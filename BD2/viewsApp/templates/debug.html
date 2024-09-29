@@ -1,0 +1,182 @@
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+<style>
+    .leaflet-draw-draw-polyline{
+        display: none !important;
+    }
+    .leaflet-draw-draw-circlemarker{
+        display: none !important;
+    }
+    .leaflet-draw-draw-rectangle{
+      display: none !important;
+    }
+    .leaflet-draw-draw-circle{
+      display: none !important;
+}
+</style>
+
+{% csrf_token %}
+
+<div id="map" style="width: 800px; height: 600px;"></div>
+
+<script>
+    
+  var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
+
+  // Adiciona o controle de layer
+  var layerControl = L.control.layers({}, {}).addTo(map);
+
+  // Adiciona as opções de layer
+  var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    subdomains:['mt0','mt1','mt2','mt3']
+  });
+  var satelliteLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+    subdomains: ['a', 'b', 'c'],
+    opacity: 0.5
+  });
+  var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+    });
+
+  // Adiciona as opções de layer ao controle de layer
+  layerControl.addBaseLayer(osmLayer, 'Mapa');
+  layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
+  
+
+  // Adiciona o layer padrão
+  osmLayer.addTo(map);
+  
+  // Cria um grupo de layer para os marcadores
+  var croplandMarkers = L.layerGroup().addTo(map);
+  var vineyardsLayer = L.layerGroup().addTo(map);
+
+// Fetch vineyards from the backend
+fetch('/backoffice/load_vineyards/', { method: 'GET' })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    addVineyards(data);
+  })
+  .catch(error => console.error('Error loading vineyards:', error));
+
+// Fetch croplands from the backend
+fetch('/backoffice/load_croplands/', { method: 'GET' })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    addCroplandsToMap(data);
+  })
+  .catch(error => console.error('Error loading markers:', error));
+
+
+// Function to add croplands to the map
+function addCroplandsToMap(markers) {
+    let jsonArray = JSON.parse(markers);
+    jsonArray.forEach(item => {
+        const lat = item.lat;
+        const lng = item.lng;
+        const latLng = [lat, lng];
+        const markerLayer = L.marker(latLng).bindPopup(item.description);
+        croplandMarkers.addLayer(markerLayer);
+    });
+}
+// Function to add vineyards to the map
+function addVineyards(vineyards) {
+  console.log(vineyards); 
+  let jsonArray = JSON.parse(vineyards);
+  jsonArray.forEach(item => {
+      const coordinates = item.coordinates;
+      const vineyard = L.polygon(coordinates).bindPopup(item.description);
+      vineyardsLayer.addLayer(vineyard);
+  });
+}
+
+  // Adiciona a opção de mostrar/ocultar marcadores ao controle de layer
+  layerControl.addOverlay(croplandMarkers, 'Marcadores de terrenos');
+  layerControl.addOverlay(vineyardsLayer, 'Marcadores de vinhas');
+  L.drawLocal.draw.toolbar.buttons.polygon = 'Criar vinha';
+  L.drawLocal.draw.toolbar.buttons.marker = 'Marcar terreno';
+
+  // Inicializa o plugin Leaflet.Draw
+  var drawControl = new L.Control.Draw({
+    draw: {
+      polygon: {
+        allowIntersection: false,
+        showArea: true
+      }
+    },
+    edit: {
+      featureGroup: new L.FeatureGroup()
+    },
+    remove: true // Add this option to enable marker removal
+  }).addTo(map);
+
+  // Captura os eventos de desenho
+  map.on('draw:created', function(e) {
+    var type = e.layerType,
+        layer = e.layer;
+
+    var csrfToken = '{{ csrf_token }}'; 
+    if(type == 'marker'){
+      fetch('/backoffice/save_marker/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken 
+        },
+  
+        body: JSON.stringify({
+          lat: layer.getLatLng().lat,
+          lng: layer.getLatLng().lng,
+          title: "teste",
+          description: ""
+        })
+      });
+      croplandMarkers.addLayer(layer);
+    }else if (type == 'polygon'){
+      fetch('/backoffice/save_polygon/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken 
+        },
+  
+        body: JSON.stringify({
+          coordinates: layer.getLatLngs(),
+          title: "testepoligono",
+          description: ""
+        })
+      });
+      croplandMarkers.addLayer(layer);
+    }
+    
+  });
+
+  map.on('draw:edited', function(e) {
+    var layers = e.layers;
+    layers.eachLayer(function(layer) {
+      var polygon = layer.getLatLngs();
+      console.log(polygon);
+    });
+  });
+
+  map.on('draw:deleted', function(e) {
+    var layer = e.layer;
+    if (layer instanceof L.Marker) {
+      console.log('<Marker> removido:', layer.getLatLng());
+    }
+  });
+</script>
