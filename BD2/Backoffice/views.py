@@ -13,7 +13,7 @@ def debug(request):
     return render(request, 'debug.html')
 
 def home(request):
-    return render(request, "home.html")
+    return redirect('backoffice/login')
 
 def login_view(request):
     return render(request, 'login.html')

@@ -26,8 +26,11 @@
     
   var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
 
+  map.removeControl(map.attributionControl);
+
   // Adiciona o controle de layer
   var layerControl = L.control.layers({}, {}).addTo(map);
+  
 
   // Adiciona as opções de layer
   var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
