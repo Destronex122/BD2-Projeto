@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, HttpResponse
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from .models import save_marker, load_markers, load_vineyards
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth.forms import UserCreationForm
 
 # Create your views here.
 
@@ -16,7 +17,26 @@ def home(request):
     return redirect('backoffice/login')
 
 def login_view(request):
+
+    if request.method == 'POST':
+        username=request.POST.get('username')
+        password=request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if  user is not None:
+            login(request, user)
+            return redirect('backofficeIndex')
+
+    form = UserCreationForm()
+    context = {'form':form}
     return render(request, 'login.html')
+
+def backofficeIndex(request):
+    return render(request, 'backofficeIndex.html')
+
+def delivery(request):
+    return render(request, 'delivery.html')
 
 @csrf_exempt
 @require_http_methods(['POST'])

@@ -9,4 +9,7 @@ urlpatterns = [
     path('save_polygon/', views.save_polygon_view, name="save_polygon"),
     path('load_croplands/', views.load_markers_view, name='load_markers'),
     path('load_vineyards/', views.load_vineyards_view, name='load_vineyards'),
+    path('home/', views.backofficeIndex, name='backofficeIndex'),
+    path('delivery/',  views.delivery, name='delivery'),
+
 ]

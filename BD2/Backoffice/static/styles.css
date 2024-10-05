@@ -54,3 +54,7 @@ body, html {
 .login-container input[type="submit"]:hover {
   background-color: #4b5320;
 }
+
+.bg-navbar{
+  background-color: #798645;
+}
