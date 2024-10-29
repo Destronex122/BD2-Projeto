@@ -2,7 +2,37 @@
 
 {% block title %}Página Inicial{% endblock %}
 
-{% block content %}
-    <h1>Página Inicial</h1>
-    <p>Este é o conteúdo da página inicial.</p>
+{% block content %} 
+
+{% load static %}
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        background: url('{% static "Vineyard.jpg" %}') center/cover no-repeat;
+    }
+
+    .editable-area {
+        width: 100%
+        padding: 100%; 
+        background-color: white;
+        display: flex;
+        font-size: 1.5em;
+        color: black;
+        padding: 20px;
+        margin: auto;
+    }
+
+</style>
+
+    <div class="editable-area">
+        <div>
+            <h1>Bem-vindo à minha aplicação</h1>
+            <p>Este é o conteúdo da página inicial.</p>
+        </div>
+    </div>
+
 {% endblock %}
