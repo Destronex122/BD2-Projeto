@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from .models import save_marker, load_markers, load_vineyards
+from .models import save_marker, load_markers, load_vineyards, save_polygon
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
@@ -53,7 +53,7 @@ def save_marker_view(request):
 def save_polygon_view(request):
     try:
         request_body = json.loads(request.body.decode('utf-8'))
-        save_marker(request_body)
+        save_polygon(request_body)
         return JsonResponse({'message': 'Polígono salvo com sucesso!'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
