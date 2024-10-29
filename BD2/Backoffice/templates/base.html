@@ -10,12 +10,15 @@
       {% endblock %}
     </title>
     <link rel="stylesheet" href="{% static 'navbar.css' %}">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"  rel="stylesheet" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
   </head>
   <body>
     {% if not request.path == '/backoffice/login/' %}
-      <nav class="navbar navbar-expand-lg navbar-light bg-navbar">
-        <a class="navbar-brand" href="#"><b>GrapeFlow</b></a>
+      <nav class="navbar navbar-expand-lg navbar-light bg-navbar" style="background-color: #e9e5dd;">
+        <a class="navbar-brand" href="#">
+          <img src="{% static 'logo.png' %}" alt="Logo" style="height: 50px; width: auto; margin-right: 8px;">
+          <b>GrapeFlow</b>
+        </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
