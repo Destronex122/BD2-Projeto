@@ -45,16 +45,16 @@ body, html {
   margin: 20px 0;
   border: none;
   border-radius: 5px;
-  background-color: #8B9467;
+  background-color: #e9e5dd;
   color: white;
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 .login-container input[type="submit"]:hover {
-  background-color: #4b5320;
+  background-color: #e9e5dd;
 }
 
 .bg-navbar{
-  background-color: #798645;
+  background-color: #e9e5dd !important;;
 }

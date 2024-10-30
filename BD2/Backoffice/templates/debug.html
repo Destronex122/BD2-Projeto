@@ -61,8 +61,13 @@
     osmLayer.addTo(map);
     
     // Cria um grupo de layer para os marcadores
-    var croplandMarkers = L.layerGroup().addTo(map);
-    var vineyardsLayer = L.layerGroup().addTo(map);
+    //var croplandMarkers = L.layerGroup().addTo(map);
+    var croplandMarkers = new L.FeatureGroup();
+    //var vineyardsLayer = L.layerGroup().addTo(map);
+    var vineyardsLayer = new L.FeatureGroup();
+    map.addLayer(croplandMarkers);
+    map.addLayer(vineyardsLayer);
+    
 
   // Fetch vineyards from the backend
   fetch('/backoffice/load_vineyards/', { method: 'GET' })
@@ -104,11 +109,12 @@
   }
   // Function to add vineyards to the map
   function addVineyards(vineyards) {
-    console.log(vineyards); 
     let jsonArray = JSON.parse(vineyards);
     jsonArray.forEach(item => {
+        var id = JSON.stringify(item._id)
         const coordinates = item.coordinates;
-        const vineyard = L.polygon(coordinates).bindPopup(item.description);
+        const vineyard = L.polygon(coordinates).bindPopup(item.description + '<br/><br/><button type="button" class="btn btn-primary sidebar-open-button" data = "' +
+          item._id + '" onclick="alertMarkerId( ' +  id +  ')" ' + '>Gerir</button>');
         vineyardsLayer.addLayer(vineyard);
     });
   }
@@ -128,7 +134,9 @@
         }
       },
       edit: {
-        featureGroup: new L.FeatureGroup()
+        featureGroup: croplandMarkers, 
+        featureGroup: vineyardsLayer
+
       },
       remove: true // Add this option to enable marker removal
     }).addTo(map);
@@ -150,11 +158,11 @@
           body: JSON.stringify({
             lat: layer.getLatLng().lat,
             lng: layer.getLatLng().lng,
-            title: "teste",
-            description: ""
+            title: "Terreno",
+            description: "Terreno de vinhas"
           })
         });
-        croplandMarkers.addLayer(layer);
+        croplandMarkers.addLayer(layer).bindPopup("Terreno de vinhas");
       }else if (type == 'polygon'){
         fetch('/backoffice/save_polygon/', {
           method: 'POST',
@@ -165,11 +173,11 @@
     
           body: JSON.stringify({
             coordinates: layer.getLatLngs(),
-            title: "testepoligono",
-            description: ""
+            title: "Vinha",
+            description: "Vinha normal"
           })
         });
-        croplandMarkers.addLayer(layer);
+        vineyardsLayer.addLayer(layer).bindPopup("Vinha normal");
       }
       
     });
@@ -183,10 +191,21 @@
     });
 
     map.on('draw:deleted', function(e) {
-      var layer = e.layer;
-      if (layer instanceof L.Marker) {
-        console.log('<Marker> removido:', layer.getLatLng());
-      }
+      var layers = e.layers;
+      isDeleting = true; // Ativa a variável de controle
+      layers.eachLayer(function(layer) {
+        if (layer instanceof L.Marker) {
+          console.log('<Marker> removido:', layer.getLatLng());
+          croplandMarkers.removeLayer(layer);
+        } else if (layer instanceof L.Polygon) {
+          console.log('<Polígono> removido:', layer.getLatLngs());
+          vineyardsLayer.removeLayer(layer);
+        }
+      });
     });
+
+    function alertMarkerId(id) {
+      alert(`ID do marcador: ` + id);
+    }
 </script>
 {% endblock %}
