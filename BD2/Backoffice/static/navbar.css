@@ -1,3 +1,9 @@
 .bg-navbar{
-    background-color: #e9e8e2 !important;;
+    background-color: #616646 !important;
+}
+
+.typographyTitle{
+        font-family: 'Sulphur Point';
+        color: #3a2616;
+        align-items:center;
 }

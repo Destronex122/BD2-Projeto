@@ -3,6 +3,100 @@
 {% block title %}Envios{% endblock %}
 
 {% block content %}
-    <h1>Envios</h1>
-    <p>Aqui será feita a gestão de envios das uvas para o cliente</p>
+
+<!-- templates/simular_entrega.html -->
+
+    <h1>Envio de Encomenda</h1>
+    {% comment %} <form method="post" action="{% url 'simular_entrega' %}"> {% endcomment %}
+    <form method="post">
+        {% csrf_token %}
+        
+        <label for="numero_encomenda">Número da Encomenda:</label>
+        <input type="text" id="numero_encomenda" name="numero_encomenda" required><br><br>
+
+        <label for="endereco_entrega">Endereço de Entrega:</label>
+        <input type="text" id="endereco_entrega" name="endereco_entrega" required><br><br>
+
+        <label for="status_entrega">Status da Entrega:</label>
+        <select id="status_entrega" name="status_entrega" required>
+            <option value="pendente">Pendente</option>
+            <option value="em_transito">Em Trânsito</option>
+            <option value="entregue">Entregue</option>
+        </select><br><br>
+
+        {% comment %} <button type="submit">Simular Envio</button> {% endcomment %}
+        <button>Simular Envio</button>
+    </form>
+
+    {% if status_entrega %}
+        <h2>Status Atual da Encomenda:</h2>
+        <p><strong>Número da Encomenda:</strong> {{ numero_encomenda }}</p>
+        <p><strong>Endereço de Entrega:</strong> {{ endereco_entrega }}</p>
+        <p><strong>Status:</strong> {{ status_entrega }}</p>
+    {% endif %}
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_API&libraries=places"></script>
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+    </style>
+
+    <h1>Trajeto da Encomenda</h1>
+
+    <form id="rota-form">
+        <label for="origem">Endereço de Partida:</label>
+        <input type="text" id="origem" name="origem" required><br><br>
+
+        <label for="destino">Endereço de Destino:</label>
+        <input type="text" id="destino" name="destino" required><br><br>
+
+        <button type="button" onclick="calcularRota()">Obter Trajeto</button>
+    </form>
+
+    <div id="map"></div>
+
+    <script>
+        let map, directionsService, directionsRenderer;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: -23.55052, lng: -46.633308 }, // Ponto inicial genérico (São Paulo)
+                zoom: 12
+            });
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+        }
+
+        function calcularRota() {
+            const origem = document.getElementById("origem").value;
+            const destino = document.getElementById("destino").value;
+
+            if (origem && destino) {
+                const request = {
+                    origin: origem,
+                    destination: destino,
+                    travelMode: 'DRIVING' // Modo de transporte (DRIVING, BICYCLING, TRANSIT, WALKING)
+                };
+
+                directionsService.route(request, function(result, status) {
+                    if (status == 'OK') {
+                        directionsRenderer.setDirections(result);
+                    } else {
+                        alert('Não foi possível encontrar o trajeto: ' + status);
+                    }
+                });
+            } else {
+                alert("Por favor, insira os endereços de partida e destino.");
+            }
+        }
+
+        // Inicializar o mapa quando a página carregar
+        window.onload = initMap;
+    </script>
+
+    {% comment %} <h1>Envios</h1>
+    <p>Aqui será feita a gestão de envios das uvas para o cliente</p> {% endcomment %}
 {% endblock %}
