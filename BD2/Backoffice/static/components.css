@@ -1,0 +1,115 @@
+/* Pages Width CSS*/
+.container{
+    max-width: 100%;
+    width:100%;
+    min-width: 80%;
+}
+
+.newPadding{
+    padding:20px 0px;
+}
+
+
+/* Table CSS */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 18px;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: 8px 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+
+/* Typography CSS */
+h2 {
+    color: #333;
+    text-align:left;
+    font-size: 2rem;
+    margin-top: 24px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+input[type="text"], input[type="datetime-local"] {
+    width: 50%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+
+/* Buttons CSS */
+button {
+    background-color: #616646;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    
+}
+
+button:hover {
+    background-color: #e9e8e2;
+    color: black;
+}
+
+
+/*Delivery map CSS*/
+#map {
+    height: 500px;
+    width: 100%;
+}
+
+
+/* Sidebar CSS */
+.sidebar {
+    position: fixed;
+    overflow-y: scroll;
+    top: 0;
+    right: -550px; /* Começa fora da tela */
+    width: 550px;
+    height: 100%;
+    background-color: #fff;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+    transition: right 0.3s ease; /* Efeito de transição */
+}
+
+.sidebar.open {
+    right: 0; /* Mover para a direita quando aberto */
+}
+
+.close {
+    position: fixed;
+    text-align: right;
+    color: #616646;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    text-align: right;
+    color: #e9e8e2;
+    text-decoration: none;
+}
+

@@ -5,6 +5,7 @@
 {% block title %}Mapa{% endblock %}
 
 {% block content %}
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -26,7 +27,13 @@
 </style>
 
 {% csrf_token %}
-<div id="map" style="width: 800px; height: 600px;"></div>
+{% load static %}
+<div class="newPadding">
+  <h1>Campos</h1>
+  <button id="openModal">Abrir Sidebar</button>
+  <br>
+  
+  <div id="map" style="width: 700px; height: 500px;"></div>
 
 <script>
       
@@ -189,4 +196,149 @@
       }
     });
 </script>
+
+
+{% comment %} 
+  ALL NEEDED TO OPEN THE SIDEBAR 
+{% endcomment %}
+
+    <div id="myModal" class="sidebar">
+        <div class="p-3">
+          <div style="text-align:right; padding:0px 24px;">
+            <span class="close">&times;</span>
+          </div>
+            <h2>Informação dos campos</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome do campo</th>
+                  <th>Cidade</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Quinta do Douro</td>
+                  <td>Porto</td>
+                  <td>
+                    <!-- Botão de edição -->
+                    <form method="GET" style="display:inline;">
+                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                    </form>
+                    <!-- Botão de exclusão -->
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                    </form>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Quinta do Dão</td>
+                  <td>Viseu</td>
+                  <td>
+                    <!-- Botão de edição -->
+                    <form method="GET" style="display:inline;">
+                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                    </form>
+                    <!-- Botão de exclusão -->
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                    </form>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Quinta do Alentejo</td>
+                  <td>Alentejo</td>
+                  <td>
+                    <!-- Botão de edição -->
+                    <form method="GET" style="display:inline;">
+                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                    </form>
+                    <!-- Botão de exclusão -->
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                    </form>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Quinta de Mirandela</td>
+                  <td>Mirandela</td>
+                  <td>
+                    <!-- Botão de edição -->
+                    <form method="GET" style="display:inline;">
+                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                    </form>
+                    <!-- Botão de exclusão -->
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                    </form>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Quinta de Lagos</td>
+                  <td>Lagos</td>
+                  <td>
+                    <!-- Botão de edição -->
+                    <form method="GET" style="display:inline;">
+                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                    </form>
+                    <!-- Botão de exclusão -->
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height:25px; width: auto;"></button>
+                    </form>
+                  </td>
+                </tr>
+                {% comment %} 
+                {% empty %}
+                  <tr>
+                    <td colspan="2">Nenhuma entrega pendente.</td>
+                  </tr>
+                {% endfor %} 
+                {% endcomment %}
+              </tbody>
+          </table> 
+          <h2>Adicionar novo campo</h2>
+          <form method="POST">
+            {% csrf_token %}
+            <label for="name">Nome do campo:</label>
+            <input type="text" id="name" name="name" required>
+            
+            <label for="city">Cidade:</label>
+            <input type="text" id="city" name="city" required><br>
+
+            <button type="submit">Guardar</button> 
+          </form>
+         
+        </div>
+        
+    </div>
+
+    <script>
+        // Obtendo os elementos
+        const modal = document.getElementById('myModal');
+        const btn = document.getElementById('openModal');
+        const span = document.getElementsByClassName('close')[0];
+
+        // Quando o botão é clicado, abre a sidebar
+        btn.onclick = function() {
+            modal.classList.add('open');
+        }
+
+        // Quando o "X" é clicado, fecha a sidebar
+        span.onclick = function() {
+            modal.classList.remove('open');
+        }
+
+        // Quando o usuário clica fora da sidebar, fecha a sidebar
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                modal.classList.remove('open');
+            }
+        }
+    </script>
+  </div>
 {% endblock %}

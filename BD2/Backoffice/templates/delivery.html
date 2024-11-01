@@ -5,58 +5,56 @@
 {% block content %}
 
 <!-- templates/simular_entrega.html -->
-
-    <h1>Envio de Encomenda</h1>
-    {% comment %} <form method="post" action="{% url 'simular_entrega' %}"> {% endcomment %}
+<div class="newPadding">
+    <h1>Entrega de encomendas</h1>
+    <br>
     <form method="post">
         {% csrf_token %}
-        
-        <label for="numero_encomenda">Número da Encomenda:</label>
-        <input type="text" id="numero_encomenda" name="numero_encomenda" required><br><br>
-
-        <label for="endereco_entrega">Endereço de Entrega:</label>
-        <input type="text" id="endereco_entrega" name="endereco_entrega" required><br><br>
-
-        <label for="status_entrega">Status da Entrega:</label>
-        <select id="status_entrega" name="status_entrega" required>
-            <option value="pendente">Pendente</option>
-            <option value="em_transito">Em Trânsito</option>
-            <option value="entregue">Entregue</option>
-        </select><br><br>
-
-        {% comment %} <button type="submit">Simular Envio</button> {% endcomment %}
-        <button>Simular Envio</button>
+        <label for="numero_encomenda">Número da encomenda:</label>
+        <input type="text" id="numero_encomenda" name="numero_encomenda" required>
+        {% comment %} <button type="submit">Procurar</button> {% endcomment %}
+        <button>Procurar</button>
     </form>
-
-    {% if status_entrega %}
-        <h2>Status Atual da Encomenda:</h2>
-        <p><strong>Número da Encomenda:</strong> {{ numero_encomenda }}</p>
-        <p><strong>Endereço de Entrega:</strong> {{ endereco_entrega }}</p>
-        <p><strong>Status:</strong> {{ status_entrega }}</p>
-    {% endif %}
+    {% comment %} <form method="post" action="{% url 'simular_entrega' %}"> {% endcomment %}
+    <h2>Lista de entregas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Nº da encomenda</th>
+                <th>Endereço</th>
+                <th>Código postal</th>
+                <th>Cidade</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% comment %} {% for delivery in deliveries %} {% endcomment %}
+            <tr>
+                <td>E123123</td>
+                <td>Quinta do Douro</td>
+                <td>3000-100</td>
+                <td>Porto</td>
+            </tr>
+            <tr>
+                <td>E234432</td>
+                <td>Quinta do Dão</td>
+                <td>3500-100</td>
+                <td>Viseu</td>
+            </tr>
+            {% comment %} 
+            {% empty %}
+                <tr>
+                    <td colspan="2">Nenhuma entrega pendente.</td>
+                </tr>
+            {% endfor %} 
+            {% endcomment %}
+        </tbody>
+    </table>
 
     <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_API&libraries=places"></script>
-    <style>
-        #map {
-            height: 500px;
-            width: 100%;
-        }
-    </style>
 
-    <h1>Trajeto da Encomenda</h1>
-
-    <form id="rota-form">
-        <label for="origem">Endereço de Partida:</label>
-        <input type="text" id="origem" name="origem" required><br><br>
-
-        <label for="destino">Endereço de Destino:</label>
-        <input type="text" id="destino" name="destino" required><br><br>
-
-        <button type="button" onclick="calcularRota()">Obter Trajeto</button>
-    </form>
-
+    <br>
+    <h2>Trajeto</h2>
     <div id="map"></div>
-
     <script>
         let map, directionsService, directionsRenderer;
 
@@ -86,8 +84,8 @@
                         directionsRenderer.setDirections(result);
                     } else {
                         alert('Não foi possível encontrar o trajeto: ' + status);
-                    }
-                });
+                        }
+                    });
             } else {
                 alert("Por favor, insira os endereços de partida e destino.");
             }
@@ -96,7 +94,5 @@
         // Inicializar o mapa quando a página carregar
         window.onload = initMap;
     </script>
-
-    {% comment %} <h1>Envios</h1>
-    <p>Aqui será feita a gestão de envios das uvas para o cliente</p> {% endcomment %}
+</div>
 {% endblock %}
