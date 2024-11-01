@@ -27,6 +27,7 @@
           <b class="typographyTitle">GrapeFlow</b>
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="navbar">
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
             <li class="nav-item active">
@@ -37,8 +38,22 @@
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/backoffice/delivery">Envios</a>
-            </li>
+            </li>  
+            <select class="custom-select" style="float: right" name="vineyard" required>
+            {% comment %} 
+              {% for quinta in quintas %}
+                <option value="{{ quinta.id }}">{{ quinta.nome }}</option>
+              {% endfor %} 
+            {% endcomment %}
+              <option>Quinta do Douro</option>
+              <option>Quinta do Dão</option>
+              <option>Quinta do Alentejo</option>
+              <option>Quinta de Mirandela</option>
+              <option>Quinta de Lagos</option>
+          </select>
           </ul>
+          
+        </div>
         </div>
       </nav>
     {% endif %}
