@@ -208,6 +208,9 @@
             <span class="close">&times;</span>
           </div>
             <h2>Informação dos campos</h2>
+            <div style="justify-self:right">
+              <button id="addFieldButton" type="submit"><img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+            </div>
             <table>
               <thead>
                 <tr>
@@ -301,17 +304,19 @@
                 {% endcomment %}
               </tbody>
           </table> 
-          <h2>Adicionar novo campo</h2>
-          <form method="POST">
-            {% csrf_token %}
-            <label for="name">Nome do campo:</label>
-            <input type="text" id="name" name="name" required>
-            
-            <label for="city">Cidade:</label>
-            <input type="text" id="city" name="city" required><br>
+          <div id="formContainer" style="display: none; margin-top: 15px;">
+            <h2>Adicionar novo campo</h2>
+            <form method="POST">
+                {% csrf_token %}
+                <label for="name">Nome do campo:</label>
+                <input style="width: 50%;" type="text" id="name" name="name" required>
 
-            <button type="submit">Guardar</button> 
-          </form>
+                <label for="city">Cidade:</label>
+                <input style="width: 50%;" type="text" id="city" name="city" required><br>
+
+                <button type="submit">Guardar</button> 
+            </form>
+        </div>
          
         </div>
         
@@ -322,7 +327,9 @@
         const modal = document.getElementById('myModal');
         const btn = document.getElementById('openModal');
         const span = document.getElementsByClassName('close')[0];
-
+        const addFieldButton = document.getElementById('addFieldButton');
+        const formContainer = document.getElementById('formContainer');
+        
         // Quando o botão é clicado, abre a sidebar
         btn.onclick = function() {
             modal.classList.add('open');
@@ -339,6 +346,17 @@
                 modal.classList.remove('open');
             }
         }
+
+        // Quando o botão de adicionar "+" é clicado, mostra o formulário
+        addFieldButton.onclick = function() {
+          if (formContainer.style.display === 'none') {
+            formContainer.style.display = 'block'; // Mostrar o formulário
+            addFieldButton.firstChild.src = "{% static 'closeForm.webp' %}"; // Mudar imagem para "Fechar"
+        } else {
+            formContainer.style.display = 'none'; // Esconder o formulário
+            addFieldButton.firstChild.src = "{% static 'add.png' %}"; // Mudar imagem para "Adicionar"
+        }
+      }
     </script>
   </div>
 {% endblock %}

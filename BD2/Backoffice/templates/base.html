@@ -1,66 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     {% load static %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
-      {% block title %}
-        GrapeFlow
-      {% endblock %}
+        {% block title %}
+            GrapeFlow
+        {% endblock %}
     </title>
     <link rel="stylesheet" href="{% static 'navbar.css' %}">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
     <link rel="stylesheet" href="{% static 'components.css' %}">
-    <link href='https://fonts.googleapis.com/css?family=Sulphur Point'rel='stylesheet'>
-    
-  </head>
-  <body>
+    <link href='https://fonts.googleapis.com/css?family=Sulphur Point' rel='stylesheet'>
+</head>
+<body>
     <script>
-      function redirecionar() {
-          const dropdown = document.getElementById('id_dropdown');
-          const valorSelecionado = dropdown.value; // Redireciona para uma nova URL ou faz outra ação com o valor selecionado
-      }
+        function redirecionar() {
+            const dropdown = document.getElementById('id_dropdown');
+            const valorSelecionado = dropdown.value; // Redireciona para uma nova URL ou faz outra ação com o valor selecionado
+        }
     </script>
     {% if not request.path == '/backoffice/login/' %}
-      <nav class="navbar navbar-expand-lg navbar-light bg-navbar" style="background-color: #e9e8e2 !important;">
-        <a class="navbar-brand" href="#">
-          <img src="{% static 'logoApp.png' %}" alt="Logo" style="height: 60px; width: auto;">
-          <b class="typographyTitle">GrapeFlow</b>
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-        <div class="navbar">
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav">
-            <li class="nav-item active">
-              <a class="nav-link" href="/backoffice/home">Início</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/backoffice/debug">Mapa</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/backoffice/delivery">Envios</a>
-            </li>  
-            <select class="custom-select" style="float: right" name="vineyard" required>
-            {% comment %} 
-              {% for quinta in quintas %}
-                <option value="{{ quinta.id }}">{{ quinta.nome }}</option>
-              {% endfor %} 
-            {% endcomment %}
-              <option>Quinta do Douro</option>
-              <option>Quinta do Dão</option>
-              <option>Quinta do Alentejo</option>
-              <option>Quinta de Mirandela</option>
-              <option>Quinta de Lagos</option>
-          </select>
-          </ul>
-          
-        </div>
-        </div>
-      </nav>
+        <nav class="navbar navbar-expand-lg navbar-light bg-navbar" style="background-color: #e9e8e2 !important;">
+            <a class="navbar-brand" href="#">
+                <img src="{% static 'logoApp.png' %}" alt="Logo" style="height: 60px; width: auto;">
+                <b class="typographyTitle">GrapeFlow</b>
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/backoffice/home">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/backoffice/debug">Mapa</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/backoffice/delivery">Envios</a>
+                    </li>
+                </ul>
+                <div class="ml-auto"> <!-- Adicione esta div para alinhar à direita -->
+                    <select class="custom-select" name="vineyard" required>
+                        {% comment %}
+                        {% for quinta in quintas %}
+                            <option value="{{ quinta.id }}">{{ quinta.nome }}</option>
+                        {% endfor %}
+                        {% endcomment %}
+                        <option>Quinta do Douro</option>
+                        <option>Quinta do Dão</option>
+                        <option>Quinta do Alentejo</option>
+                        <option>Quinta de Mirandela</option>
+                        <option>Quinta de Lagos</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
     {% endif %}
     <div class="container" style="width: 100vh; height:">{% block content %} {% endblock %}</div>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js" ></script>
-  </body>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
