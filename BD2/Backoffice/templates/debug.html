@@ -340,12 +340,12 @@
             modal.classList.remove('open');
         }
 
-        // Quando o usuário clica fora da sidebar, fecha a sidebar
-        window.onclick = function(event) {
+        // Quando o utilizador clica fora da sidebar, fecha a sidebar
+        {% comment %} window.onclick = function(event) {
             if (event.target === modal) {
                 modal.classList.remove('open');
             }
-        }
+        } {% endcomment %}
 
         // Quando o botão de adicionar "+" é clicado, mostra o formulário
         addFieldButton.onclick = function() {

@@ -72,6 +72,21 @@ button:hover {
     color: black;
 }
 
+.secondary-button {
+    background-color: #e9e8e2;
+    color: black;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    
+}
+
+.secondary-button:hover {
+    background-color: white;
+    color: black;
+}
+
 
 /*Delivery map CSS*/
 #map {
@@ -109,7 +124,12 @@ button:hover {
 .close:hover,
 .close:focus {
     text-align: right;
-    color: #e9e8e2;
     text-decoration: none;
+}
+
+/* Row in table with another color */
+#colheitaTable tbody tr:hover {
+    background-color: #f1f1f1; /* Cor de fundo ao passar o mouse */
+    cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
 }
 

@@ -38,6 +38,9 @@ def backofficeIndex(request):
 def delivery(request):
     return render(request, 'delivery.html')
 
+def harvestdetail(request):
+    return render(request, 'harvestdetail.html')
+
 @csrf_exempt
 @require_http_methods(['POST'])
 def save_marker_view(request):

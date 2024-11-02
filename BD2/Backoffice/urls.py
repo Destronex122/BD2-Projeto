@@ -11,5 +11,6 @@ urlpatterns = [
     path('load_vineyards/', views.load_vineyards_view, name='load_vineyards'),
     path('home/', views.backofficeIndex, name='backofficeIndex'),
     path('delivery/',  views.delivery, name='delivery'),
+    path('harvestdetail/',  views.harvestdetail, name='harvestdetail'),
 
 ]
