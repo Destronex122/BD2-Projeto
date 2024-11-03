@@ -1,8 +1,6 @@
-
-
 {% extends 'base.html' %}
 
-{% block title %}Mapa{% endblock %}
+{% block title %}Mapa do campo{% endblock %}
 
 {% block content %}
 
@@ -12,314 +10,296 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <style>
-    .leaflet-draw-draw-polyline{
+    .leaflet-draw-draw-polyline {
         display: none !important;
     }
-    .leaflet-draw-draw-circlemarker{
+    .leaflet-draw-draw-circlemarker {
         display: none !important;
     }
-    .leaflet-draw-draw-rectangle{
-      display: none !important;
+    .leaflet-draw-draw-rectangle {
+        display: none !important;
     }
-    .leaflet-draw-draw-circle{
-      display: none !important;
-}
+    .leaflet-draw-draw-circle {
+        display: none !important;
+    }
 </style>
 
 {% csrf_token %}
 {% load static %}
 <div class="newPadding">
-  <h1>Campos</h1>
-  <button id="openModal">Abrir Sidebar</button>
-  <br>
-  
-  <div id="map" style="width: 700px; height: 500px;"></div>
-
-<script>
-      
-    var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
-
-    map.removeControl(map.attributionControl);
-
-    // Adiciona o controle de layer
-    var layerControl = L.control.layers({}, {}).addTo(map);
+    <h1>Campos</h1>
+    {% comment %} <button id="openModal">Abrir Sidebar</button> {% endcomment %}
+    <br>
     
+    <div id="map" style="width: 700px; height: 500px;"></div>
 
-    // Adiciona as opções de layer
-    var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-      subdomains:['mt0','mt1','mt2','mt3']
-    });
-    var satelliteLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
-      subdomains: ['a', 'b', 'c'],
-      opacity: 0.5
-    });
-    var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
-      maxZoom: 20,
-      subdomains:['mt0','mt1','mt2','mt3']
-      });
+    <script>
+        var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
 
-    // Adiciona as opções de layer ao controle de layer
-    layerControl.addBaseLayer(osmLayer, 'Mapa');
-    layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
-    
+        map.removeControl(map.attributionControl);
 
-    // Adiciona o layer padrão
-    osmLayer.addTo(map);
-    
-    // Cria um grupo de layer para os marcadores
-    var croplandMarkers = L.layerGroup().addTo(map);
-    var vineyardsLayer = L.layerGroup().addTo(map);
+        // Adiciona o controle de layer
+        var layerControl = L.control.layers({}, {}).addTo(map);
+        
+        // Adiciona as opções de layer
+        var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+        var satelliteLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+            subdomains: ['a', 'b', 'c'],
+            opacity: 0.5
+        });
+        var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
 
-  // Fetch vineyards from the backend
-  fetch('/backoffice/load_vineyards/', { method: 'GET' })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      addVineyards(data);
-    })
-    .catch(error => console.error('Error loading vineyards:', error));
+        // Adiciona as opções de layer ao controle de layer
+        layerControl.addBaseLayer(osmLayer, 'Mapa');
+        layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
+        
+        // Adiciona o layer padrão
+        osmLayer.addTo(map);
+        
+        // Cria um grupo de layer para os marcadores
+        var croplandMarkers = L.layerGroup().addTo(map);
+        var vineyardsLayer = L.layerGroup().addTo(map);
 
-  // Fetch croplands from the backend
-  fetch('/backoffice/load_croplands/', { method: 'GET' })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      addCroplandsToMap(data);
-    })
-    .catch(error => console.error('Error loading markers:', error));
+        // Fetch vineyards from the backend
+        fetch('/backoffice/load_vineyards/', { method: 'GET' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                addVineyards(data);
+            })
+            .catch(error => console.error('Error loading vineyards:', error));
 
+        // Fetch croplands from the backend
+        fetch('/backoffice/load_croplands/', { method: 'GET' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                addCroplandsToMap(data);
+            })
+            .catch(error => console.error('Error loading markers:', error));
 
-  // Function to add croplands to the map
-  function addCroplandsToMap(markers) {
-      let jsonArray = JSON.parse(markers);
-      jsonArray.forEach(item => {
-          const lat = item.lat;
-          const lng = item.lng;
-          const latLng = [lat, lng];
-          const markerLayer = L.marker(latLng).bindPopup(item.description);
-          croplandMarkers.addLayer(markerLayer);
-      });
-  }
-  // Function to add vineyards to the map
-  function addVineyards(vineyards) {
-    console.log(vineyards); 
-    let jsonArray = JSON.parse(vineyards);
-    jsonArray.forEach(item => {
-        const coordinates = item.coordinates;
-        const vineyard = L.polygon(coordinates).bindPopup(item.description);
-        vineyardsLayer.addLayer(vineyard);
-    });
-  }
+        // Função para adicionar croplands ao mapa
+        function addCroplandsToMap(markers) {
+            let jsonArray = JSON.parse(markers);
+            jsonArray.forEach(item => {
+                const lat = item.lat;
+                const lng = item.lng;
+                const latLng = [lat, lng];
+                const markerLayer = L.marker(latLng).bindPopup(item.description);
+                
+                // Adiciona o evento de clique para abrir a sidebar
+                markerLayer.on('click', function() {
+                    modal.classList.add('open');
+                });
 
-    // Adiciona a opção de mostrar/ocultar marcadores ao controle de layer
-    layerControl.addOverlay(croplandMarkers, 'Marcadores de terrenos');
-    layerControl.addOverlay(vineyardsLayer, 'Marcadores de vinhas');
-    L.drawLocal.draw.toolbar.buttons.polygon = 'Criar vinha';
-    L.drawLocal.draw.toolbar.buttons.marker = 'Marcar terreno';
-
-    // Inicializa o plugin Leaflet.Draw
-    var drawControl = new L.Control.Draw({
-      draw: {
-        polygon: {
-          allowIntersection: false,
-          showArea: true
+                croplandMarkers.addLayer(markerLayer);
+            });
         }
-      },
-      edit: {
-        featureGroup: new L.FeatureGroup()
-      },
-      remove: true // Add this option to enable marker removal
-    }).addTo(map);
 
-    // Captura os eventos de desenho
-    map.on('draw:created', function(e) {
-      var type = e.layerType,
-          layer = e.layer;
+        // Função para adicionar vineyards ao mapa
+        function addVineyards(vineyards) {
+            console.log(vineyards); 
+            let jsonArray = JSON.parse(vineyards);
+            jsonArray.forEach(item => {
+                const coordinates = item.coordinates;
+                const vineyard = L.polygon(coordinates).bindPopup(item.description);
+                
+                // Adiciona o evento de clique para abrir a sidebar
+                vineyard.on('click', function() {
+                    modal.classList.add('open');
+                });
 
-      var csrfToken = '{{ csrf_token }}'; 
-      if(type == 'marker'){
-        fetch('/backoffice/save_marker/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken 
-          },
-    
-          body: JSON.stringify({
-            lat: layer.getLatLng().lat,
-            lng: layer.getLatLng().lng,
-            title: "teste",
-            description: ""
-          })
+                vineyardsLayer.addLayer(vineyard);
+            });
+        }
+
+        // Adiciona a opção de mostrar/ocultar marcadores ao controlo de layer
+        layerControl.addOverlay(croplandMarkers, 'Marcadores de terrenos');
+        layerControl.addOverlay(vineyardsLayer, 'Marcadores de vinhas');
+        L.drawLocal.draw.toolbar.buttons.polygon = 'Criar vinha';
+        L.drawLocal.draw.toolbar.buttons.marker = 'Marcar terreno';
+
+        // Inicializa o plugin Leaflet.Draw
+        var drawControl = new L.Control.Draw({
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    showArea: true
+                }
+            },
+            edit: {
+                featureGroup: new L.FeatureGroup()
+            },
+            remove: true // Add this option to enable marker removal
+        }).addTo(map);
+
+        // Captura os eventos de desenho
+        map.on('draw:created', function(e) {
+            var type = e.layerType,
+                layer = e.layer;
+
+            var csrfToken = '{{ csrf_token }}'; 
+            if (type == 'marker') {
+                fetch('/backoffice/save_marker/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken 
+                    },
+                    body: JSON.stringify({
+                        lat: layer.getLatLng().lat,
+                        lng: layer.getLatLng().lng,
+                        title: "teste",
+                        description: ""
+                    })
+                });
+                croplandMarkers.addLayer(layer);
+            } else if (type == 'polygon') {
+                fetch('/backoffice/save_polygon/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken 
+                    },
+                    body: JSON.stringify({
+                        coordinates: layer.getLatLngs(),
+                        title: "testepoligono",
+                        description: ""
+                    })
+                });
+                croplandMarkers.addLayer(layer);
+            }
         });
-        croplandMarkers.addLayer(layer);
-      }else if (type == 'polygon'){
-        fetch('/backoffice/save_polygon/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken 
-          },
-    
-          body: JSON.stringify({
-            coordinates: layer.getLatLngs(),
-            title: "testepoligono",
-            description: ""
-          })
+
+        map.on('draw:edited', function(e) {
+            var layers = e.layers;
+            layers.eachLayer(function(layer) {
+                var polygon = layer.getLatLngs();
+                console.log(polygon);
+            });
         });
-        croplandMarkers.addLayer(layer);
-      }
-      
-    });
 
-    map.on('draw:edited', function(e) {
-      var layers = e.layers;
-      layers.eachLayer(function(layer) {
-        var polygon = layer.getLatLngs();
-        console.log(polygon);
-      });
-    });
-
-    map.on('draw:deleted', function(e) {
-      var layer = e.layer;
-      if (layer instanceof L.Marker) {
-        console.log('<Marker> removido:', layer.getLatLng());
-      }
-    });
-</script>
-
-
-{% comment %} 
-  ALL NEEDED TO OPEN THE SIDEBAR 
-{% endcomment %}
+        map.on('draw:deleted', function(e) {
+            var layer = e.layer;
+            if (layer instanceof L.Marker) {
+                console.log('<Marker> removido:', layer.getLatLng());
+            }
+        });
+    </script>
 
     <div id="myModal" class="sidebar">
         <div class="p-3">
-          <div style="text-align:right; padding:0px 24px;">
-            <span class="close">&times;</span>
-          </div>
+            <div style="text-align:right; padding:0px 24px;">
+                <span id="openModal" class="close">&times;</span>
+            </div>
             <h2>Informação dos campos</h2>
             <div style="justify-self:right">
-              <button id="addFieldButton" type="submit"><img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                <button id="addFieldButton" type="submit"><img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
             </div>
             <table>
-              <thead>
-                <tr>
-                  <th>Nome do campo</th>
-                  <th>Cidade</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Quinta do Douro</td>
-                  <td>Porto</td>
-                  <td>
-                    <!-- Botão de edição -->
-                    <form method="GET" style="display:inline;">
-                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                    </form>
-                    <!-- Botão de exclusão -->
-                    <form method="POST" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                    </form>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Quinta do Dão</td>
-                  <td>Viseu</td>
-                  <td>
-                    <!-- Botão de edição -->
-                    <form method="GET" style="display:inline;">
-                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                    </form>
-                    <!-- Botão de exclusão -->
-                    <form method="POST" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                    </form>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Quinta do Alentejo</td>
-                  <td>Alentejo</td>
-                  <td>
-                    <!-- Botão de edição -->
-                    <form method="GET" style="display:inline;">
-                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                    </form>
-                    <!-- Botão de exclusão -->
-                    <form method="POST" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                    </form>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Quinta de Mirandela</td>
-                  <td>Mirandela</td>
-                  <td>
-                    <!-- Botão de edição -->
-                    <form method="GET" style="display:inline;">
-                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                    </form>
-                    <!-- Botão de exclusão -->
-                    <form method="POST" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                    </form>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Quinta de Lagos</td>
-                  <td>Lagos</td>
-                  <td>
-                    <!-- Botão de edição -->
-                    <form method="GET" style="display:inline;">
-                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                    </form>
-                    <!-- Botão de exclusão -->
-                    <form method="POST" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height:25px; width: auto;"></button>
-                    </form>
-                  </td>
-                </tr>
-                {% comment %} 
-                {% empty %}
-                  <tr>
-                    <td colspan="2">Nenhuma entrega pendente.</td>
-                  </tr>
-                {% endfor %} 
-                {% endcomment %}
-              </tbody>
-          </table> 
-          <div id="formContainer" style="display: none; margin-top: 15px;">
-            <h2>Adicionar novo campo</h2>
-            <form method="POST">
-                {% csrf_token %}
-                <label for="name">Nome do campo:</label>
-                <input style="width: 50%;" type="text" id="name" name="name" required>
+                <thead>
+                    <tr>
+                        <th>Nome do campo</th>
+                        <th>Cidade</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Quinta do Douro</td>
+                        <td>Porto</td>
+                        <td>
+                            <form method="GET" style="display:inline;">
+                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                            </form>
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Quinta do Dão</td>
+                        <td>Viseu</td>
+                        <td>
+                            <form method="GET" style="display:inline;">
+                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                            </form>
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Quinta do Alentejo</td>
+                        <td>Alentejo</td>
+                        <td>
+                            <form method="GET" style="display:inline;">
+                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                            </form>
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Quinta de Mirandela</td>
+                        <td>Mirandela</td>
+                        <td>
+                            <form method="GET" style="display:inline;">
+                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                            </form>
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Quinta de Lagos</td>
+                        <td>Lagos</td>
+                        <td>
+                            <form method="GET" style="display:inline;">
+                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                            </form>
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height:25px; width: auto;"></button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table> 
+            <div id="formContainer" style="display: none; margin-top: 15px;">
+                <h2>Adicionar novo campo</h2>
+                <form method="POST">
+                    {% csrf_token %}
+                    <label for="name">Nome do campo:</label>
+                    <input style="width: 50%;" type="text" id="name" name="name" required>
 
-                <label for="city">Cidade:</label>
-                <input style="width: 50%;" type="text" id="city" name="city" required><br>
+                    <label for="city">Cidade:</label>
+                    <input style="width: 50%;" type="text" id="city" name="city" required><br>
 
-                <button type="submit">Guardar</button> 
-            </form>
+                    <button type="submit">Guardar</button> 
+                </form>
+            </div>
         </div>
-         
-        </div>
-        
     </div>
 
     <script>
@@ -341,22 +321,22 @@
         }
 
         // Quando o utilizador clica fora da sidebar, fecha a sidebar
-        {% comment %} window.onclick = function(event) {
-            if (event.target === modal) {
-                modal.classList.remove('open');
-            }
-        } {% endcomment %}
+        // window.onclick = function(event) {
+        //     if (event.target === modal) {
+        //         modal.classList.remove('open');
+        //     }
+        // }
 
         // Quando o botão de adicionar "+" é clicado, mostra o formulário
         addFieldButton.onclick = function() {
-          if (formContainer.style.display === 'none') {
-            formContainer.style.display = 'block'; // Mostrar o formulário
-            addFieldButton.firstChild.src = "{% static 'closeForm.webp' %}"; // Mudar imagem para "Fechar"
-        } else {
-            formContainer.style.display = 'none'; // Esconder o formulário
-            addFieldButton.firstChild.src = "{% static 'add.png' %}"; // Mudar imagem para "Adicionar"
+            if (formContainer.style.display === 'none') {
+                formContainer.style.display = 'block'; // Mostrar o formulário
+                addFieldButton.firstChild.src = "{% static 'closeForm.webp' %}"; // Mudar imagem para "Fechar"
+            } else {
+                formContainer.style.display = 'none'; // Esconder o formulário
+                addFieldButton.firstChild.src = "{% static 'add.png' %}"; // Mudar imagem para "Adicionar"
+            }
         }
-      }
     </script>
-  </div>
+</div>
 {% endblock %}

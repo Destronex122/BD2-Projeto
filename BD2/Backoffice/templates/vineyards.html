@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}Mapa de vinhas{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+<style>
+    .leaflet-draw-draw-polyline,
+    .leaflet-draw-draw-circlemarker,
+    .leaflet-draw-draw-rectangle,
+    .leaflet-draw-draw-circle {
+        display: none !important;
+    }
+</style>
+
+{% csrf_token %}
+{% load static %}
+<div class="newPadding">
+    <h1>Vinhas</h1>
+    <br>
+    
+    <div id="map" style="width: 700px; height: 500px;"></div>
+
+    <script>
+        var terrainCoordinates = [41.230704, -7.646158];
+        var map = L.map('map').setView(terrainCoordinates, 17); // Aumentar o zoom para focar no terreno
+
+        map.removeControl(map.attributionControl);
+
+        // Define as opções de layer
+        var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        }).addTo(map); // Adiciona a camada de satélite ao mapa por padrão
+
+        // Adiciona as opções de layer ao controle
+        var layerControl = L.control.layers({}, {}).addTo(map);
+        layerControl.addBaseLayer(osmLayer, 'Mapa');
+        layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
+
+        // Cria grupos de layer para os marcadores de terrenos e vinhas
+        var terrainMarkers = L.layerGroup().addTo(map);
+        var vineyardMarkers = L.layerGroup().addTo(map);
+        
+        // Adiciona o marcador do terreno específico
+        var terrainMarker = L.marker(terrainCoordinates).addTo(terrainMarkers).bindPopup('Quinta da Queda');
+        
+        // Fetch vineyards from the backend
+        fetch('/backoffice/load_vineyards/', { method: 'GET' })
+            .then(response => response.json())
+            .then(data => {
+                addVineyards(data);
+            })
+            .catch(error => console.error('Error loading vineyards:', error));
+
+        // Função para adicionar vinhas ao mapa
+        function addVineyards(vineyards) {
+            let jsonArray = JSON.parse(vineyards);
+            jsonArray.forEach(item => {
+                const coordinates = item.coordinates;
+                const vineyard = L.polygon(coordinates).bindPopup(item.description);
+                vineyardMarkers.addLayer(vineyard);
+                
+                // Adiciona evento de clique ao popup da vinha
+                vineyard.on('click', function() {
+                    document.getElementById('vineyardInfo').innerHTML = item.description; // Exibe a descrição na sidebar
+                    modal.classList.add('open'); // Abre a sidebar
+                });
+            });
+        }
+
+        // Fetch markers from the backend
+        fetch('/backoffice/load_markers/', { method: 'GET' })
+            .then(response => response.json())
+            .then(data => {
+                addMarkers(data);
+            })
+            .catch(error => console.error('Error loading markers:', error));
+
+        // Função para adicionar marcadores ao mapa
+        function addMarkers(markers) {
+            let jsonArray = JSON.parse(markers);
+            jsonArray.forEach(item => {
+                const marker = L.marker([item.lat, item.lng]).bindPopup(item.description);
+                terrainMarkers.addLayer(marker);
+            });
+        }
+
+        // Inicializa o plugin Leaflet.Draw
+        var drawControl = new L.Control.Draw({
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    showArea: true
+                },
+                marker: true
+            },
+            edit: {
+                featureGroup: new L.FeatureGroup()
+            },
+            remove: true
+        }).addTo(map);
+
+        // Captura os eventos de desenho
+        map.on('draw:created', function(e) {
+            var type = e.layerType,
+                layer = e.layer;
+
+            var csrfToken = '{{ csrf_token }}'; 
+            if (type === 'marker') {
+                var latLng = layer.getLatLng();
+                fetch('/backoffice/save_marker/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken 
+                    },
+                    body: JSON.stringify({
+                        lat: latLng.lat,
+                        lng: latLng.lng,
+                        description: "Novo Marcador"
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                        terrainMarkers.addLayer(layer);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error saving marker:', error));
+            } else if (type === 'polygon') {
+                fetch('/backoffice/save_polygon/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken 
+                    },
+                    body: JSON.stringify({
+                        coordinates: layer.getLatLngs(),
+                        title: "Nova Vinha",
+                        description: ""
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                        vineyardMarkers.addLayer(layer);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error saving polygon:', error));
+            }
+        });
+
+        // ...
+    </script>
+
+    </div>
+    <div id="myModal" class="sidebar">
+        <div class="p-3">
+            <div style="text-align:right; padding:0px 24px;">
+                <span id="openModal" class="close">&times;</span>
+            </div>
+            <h2>Informação das vinhas</h2>
+            <div id="vineyardInfo" style="justify-self:right">
+                <button id="addFieldButton" type="submit"><img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Casta</th>
+                        <th>Data de plantação</th>
+                        <th>Hectares</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Merlot Blanc</td>
+                        <td>01/11/2024</td>
+                        <td>35</td>
+                        <td>
+                            <div style ="display:flex">
+                                <form method="GET" style="display:inline; margin-right:8px">
+                                    <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                                </form>
+                                <form method="POST" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Touriga Nacional</td>
+                        <td>01/11/2024</td>
+                        <td>45</td>
+                        <td>
+                            <div style ="display:flex">
+                                <form method="GET" style="display:inline; margin-right:8px">
+                                    <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                                </form>
+                                <form method="POST" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table> 
+            <div id="formContainer" style="display: none; margin-top: 15px;">
+                <h2>Adicionar novo campo</h2>
+                <form method="POST">
+                    {% csrf_token %}
+                    <label for="name">Nome do campo:</label>
+                    <input style="width: 50%;" type="text" id="name" name="name" required>
+
+                    <label for="city">Cidade:</label>
+                    <input style="width: 50%;" type="text" id="city" name="city" required><br>
+
+                    <button type="submit">Guardar</button> 
+                </form>
+            </div>
+        </div>
+
+    <script>
+        const modal = document.getElementById('myModal');
+        
+        const btn = document.getElementById('openModal');
+        const span = document.getElementsByClassName('close')[0];
+        
+        // Fecha a sidebar ao clicar no "X"
+        span.onclick = function() {
+            modal.classList.remove('open');
+        }
+    </script>
+</div>
+{% endblock %}

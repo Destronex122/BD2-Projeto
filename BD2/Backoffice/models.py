@@ -14,10 +14,37 @@ def save_marker(request):
     markers_collection.insert_one(request)
     return
 
+# def save_polygon(request):
+#     markers_collection = db[dbcollection]
+#     markers_collection.insert_one(request)
+#     return~
+
 def save_polygon(request):
-    markers_collection = db[dbcollection]
-    markers_collection.insert_one(request)
-    return
+    # Verifica se a solicitação é do tipo POST
+    if request.method == 'POST':
+        # Extrai os dados do corpo da solicitação
+        data = json.loads(request.body)
+        
+        # Aqui você pode querer validar os dados antes de salvar
+        coordinates = data.get('coordinates')
+        title = data.get('title')
+        description = data.get('description')
+
+        if coordinates and title:  # Verifica se as informações necessárias estão presentes
+            markers_collection = db[dbcollection]
+            # Cria um dicionário para o novo documento
+            new_polygon = {
+                "coordinates": coordinates,
+                "title": title,
+                "description": description
+            }
+            markers_collection.insert_one(new_polygon)
+            return JsonResponse({'status': 'success', 'message': 'Polygon saved successfully.'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid data provided.'}, status=400)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Only POST requests are allowed.'}, status=405)
+
 
 
 def load_markers(request):
@@ -51,3 +78,5 @@ def load_vineyards(request):
     print(json_data)
     
     return json_data
+
+

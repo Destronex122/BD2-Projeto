@@ -41,6 +41,9 @@ def delivery(request):
 def harvestdetail(request):
     return render(request, 'harvestdetail.html')
 
+def vineyards(request):
+    return render(request, 'vineyards.html')
+
 @csrf_exempt
 @require_http_methods(['POST'])
 def save_marker_view(request):
