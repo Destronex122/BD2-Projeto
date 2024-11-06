@@ -3,15 +3,33 @@
   <head>
     <link rel="stylesheet" href="{% static 'styles.css' %}">
       <style>
-          
+          .error-popup {
+              color: #721c24;
+              background-color: #f8d7da;
+              border-color: #f5c6cb;
+              padding: 10px;
+              border-radius: 5px;
+              margin: 10px 0;
+              text-align: center;
+          }
       </style>
   </head>
   <body>
     
-      <div class="background-image" style=" background: url('{% static "login.jpg" %}') no-repeat center center fixed;"></div>
+      <div class="background-image" style="background: url('{% static "login.jpg" %}') no-repeat center center fixed;"></div>
       <div class="login-container">
           <img src="{% static 'logoApp.png' %}" alt="Logo" style="height: 200px; width: auto; margin-right: 8px;">
           <h1>GrapeFlow</h1>
+          
+          <!-- Exibe mensagens de erro -->
+          {% if messages %}
+              <div class="error-popup">
+                  {% for message in messages %}
+                      <p>{{ message }}</p>
+                  {% endfor %}
+              </div>
+          {% endif %}
+
           <form action="" method="post">
             {% csrf_token %}
               <input type="text" name="username" placeholder="Utilizador" required><br>

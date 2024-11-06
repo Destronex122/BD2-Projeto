@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from django.contrib.auth import views as auth_views
+from django.urls import path
 
 urlpatterns = [
     path ("" , views.home, name="home"),
@@ -13,5 +15,6 @@ urlpatterns = [
     path('delivery/',  views.delivery, name='delivery'),
     path('harvestdetail/',  views.harvestdetail, name='harvestdetail'),
     path('vineyards/',  views.vineyards, name='vineyards'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
 ]
