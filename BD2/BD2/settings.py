@@ -85,8 +85,12 @@ WSGI_APPLICATION = 'BD2.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'GrapeFlow',    # Nome da sua base de dados PostgreSQL
+        'USER': 'admin',              # Nome de usuário do PostgreSQL
+        'PASSWORD': 'admin',            # Senha do PostgreSQL
+        'HOST': 'localhost',                # Endereço do servidor PostgreSQL
+        'PORT': '5432',                     # Porta do PostgreSQL (5432 é a padrão)
     }
 }
 
@@ -131,3 +135,8 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGOUT_REDIRECT_URL = '/backoffice/login/'
+
+LOGIN_URL = '/backoffice/login/'  # Altere para a URL correta da sua página de login
+
