@@ -13,6 +13,7 @@ urlpatterns = [
     path('load_vineyards/', views.load_vineyards_view, name='load_vineyards'),
     path('home/', views.backofficeIndex, name='backofficeIndex'),
     path('delivery/',  views.delivery, name='delivery'),
+    path('harvest/',  views.harvest, name='harvest'),
     path('harvestdetail/',  views.harvestdetail, name='harvestdetail'),
     path('vineyards/',  views.vineyards, name='vineyards'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

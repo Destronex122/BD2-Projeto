@@ -1,181 +1,205 @@
 {% extends 'base.html' %}
 
-{% block title %}Colheita{% endblock %}
+{% block title %}Detalhe da Colheita{% endblock %}
 
-{% block content %} 
+{% block content %}
 
 {% load static %}
-
 <style>
-    #colheitaTable tbody tr:hover {
-        background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
-        cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
+    /* Estilo do modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
     }
 
-    #pesagensTitle {
-        display: none; /* Oculta o título das pesagens*/
+    .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        width: 400px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .modal-header h5 {
+        margin: 0;
+    }
+
+    .close {
+        cursor: pointer;
+        font-size: 1.5em;
     }
 </style>
 
-<div class="editable-area newPadding">    
-    <h1>Colheitas</h1>
-    <p>Selecione uma colheita para visualizar as pesagens efetuadas.</p> 
-    <table class="table table-bordered" id="colheitaTable">
-        <thead>
-            <tr>
-                <th>Vinha</th>
-                <th>Casta</th>
-                <th>Peso total (kg)</th>
-                <th>Preço por tonelada (€)</th>
-                <th>Data da última pesagem</th>
-                <th>Período</th>
-                <th>Previsão do fim da colheita</th>
-                <th>Notas</th>
-                <th>Data de término</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr data-vinha="Vinha A" data-casta="Casta X" data-peso-total="10,000" data-preco="200.00" data-data-pesagem="2024-10-01" data-periodo="2024-09-01 a 2024-10-15" data-previsao="2024-10-15" data-notas="A colheita está indo muito bem." data-termino="2024-10-10">
-                <td>Vinha A</td>
-                <td>Casta X</td>
-                <td>10,000</td>
-                <td>200.00</td>
-                <td>2024-10-01</td>
-                <td>2024-09-01 a 2024-10-15</td>
-                <td>2024-10-15</td>
-                <td>A colheita está a ir bem, sem pragas até o momento.</td>
-                <td>-</td>
-            </tr>
-            <tr data-vinha="Vinha B" data-casta="Casta Y" data-peso-total="8,500" data-preco="180.00" data-data-pesagem="2024-10-02" data-periodo="2024-08-15 a 2024-10-05" data-previsao="2024-10-05" data-notas="Colheita com um bom rendimento." data-termino="2024-10-03">
-                <td>Vinha B</td>
-                <td>Casta Y</td>
-                <td>8,500</td>
-                <td>180.00</td>
-                <td>2024-10-02</td>
-                <td>2024-08-15 a 2024-10-05</td>
-                <td>2024-10-05</td>
-                <td>Colheita com um bom rendimento, mas observar a humidade.</td>
-                <td>-</td>
-            </tr>
-        </tbody>
-    </table>
-    <br>
-    <div id="pesagensTitle">
-        <div style="display:flex; justify-content:space-between; margin-bottom:16px; align-items:center;">
-            <h2>Pesagens de colheita</h2>
-            <button data-toggle="modal" data-target="#addPesagemModal">
-                <img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: 25px;">
-            </button>
-        </div>   
-    </div>
-    <div>
-        <div class="row" id="cardContainer">
-            <!-- As pesagens correspondentes aparecerão aqui -->
-        </div>
-    </div>
+<div class="editable-area newPadding">
+    <h1>Detalhe da Colheita</h1>  
 
-    <!-- Modal para adicionar uma nova pesagem -->
-    <div class="modal fade" id="addPesagemModal" tabindex="-1" role="dialog" aria-labelledby="addPesagemModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addPesagemModalLabel">Nova pesagem</h5>
-                    <div style="display:flex; justify-content: flex-end;">
-                        <span data-dismiss="modal" class="close">&times;</span>
-                    </div>
+    <div class="dashboard">
+        <div class="info-sections">
+            <!-- Seção de informações resumidas -->
+            <div class="info-card">
+                <h2>Produção</h2>
+                <div class="info-item">
+                    <span class="label">Vinha:</span>
+                    <span class="value">Vinha A</span>
                 </div>
-                <div class="modal-body">
-                    <form id="pesagemForm">
-                        <div class="form-group">
-                            <label for="pesoBruto">Peso bruto (kg)</label>
-                            <input type="text" class="form-control" id="pesoBruto" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="pesoLiquido">Peso líquido (kg)</label>
-                            <input type="text" class="form-control" id="pesoLiquido" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="dataPesagem">Data de pesagem</label>
-                            <input type="date" class="form-control" id="dataPesagem" required>
-                        </div>
-                        <div style="display:flex; justify-content: flex-end;">
-                            <button type="button" class="secondary-button" data-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="button" >Adicionar</button>
-                        </div>
-                        <style>
-                            .secondary-button {
-                                background-color: #e9e8e2;
-                                color: black;
-                                padding: 10px;
-                                border: none;
-                                border-radius: 4px;
-                                cursor: pointer;
-                                margin-right: 8px;
-                            }
-                            
-                            .secondary-button:hover {
-                                background-color: #f4f4f1;
-                                color: black;
-                            }
-                        </style>
-                    </form>
+                <div class="info-item">
+                    <span class="label">Casta:</span>
+                    <span class="value">Casta X</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Peso total:</span>
+                    <span class="value">10,000 kg</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Preço por tonelada:</span>
+                    <span class="value">€200.00</span>
+                </div>
+            </div>
+
+            <!-- Seção de previsão e status -->
+            <div class="info-card">
+                <h2>Status da Colheita</h2>
+                <div class="info-item">
+                    <span class="label">Data da última pesagem:</span>
+                    <span class="value">2024-10-01</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Período:</span>
+                    <span class="value">2024-09-01 a 2024-10-15</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Previsão do fim:</span>
+                    <span class="value">2024-10-15</span>
+                </div>
+            </div>
+
+            <!-- Notas e Data de Término -->
+            <div class="info-card">
+                <h2>Notas e Término</h2>
+                <div class="info-item">
+                    <span class="label">Notas:</span>
+                    <span class="value">A colheita está a ir bem, sem pragas até o momento.</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Data de término:</span>
+                    <span class="value">2024-10-10</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const colheitaTable = document.getElementById('colheitaTable');
-        const cardContainer = document.getElementById('cardContainer');
-        const pesagensTitle = document.getElementById('pesagensTitle');
+    <!-- Pesagens de Colheita -->
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 class="pesagens-title">Pesagens de Colheita</h2>
+        
+        <button onclick="openModal()">
+            <img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: 25px;">
+        </button>
+    </div>
+    <div class="pesagens-container" id="pesagensContainer">
+        <!-- Pesagens da Vinha A -->
+        <div class="pesagem-card">
+            <h5>Peso Bruto: 1000.00 kg</h5>
+            <p><strong>Peso Líquido:</strong> 950.00 kg</p>
+            <p><strong>Data de Pesagem:</strong> 2024-10-01</p>
+        </div>
+        <div class="pesagem-card">
+            <h5>Peso Bruto: 1100.00 kg</h5>
+            <p><strong>Peso Líquido:</strong> 1050.00 kg</p>
+            <p><strong>Data de Pesagem:</strong> 2024-10-02</p>
+        </div>
 
-        // Exemplo de dados de pesagens
-        const pesagensData = {
-            "Vinha A": [
-                { pesoBruto: "1000.00 kg", pesoLiquido: "950.00 kg", dataPesagem: "2024-10-01" },
-                { pesoBruto: "1100.00 kg", pesoLiquido: "1050.00 kg", dataPesagem: "2024-10-02" },
-            ],
-            "Vinha B": [
-                { pesoBruto: "1200.00 kg", pesoLiquido: "1150.00 kg", dataPesagem: "2024-10-03" },
-            ]
-        };
-
-        colheitaTable.addEventListener('click', function(event) {
-            const targetRow = event.target.closest('tr');
-            if (targetRow) {
-                const vinha = targetRow.getAttribute('data-vinha');
-
-                // Limpar o container de cards antes de adicionar novos
-                cardContainer.innerHTML = '';
-
-                // Adicionar novas pesagens com base na vinha selecionada
-                const pesagens = pesagensData[vinha] || [];
-                pesagens.forEach(pesagem => {
-                    const newCard = `
-                        <div class="col-md-4 mb-4">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">${vinha}</h5>
-                                    <h6 class="card-subtitle mb-2 text-muted">${targetRow.getAttribute('data-casta')}</h6>
-                                    <p class="card-text">Peso Bruto: ${pesagem.pesoBruto}</p>
-                                    <p class="card-text">Peso Líquido: ${pesagem.pesoLiquido}</p>
-                                    <p class="card-text">Data de Pesagem: ${pesagem.dataPesagem}</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    cardContainer.insertAdjacentHTML('beforeend', newCard);
-                });
-
-                // Exibir o título se houver pesagens
-                if (pesagens.length > 0) {
-                    pesagensTitle.style.display = 'block';
-                } else {
-                    pesagensTitle.style.display = 'none';
-                }
-            }
-        });
-    </script>
+        <!-- Pesagens da Vinha B -->
+        <div class="pesagem-card">
+            <h5>Peso Bruto: 1200.00 kg</h5>
+            <p><strong>Peso Líquido:</strong> 1150.00 kg</p>
+            <p><strong>Data de Pesagem:</strong> 2024-10-03</p>
+        </div>
+    </div>
 </div>
+
+<!-- Modal para adicionar uma nova pesagem -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="addPesagemModalLabel">Nova pesagem</h5>
+            <div style="display:flex; justify-content: flex-end;">
+                <span data-dismiss="modal" class="close">&times;</span>
+            </div>
+        </div>
+        <div class="modal-body">
+            <form id="pesagemForm" onsubmit="addPesagem(event)">
+                <div class="form-group">
+                    <label for="pesoBruto">Peso bruto (kg)</label>
+                    <input type="text" class="form-control" id="pesoBruto" required>
+                </div>
+                <div class="form-group">
+                    <label for="pesoLiquido">Peso líquido (kg)</label>
+                    <input type="text" class="form-control" id="pesoLiquido" required>
+                </div>
+                <div class="form-group">
+                    <label for="dataPesagem">Data de pesagem</label>
+                    <input type="date" class="form-control" id="dataPesagem" required>
+                </div>
+                <div style="display:flex; justify-content: flex-end;">
+                    <button type="button" class="secondary-button" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="button">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Função para abrir o modal
+    function openModal() {
+        document.getElementById('modalOverlay').style.display = 'flex';
+    }
+
+    // Função para fechar o modal
+    function closeModal() {
+        document.getElementById('modalOverlay').style.display = 'none';
+    }
+
+    // Função para adicionar uma nova pesagem
+    function addPesagem(event) {
+        event.preventDefault(); // Impede o envio do formulário
+
+        const pesoBruto = document.getElementById('pesoBruto').value;
+        const pesoLiquido = document.getElementById('pesoLiquido').value;
+        const dataPesagem = document.getElementById('dataPesagem').value;
+
+        // Cria o novo card de pesagem
+        const newCard = `
+            <div class="pesagem-card">
+                <h5>Peso Bruto: ${pesoBruto} kg</h5>
+                <p><strong>Peso Líquido:</strong> ${pesoLiquido} kg</p>
+                <p><strong>Data de Pesagem:</strong> ${dataPesagem}</p>
+            </div>
+        `;
+
+        // Adiciona o novo card ao container de pesagens
+        document.getElementById('pesagensContainer').insertAdjacentHTML('beforeend', newCard);
+
+        // Fecha o modal e limpa o formulário
+        closeModal();
+        document.getElementById('pesagemForm').reset();
+    }
+</script>
 
 {% endblock %}

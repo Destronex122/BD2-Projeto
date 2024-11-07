@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Colheita{% endblock %}
+
+{% block content %} 
+
+{% load static %}
+
+<style>
+    #colheitaTable tbody tr:hover {
+        background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
+        cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
+    }
+
+    #pesagensTitle {
+        display: none; /* Oculta o título das pesagens*/
+    }
+</style>
+
+<div class="editable-area newPadding">    
+    <h1>Colheitas</h1>
+    <p>Selecione uma colheita para visualizar as pesagens efetuadas.</p> 
+    <table class="table table-bordered" id="colheitaTable">
+        <thead>
+            <tr>
+                <th>Vinha</th>
+                <th>Casta</th>
+                <th>Peso total (kg)</th>
+                <th>Preço por tonelada (€)</th>
+                <th>Data da última pesagem</th>
+                <th>Período</th>
+                <th>Previsão do fim da colheita</th>
+                <th>Notas</th>
+                <th>Data de término</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr data-vinha="Vinha A" data-casta="Casta X" data-peso-total="10,000" data-preco="200.00" data-data-pesagem="2024-10-01" data-periodo="2024-09-01 a 2024-10-15" data-previsao="2024-10-15" data-notas="A colheita está indo muito bem." data-termino="2024-10-10">
+                <td>Vinha A</td>
+                <td>Casta X</td>
+                <td>10,000</td>
+                <td>200.00</td>
+                <td>2024-10-01</td>
+                <td>2024-09-01 a 2024-10-15</td>
+                <td>2024-10-15</td>
+                <td>A colheita está a ir bem, sem pragas até o momento.</td>
+                <td>-</td>
+            </tr>
+            <tr data-vinha="Vinha B" data-casta="Casta Y" data-peso-total="8,500" data-preco="180.00" data-data-pesagem="2024-10-02" data-periodo="2024-08-15 a 2024-10-05" data-previsao="2024-10-05" data-notas="Colheita com um bom rendimento." data-termino="2024-10-03">
+                <td>Vinha B</td>
+                <td>Casta Y</td>
+                <td>8,500</td>
+                <td>180.00</td>
+                <td>2024-10-02</td>
+                <td>2024-08-15 a 2024-10-05</td>
+                <td>2024-10-05</td>
+                <td>Colheita com um bom rendimento, mas observar a humidade.</td>
+                <td>-</td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
+    <div id="pesagensTitle">
+        <div style="display:flex; justify-content:space-between; margin-bottom:16px; align-items:center;">
+            <h2>Pesagens de colheita</h2>
+            <button data-toggle="modal" data-target="#addPesagemModal">
+                <img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: 25px;">
+            </button>
+        </div>   
+    </div>
+    <div>
+        <div class="row" id="cardContainer">
+            <!-- As pesagens correspondentes aparecerão aqui -->
+        </div>
+    </div>
+
+    <!-- Modal para adicionar uma nova pesagem -->
+    <div class="modal fade" id="addPesagemModal" tabindex="-1" role="dialog" aria-labelledby="addPesagemModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPesagemModalLabel">Nova pesagem</h5>
+                    <div style="display:flex; justify-content: flex-end;">
+                        <span data-dismiss="modal" class="close">&times;</span>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form id="pesagemForm">
+                        <div class="form-group">
+                            <label for="pesoBruto">Peso bruto (kg)</label>
+                            <input type="text" class="form-control" id="pesoBruto" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pesoLiquido">Peso líquido (kg)</label>
+                            <input type="text" class="form-control" id="pesoLiquido" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataPesagem">Data de pesagem</label>
+                            <input type="date" class="form-control" id="dataPesagem" required>
+                        </div>
+                        <div style="display:flex; justify-content: flex-end;">
+                            <button type="button" class="secondary-button" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="button" >Adicionar</button>
+                        </div>
+                        <style>
+                            .secondary-button {
+                                background-color: #e9e8e2;
+                                color: black;
+                                padding: 10px;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                margin-right: 8px;
+                            }
+                            
+                            .secondary-button:hover {
+                                background-color: #f4f4f1;
+                                color: black;
+                            }
+                        </style>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const colheitaTable = document.getElementById('colheitaTable');
+        const cardContainer = document.getElementById('cardContainer');
+        const pesagensTitle = document.getElementById('pesagensTitle');
+
+        // Exemplo de dados de pesagens
+        const pesagensData = {
+            "Vinha A": [
+                { pesoBruto: "1000.00 kg", pesoLiquido: "950.00 kg", dataPesagem: "2024-10-01" },
+                { pesoBruto: "1100.00 kg", pesoLiquido: "1050.00 kg", dataPesagem: "2024-10-02" },
+            ],
+            "Vinha B": [
+                { pesoBruto: "1200.00 kg", pesoLiquido: "1150.00 kg", dataPesagem: "2024-10-03" },
+            ]
+        };
+
+        colheitaTable.addEventListener('click', function(event) {
+            const targetRow = event.target.closest('tr');
+            if (targetRow) {
+                const vinha = targetRow.getAttribute('data-vinha');
+                
+                // Redirecionar para a página de detalhe da colheita usando o nome da vinha
+                //window.location.href = `/harvestdetail/${encodeURIComponent(vinha)}`;
+                window.location.href = `/harvestdetail/`;
+            }
+        });
+        
+    </script>
+</div>
+
+{% endblock %}
