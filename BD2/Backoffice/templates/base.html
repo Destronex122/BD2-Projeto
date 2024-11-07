@@ -61,9 +61,13 @@
                         <option>Quinta de Mirandela</option>
                         <option>Quinta de Lagos</option>
                     </select>
-                    <a href="{% url 'logout' %}" title="Logout">
-                        <img src="{% static 'logout.svg' %}" alt="Logout" style="height: 30px; width: auto;">
-                    </a>
+                    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" title="Logout" style="background: none; border: none; padding: 0; cursor: pointer;">
+                            <img src="{% static 'logout.svg' %}" alt="Logout" style="height: 30px; width: auto;">
+                        </button>
+                    </form>
+                    
                 </div>
             </div>
         </nav>
