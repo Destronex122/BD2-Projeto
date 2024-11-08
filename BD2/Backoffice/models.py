@@ -9,6 +9,7 @@ client = MongoClient('mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?ret
 db = client[dbname]
 
 
+
 def save_marker(request):
     markers_collection = db[dbcollection]
     markers_collection.insert_one(request)

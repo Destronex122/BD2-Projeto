@@ -23,9 +23,6 @@
 <div class="newPadding">
     <div style="display:flex; justify-content: space-between;">
         <h1>Campos</h1>
-        <div style="justify-self:right; text-align:center;">
-            <button id="addFieldButton" type="button"><img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-        </div>
     </div>
     <br>
     <div style="display:flex; justify-content: space-between;">
@@ -190,7 +187,7 @@
             var type = e.layerType, layer = e.layer;
             var csrfToken = '{{ csrf_token }}'; 
             if (type == 'marker') {
-                fetch('/backoffice/save_marker/', {
+                /*fetch('/backoffice/save_marker/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({
@@ -199,7 +196,9 @@
                         title: "Novo Terreno",
                         description: ""
                     })
-                });
+                });*/
+                console.log("aqui");
+                document.getElementById('coordinates').textContent = `Lat: ${layer.getLatLng().lat}, Lng: ${layer.getLatLng().lng}`;
                 croplandMarkers.addLayer(layer);
                 openModal();
             } else if (type == 'polygon') {
@@ -213,7 +212,6 @@
                     })
                 });
                 vineyardsLayer.addLayer(layer);
-                openModal();
             }
         });
     </script>
@@ -225,15 +223,18 @@
                 <span class="close">&times;</span>
             </div>
             <h2>Adicionar novo campo</h2>
-            <div id="formContainer" style="display: none; margin-top: 15px;">
+            <div id="formContainer" style=" margin-top: 15px;">
                 <form method="POST">
                     {% csrf_token %}
                     <label for="name">Nome do campo:</label>
                     <input style="width: 50%;" type="text" id="name" name="name" required>
 
-                    <label for="city">Cidade:</label>
-                    <input style="width: 50%;" type="text" id="city" name="city" required><br>
+                    <label for="name">Localidade:</label>
+                    <input style="width: 50%;" type="text" id="name" name="name" required>
 
+                    <label for="coordinates">Coordenadas:</label>
+                    <span id="coordinates" style="display: inline-block; width: 50%; padding: 5px; border: 1px solid #ccc; background-color: #f9f9f9;">Selecionar no mapa</span><br>
+                    <br/>
                     <button type="submit">Guardar</button> 
                 </form>
             </div>
@@ -253,11 +254,6 @@
         span.onclick = function() {
             modal.classList.remove('open');
         }
-
-        addFieldButton.onclick = function() {
-            formContainer.style.display = 'block';
-            openModal();
-        };
     </script>
 </div>
 {% endblock %}

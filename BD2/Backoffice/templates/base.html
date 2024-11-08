@@ -35,9 +35,11 @@
                     <li class="nav-item active">
                         <a class="nav-link" href="/backoffice/home">Início</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/backoffice/debug">Campo</a>
-                    </li>
+                    {% if is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/fields">Campo</a>
+                        </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="/backoffice/vineyards">Vinhas</a>
                     </li>
