@@ -45,6 +45,10 @@ def delivery(request):
     return render(request, 'delivery.html')
 
 @login_required
+def harvest(request):
+    return render(request, 'harvest.html')
+
+@login_required
 def harvestdetail(request):
     return render(request, 'harvestdetail.html')
 

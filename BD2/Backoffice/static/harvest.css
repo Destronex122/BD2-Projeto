@@ -1,0 +1,131 @@
+    
+.dashboard {
+    width: 80%;
+    margin: auto;
+    padding: 20px;
+    background-color: #e0e7ff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+    
+.dashboard h1 {
+    text-align: center;
+    color: #444;
+}
+    
+.info-sections {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+    
+.info-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    flex: 1;
+    margin: 0 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+    
+.info-card h2 {
+    color: #555;
+    margin-bottom: 15px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+    
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+}
+    
+.label {
+    color: #777;
+    font-weight: bold;
+}
+    
+.value {
+    color: #333;
+}
+    
+.charts-section {
+    text-align: center;
+}
+    
+.chart-placeholder {
+    width: 45%;
+    height: 200px;
+    margin: 20px auto;
+    background-color: #f1f3f6;
+    border-radius: 8px;
+    display: inline-block;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    font-size: 1.2em;
+    color: #999;
+    line-height: 200px;
+    text-align: center;
+}
+    
+
+.pesagens-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.pesagem-card {
+    background-color: #ffffff;
+    padding: 16px;
+    border-radius: 8px;
+    width: calc(50% - 10px); /* Ajusta para duas colunas */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.pesagem-card h5 {
+    margin: 0 0 8px;
+    color: #333;
+}
+
+.info-sections, .pesagens-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.info-card, .pesagem-card {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h2, .pesagens-title {
+    color: #333;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.pesagens-container {
+    flex-wrap: wrap;
+}
+
+.pesagem-card {
+    width: auto;
+    margin-bottom: 20px;
+}
+
+.pesagem-card h5 {
+    margin-top: 0;
+    color: #333;
+}
+
+   
+
