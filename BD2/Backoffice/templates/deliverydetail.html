@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Envio{% endblock %}
+
+{% block content %}
+
+<style>
+    a {
+        color: #616646;
+    }
+
+    a:hover {
+        color: #616646;
+        text-decoration: underline;
+    }
+</style>
+<nav aria-label="breadcrumb" class="breadcrumb-container">
+    <ol class="separadores">
+        <li class="breadcrumb-item"><a href="{% url 'delivery' %}">Encomendas</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Detalhe da encomenda</li>
+    </ol>
+</nav>
+
+<div class="editable-area; padding:0px 0px 20px 0px;">
+    <h1>Detalhe da encomenda</h1>
+    <br>
+    <div class="dashboard">
+        <div class="info-sections">
+            <!-- Secção de informações -->
+            <div class="info-card">
+                <h2>Endereço</h2>
+                <div class="info-item">
+                    <span class="label">Endereço:</span>
+                    <span class="value">Quinta do Douro</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Cidade:</span>
+                    <span class="value">Porto</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Código postal:</span>
+                    <span class="value">3000-100</span>
+                </div>
+            </div>
+
+            <!-- Secção de estado da colheita -->
+            <div class="info-card">
+                <h2>Estado</h2>
+                <div class="info-item">
+                    <span class="value">Em trânsito</span>
+                </div>
+            </div>
+
+            <!-- Secção de notas -->
+            <div class="info-card">
+                <h2>Veículo</h2>
+                <div class="info-item">
+                    <span class="label">Veículo:</span>
+                    <span class="value">Camião</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Matrícula:</span>
+                    <span class="value">12-AB-34</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Condutor:</span>
+                    <span class="value">João Simões</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_API&libraries=places"></script>
+
+    <br>
+    <h2>Trajeto</h2>
+    <div id="map"></div>
+    <script>
+        let map, directionsService, directionsRenderer;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: -23.55052, lng: -46.633308 }, // Ponto inicial genérico (São Paulo)
+                zoom: 12
+            });
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+        }
+
+        function calcularRota() {
+            const origem = document.getElementById("origem").value;
+            const destino = document.getElementById("destino").value;
+
+            if (origem && destino) {
+                const request = {
+                    origin: origem,
+                    destination: destino,
+                    travelMode: 'DRIVING' // Modo de transporte (DRIVING, BICYCLING, TRANSIT, WALKING)
+                };
+
+                directionsService.route(request, function(result, status) {
+                    if (status == 'OK') {
+                        directionsRenderer.setDirections(result);
+                    } else {
+                        alert('Não foi possível encontrar o trajeto: ' + status);
+                        }
+                    });
+            } else {
+                alert("Por favor, insira os endereços de partida e destino.");
+            }
+        }
+
+        // Inicializar o mapa quando a página carregar
+        window.onload = initMap;
+    </script>
+</div>
+
+
+{% endblock %}

@@ -6,51 +6,28 @@
 
 {% load static %}
 <style>
-    /* Estilo do modal */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
+    a {
+        color: #616646;
     }
 
-    .modal-content {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        width: 400px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-
-    .modal-header h5 {
-        margin: 0;
-    }
-
-    .close {
-        cursor: pointer;
-        font-size: 1.5em;
+    a:hover {
+        color: #616646;
+        text-decoration: underline;
     }
 </style>
+<nav aria-label="breadcrumb" class="breadcrumb-container">
+    <ol class="separadores">
+        <li class="breadcrumb-item"><a href="{% url 'harvest' %}">Colheitas</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Detalhe da colheita</li>
+    </ol>
+</nav>
 
-<div class="editable-area newPadding">
-    <h1>Detalhe da Colheita</h1>  
-
+<div class="editable-area; padding:0px 0px 20px 0px;">
+    <h1>Detalhe da colheita</h1>
+    <br>
     <div class="dashboard">
         <div class="info-sections">
-            <!-- Seção de informações resumidas -->
+            <!-- Secção de informações -->
             <div class="info-card">
                 <h2>Produção</h2>
                 <div class="info-item">
@@ -71,42 +48,48 @@
                 </div>
             </div>
 
-            <!-- Seção de previsão e status -->
+            <!-- Secção de estado da colheita -->
             <div class="info-card">
-                <h2>Status da Colheita</h2>
-                <div class="info-item">
-                    <span class="label">Data da última pesagem:</span>
-                    <span class="value">2024-10-01</span>
-                </div>
+                <h2>Estado</h2>
                 <div class="info-item">
                     <span class="label">Período:</span>
                     <span class="value">2024-09-01 a 2024-10-15</span>
                 </div>
                 <div class="info-item">
+                    <span class="label">Última pesagem:</span>
+                    <span class="value">2024-10-01</span>
+                </div>
+                <div class="info-item">
                     <span class="label">Previsão do fim:</span>
                     <span class="value">2024-10-15</span>
-                </div>
-            </div>
-
-            <!-- Notas e Data de Término -->
-            <div class="info-card">
-                <h2>Notas e Término</h2>
-                <div class="info-item">
-                    <span class="label">Notas:</span>
-                    <span class="value">A colheita está a ir bem, sem pragas até o momento.</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Data de término:</span>
                     <span class="value">2024-10-10</span>
                 </div>
             </div>
+
+            <!-- Secção de notas -->
+            <div class="info-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>Notas</h2>
+                    <button onclick="openNoteModal()">
+                        <img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: 25px;">
+                    </button>
+                </div>
+                <div id="notesContainer">
+                    <div class="info-item">
+                        <span class="label" style="width:60%">2024-09-10</span>
+                        <span class="value">A colheita está a ir bem, sem pragas até o momento.</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Pesagens de Colheita -->
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 class="pesagens-title">Pesagens de Colheita</h2>
-        
+    <!-- Pesagens da colheita -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
+        <h2 class="pesagens-title">Pesagens da colheita</h2>
         <button onclick="openModal()">
             <img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: 25px;">
         </button>
@@ -114,35 +97,36 @@
     <div class="pesagens-container" id="pesagensContainer">
         <!-- Pesagens da Vinha A -->
         <div class="pesagem-card">
-            <h5>Peso Bruto: 1000.00 kg</h5>
-            <p><strong>Peso Líquido:</strong> 950.00 kg</p>
-            <p><strong>Data de Pesagem:</strong> 2024-10-01</p>
+            <p><strong>Data de pesagem:</strong> 2024-10-01</p>
+            <p><strong>Peso bruto:</strong> 1000.00 kg</p>
+            <p><strong>Peso líquido:</strong> 950.00 kg</p>
         </div>
         <div class="pesagem-card">
-            <h5>Peso Bruto: 1100.00 kg</h5>
-            <p><strong>Peso Líquido:</strong> 1050.00 kg</p>
-            <p><strong>Data de Pesagem:</strong> 2024-10-02</p>
+            <p><strong>Data de pesagem:</strong> 2024-10-02</p>
+            <p><strong>Peso bruto:</strong> 1100.00 kg</h5>
+            <p><strong>Peso líquido:</strong> 1050.00 kg</p>
         </div>
 
         <!-- Pesagens da Vinha B -->
         <div class="pesagem-card">
-            <h5>Peso Bruto: 1200.00 kg</h5>
-            <p><strong>Peso Líquido:</strong> 1150.00 kg</p>
-            <p><strong>Data de Pesagem:</strong> 2024-10-03</p>
+            <p><strong>Data de pesagem:</strong> 2024-10-03</p>
+            <p><strong>Peso bruto:</strong> 1200.00 kg</h5>
+            <p><strong>Peso líquido:</strong> 1150.00 kg</p>
         </div>
     </div>
 </div>
 
-<!-- Modal para adicionar uma nova pesagem -->
-<div class="modal-overlay" id="modalOverlay">
-    <div class="modal-content">
-        <div class="modal-header">
+<!-- Popup para adicionar uma nova pesagem -->
+<div class="popup-overlay" id="modalOverlay">
+    <div class="popup-content">
+        <div class="popup-header">
             <h5 class="modal-title" id="addPesagemModalLabel">Nova pesagem</h5>
             <div style="display:flex; justify-content: flex-end;">
-                <span data-dismiss="modal" class="close">&times;</span>
+                <span data-dismiss="modal" class="close" onclick="closeModal()">&times;</span>
             </div>
         </div>
-        <div class="modal-body">
+        <br>
+        <div>
             <form id="pesagemForm" onsubmit="addPesagem(event)">
                 <div class="form-group">
                     <label for="pesoBruto">Peso bruto (kg)</label>
@@ -158,7 +142,32 @@
                 </div>
                 <div style="display:flex; justify-content: flex-end;">
                     <button type="button" class="secondary-button" onclick="closeModal()">Cancelar</button>
-                    <button type="submit" class="button">Adicionar</button>
+                    <button type="submit" style="margin-left:8px;" class="button">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Popup para adicionar uma nova nota -->
+<div class="popup-overlay" id="noteModalOverlay">
+    <div class="popup-content">
+        <div class="popup-header">
+            <h5 class="modal-title">Adicionar nota</h5>
+            <div style="display:flex; justify-content: flex-end;">
+                <span class="close" onclick="closeNoteModal()">&times;</span>
+            </div>
+        </div>
+        <br>
+        <div>
+            <form id="noteForm" onsubmit="addNote(event)">
+                <div class="form-group">
+                    <label for="noteText">Nota</label>
+                    <textarea class="form-control" id="noteText" required></textarea>
+                </div>
+                <div style="display:flex; justify-content: flex-end;">
+                    <button type="button" class="secondary-button" onclick="closeNoteModal()">Cancelar</button>
+                    <button type="submit" style="margin-left:8px;" class="button">Adicionar</button>
                 </div>
             </form>
         </div>
@@ -166,25 +175,24 @@
 </div>
 
 <script>
-    // Função para abrir o modal
+    // Função para abrir o popup de pesagem
     function openModal() {
         document.getElementById('modalOverlay').style.display = 'flex';
     }
 
-    // Função para fechar o modal
+    // Função para fechar o popup de pesagem
     function closeModal() {
         document.getElementById('modalOverlay').style.display = 'none';
     }
 
     // Função para adicionar uma nova pesagem
     function addPesagem(event) {
-        event.preventDefault(); // Impede o envio do formulário
+        event.preventDefault();
 
         const pesoBruto = document.getElementById('pesoBruto').value;
         const pesoLiquido = document.getElementById('pesoLiquido').value;
         const dataPesagem = document.getElementById('dataPesagem').value;
 
-        // Cria o novo card de pesagem
         const newCard = `
             <div class="pesagem-card">
                 <h5>Peso Bruto: ${pesoBruto} kg</h5>
@@ -193,12 +201,39 @@
             </div>
         `;
 
-        // Adiciona o novo card ao container de pesagens
         document.getElementById('pesagensContainer').insertAdjacentHTML('beforeend', newCard);
 
-        // Fecha o modal e limpa o formulário
         closeModal();
         document.getElementById('pesagemForm').reset();
+    }
+
+    // Função para abrir o popup de notas
+    function openNoteModal() {
+        document.getElementById('noteModalOverlay').style.display = 'flex';
+    }
+
+    // Função para fechar o popup de notas
+    function closeNoteModal() {
+        document.getElementById('noteModalOverlay').style.display = 'none';
+    }
+
+    // Função para adicionar uma nova notas
+    function addNote(event) {
+        event.preventDefault();
+
+        const noteText = document.getElementById('noteText').value;
+
+        const newNote = `
+            <div class="info-item">
+                <span class="value">${noteText}</span>
+            </div>
+        `;
+
+        const notesContainer = document.getElementById('notesContainer');
+        notesContainer.insertAdjacentHTML('afterbegin', newNote); // Add note at the beginning
+
+        closeNoteModal();
+        document.getElementById('noteForm').reset();
     }
 </script>
 

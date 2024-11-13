@@ -4,20 +4,47 @@
 
 {% block content %}
 
-<!-- templates/simular_entrega.html -->
-<div class="newPadding">
-    <h1>Entrega de encomendas</h1>
-    <br>
-    <form method="post">
-        {% csrf_token %}
-        <label for="numero_encomenda">Número da encomenda:</label>
-        <input type="text" id="numero_encomenda" name="numero_encomenda" required>
-        {% comment %} <button type="submit">Procurar</button> {% endcomment %}
-        <button>Procurar</button>
-    </form>
-    {% comment %} <form method="post" action="{% url 'simular_entrega' %}"> {% endcomment %}
-    <h2>Lista de entregas</h2>
-    <table>
+{% load static %}
+
+<style>
+    #deliveryTable tbody tr:hover {
+        background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
+        cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
+    }
+</style>
+
+<div class="editable-area newPadding">    
+    <div style="display:flex; justify-content: space-between;">
+        <h1>Encomendas</h1>
+        <div style="justify-self:right; text-align:center;">
+            <button type="button" onclick="openAddDeliveryModal()">
+                <img src="{% static 'add.png' %}" alt="add" style="height: 25px; width: auto;">
+            </button>
+        </div>
+    </div>
+    <p>Selecione uma encomenda para visualizar o detalhe da mesma.</p> 
+
+    <!-- Filtros para a tabela -->
+    <div class="filters" style="margin-bottom: 20px;">
+        <form id="filterForm">
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group">
+                    <label for="filterNumber">Nº da encomenda:</label>
+                    <input type="text" id="filterNumber" class="form-control" placeholder="Ex: E123123">
+                </div>
+                <div class="form-group">
+                    <label for="filterDate">Data da entrega:</label>
+                    <input type="date" id="filterDate" class="form-control">
+                </div>
+                <div class="form-group" style="margin-top:24px; width:10%">
+                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de entregas -->
+    <table class="table table-bordered" id="deliveryTable">
         <thead>
             <tr>
                 <th>Nº da encomenda</th>
@@ -27,7 +54,6 @@
             </tr>
         </thead>
         <tbody>
-            {% comment %} {% for delivery in deliveries %} {% endcomment %}
             <tr>
                 <td>E123123</td>
                 <td>Quinta do Douro</td>
@@ -40,59 +66,89 @@
                 <td>3500-100</td>
                 <td>Viseu</td>
             </tr>
-            {% comment %} 
-            {% empty %}
-                <tr>
-                    <td colspan="2">Nenhuma entrega pendente.</td>
-                </tr>
-            {% endfor %} 
-            {% endcomment %}
         </tbody>
     </table>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_API&libraries=places"></script>
+    <!-- Popup para adicionar nova encomenda -->
+    <div class="popup-overlay" id="addDeliveryModal">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h5>Adicionar encomenda</h5>
+                <span class="modal-close" onclick="closeAddDeliveryModal()">&times;</span>
+            </div>
+            <br>
+            <form id="addDeliveryForm" onsubmit="addDelivery(event)">
+                <div class="form-group">
+                    <label for="newOrderNumber">Nº da encomenda:</label>
+                    <input type="text" id="newOrderNumber" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newAddress">Endereço:</label>
+                    <input type="text" id="newAddress" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPostalCode">Código postal:</label>
+                    <input type="text" id="newPostalCode" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newCity">Cidade:</label>
+                    <input type="text" id="newCity" class="form-control" required>
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                    <button type="button" onclick="closeAddDeliveryModal()" class="button">Cancelar</button>
+                    <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <br>
-    <h2>Trajeto</h2>
-    <div id="map"></div>
     <script>
-        let map, directionsService, directionsRenderer;
-
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: -23.55052, lng: -46.633308 }, // Ponto inicial genérico (São Paulo)
-                zoom: 12
-            });
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
-            directionsRenderer.setMap(map);
+        // Função para abrir o modal de adicionar encomenda
+        function openAddDeliveryModal() {
+            document.getElementById('addDeliveryModal').style.display = 'flex';
         }
 
-        function calcularRota() {
-            const origem = document.getElementById("origem").value;
-            const destino = document.getElementById("destino").value;
+        // Função para fechar o modal de adicionar encomenda
+        function closeAddDeliveryModal() {
+            document.getElementById('addDeliveryModal').style.display = 'none';
+        }
 
-            if (origem && destino) {
-                const request = {
-                    origin: origem,
-                    destination: destino,
-                    travelMode: 'DRIVING' // Modo de transporte (DRIVING, BICYCLING, TRANSIT, WALKING)
-                };
+        // Função para adicionar uma nova encomenda à tabela
+        function addDelivery(event) {
+            event.preventDefault();
 
-                directionsService.route(request, function(result, status) {
-                    if (status == 'OK') {
-                        directionsRenderer.setDirections(result);
-                    } else {
-                        alert('Não foi possível encontrar o trajeto: ' + status);
-                        }
-                    });
-            } else {
-                alert("Por favor, insira os endereços de partida e destino.");
+            // Captura os valores dos campos do formulário
+            const newOrderNumber = document.getElementById('newOrderNumber').value;
+            const newAddress = document.getElementById('newAddress').value;
+            const newPostalCode = document.getElementById('newPostalCode').value;
+            const newCity = document.getElementById('newCity').value;
+
+            // Cria uma nova linha na tabela com os valores capturados
+            const newRow = `
+                <tr>
+                    <td>${newOrderNumber}</td>
+                    <td>${newAddress}</td>
+                    <td>${newPostalCode}</td>
+                    <td>${newCity}</td>
+                </tr>
+            `;
+
+            // Adiciona a nova linha ao corpo da tabela
+            document.querySelector('#deliveryTable tbody').insertAdjacentHTML('beforeend', newRow);
+
+            // Fecha o modal e reseta o formulário
+            closeAddDeliveryModal();
+            document.getElementById('addDeliveryForm').reset();
+        }
+
+        // Tabela clicável
+        document.getElementById('deliveryTable').addEventListener('click', function(event) {
+            const targetRow = event.target.closest('tr');
+            if (targetRow && !targetRow.closest('thead')) {
+                window.location.href = `/backoffice/deliverydetail/`; // Adjust with appropriate URL logic
             }
-        }
-
-        // Inicializar o mapa quando a página carregar
-        window.onload = initMap;
+        });
     </script>
 </div>
+
 {% endblock %}

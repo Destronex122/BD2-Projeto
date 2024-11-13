@@ -13,8 +13,8 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 @login_required
-def debug(request):
-    return render(request, 'debug.html')
+def fields(request):
+    return render(request, 'fields.html')
 
 def home(request):
     return redirect('backoffice/login')
@@ -43,6 +43,10 @@ def backofficeIndex(request):
 @login_required
 def delivery(request):
     return render(request, 'delivery.html')
+
+@login_required
+def deliverydetail(request):
+    return render(request, 'deliverydetail.html')
 
 @login_required
 def harvest(request):
