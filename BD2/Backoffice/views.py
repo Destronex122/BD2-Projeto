@@ -41,6 +41,14 @@ def backofficeIndex(request):
     return render(request, 'backofficeIndex.html')
 
 @login_required
+def userdetail(request):
+    return render(request, 'userdetail.html')
+
+@login_required
+def users(request):
+    return render(request, 'users.html')
+
+@login_required
 def delivery(request):
     return render(request, 'delivery.html')
 
@@ -94,4 +102,3 @@ def load_vineyards_view(request):
 
     vineyards = load_vineyards(request)
     return JsonResponse(vineyards, safe=False)
-

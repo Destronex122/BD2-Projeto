@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Utilizadores{% endblock %}
+
+{% block content %}
+
+{% load static %}
+
+<style>
+    #userTable tbody tr:hover {
+        background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
+        cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
+    }
+</style>
+
+
+<div class="editable-area newPadding">
+    <!-- Cabeçalho da página com título e botão de adicionar utilizador -->
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <h1>Utilizadores</h1>
+        <div style="justify-self:right; text-align:center;">
+            <button type="button" onclick="openAddUserModal()">
+                <img src="{% static 'add.png' %}" alt="add" style="height: 25px; width: auto;">
+            </button>
+        </div>
+    </div>
+    <p>Selecione um utilizador para visualizar o detalhe do mesmo.</p> 
+
+    <!-- Filtros para a tabela de utilizadores -->
+    <div class="filters mb-3">
+        <form id="filterForm">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="filterName">Nome:</label>
+                        <input type="text" id="filterName" class="form-control" placeholder="Ex: João Silva">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="filterEmail">Email:</label>
+                        <input type="email" id="filterEmail" class="form-control" placeholder="Ex: joao@example.com">
+                    </div>
+                </div>
+                
+                <div class="col-md-2" style="margin-top:24px; width:10%">
+                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de utilizadores -->
+    <table class="table table-bordered" id="userTable">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Cidade</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>João Silva</td>
+                <td>joao.silva@example.com</td>
+                <td>+351 912 345 678</td>
+                <td>Lisboa</td>
+            </tr>
+            <tr>
+                <td>Ana Pereira</td>
+                <td>ana.pereira@example.com</td>
+                <td>+351 934 567 890</td>
+                <td>Porto</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Modal para adicionar novo utilizador -->
+    <div class="popup-overlay" id="addUserModal">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h5>Adicionar utilizador</h5>
+                <span class="modal-close" onclick="closeAddUserModal()">&times;</span>
+            </div>
+            <br>
+            
+            <form id="addUserForm" onsubmit="addUser(event)">
+                <div class="form-group">
+                    <label for="newUserName">Nome:</label>
+                    <input type="text" id="newUserName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newUserEmail">Email:</label>
+                    <input type="email" id="newUserEmail" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newUserPhone">Telefone:</label>
+                    <input type="text" id="newUserPhone" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newUserCity">Cidade:</label>
+                    <input type="text" id="newUserCity" class="form-control" required>
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                    <button type="button" onclick="closeAddUserModal()" class="secondary-button">Cancelar</button>
+                    <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
+                </div>
+            </form>    
+        </div>
+    </div>
+
+    <script>
+        // Função para abrir o modal de adicionar utilizador
+        function openAddUserModal() {
+            document.getElementById('addUserModal').style.display = 'flex';
+        }
+    
+        // Função para fechar o modal de adicionar utilizador
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').style.display = 'none';
+        }
+    
+        // Função para adicionar um novo utilizador à tabela
+        function addUser(event) {
+            event.preventDefault();
+    
+            // Captura os valores dos campos do formulário
+            const newUserName = document.getElementById('newUserName').value;
+            const newUserEmail = document.getElementById('newUserEmail').value;
+            const newUserPhone = document.getElementById('newUserPhone').value;
+            const newUserCity = document.getElementById('newUserCity').value;
+    
+            // Cria uma nova linha na tabela com os valores capturados
+            const newRow = `
+                <tr>
+                    <td>${newUserName}</td>
+                    <td>${newUserEmail}</td>
+                    <td>${newUserPhone}</td>
+                    <td>${newUserCity}</td>
+                </tr>
+            `;
+    
+            // Adiciona a nova linha ao corpo da tabela
+            document.querySelector('#userTable tbody').insertAdjacentHTML('beforeend', newRow);
+    
+            // Fecha o modal e reseta o formulário
+            closeAddUserModal();
+            document.getElementById('addUserForm').reset();
+        }
+
+        document.getElementById('userTable').addEventListener('click', function(event) {
+            const targetRow = event.target.closest('tr');
+            if (targetRow && !targetRow.closest('thead')) {
+                window.location.href = `/backoffice/userdetail/`; // Ajuste com a lógica apropriada para o detalhe do utilizador
+            }
+        });
+    </script>
+</div>
+
+{% endblock %}
