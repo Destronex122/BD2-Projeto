@@ -47,7 +47,6 @@ label {
 }
 
 input[type="text"], input[type="datetime-local"] {
-    width: 30%;
     padding: 10px;
     margin-bottom: 15px;
     border: 1px solid #ccc;
@@ -83,7 +82,7 @@ button:hover {
 }
 
 .secondary-button:hover {
-    background-color: white;
+    background-color: #f1f1f1;
     color: black;
 }
 

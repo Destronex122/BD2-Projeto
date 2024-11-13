@@ -7,7 +7,7 @@
 {% load static %}
 
 <style>
-    #colheitaTable tbody tr:hover {
+    #harvestTable tbody tr:hover {
         background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
         cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
     }
@@ -18,9 +18,42 @@
 </style>
 
 <div class="editable-area newPadding">    
-    <h1>Colheitas</h1>
-    <p>Selecione uma colheita para visualizar as pesagens efetuadas.</p> 
-    <table class="table table-bordered" id="colheitaTable">
+    <div style="display:flex; justify-content: space-between;">
+        <h1>Colheitas</h1>
+        <div style="justify-self:right; text-align:center;">
+            <button type="button" onclick="openAddHarvestModal()">
+                <img src="{% static 'add.png' %}" alt="add" style="height: 25px; width: auto;">
+            </button>
+        </div>
+    </div>
+    <p>Selecione uma colheita para visualizar todo o detalhe e as pesagens efetuadas.</p> 
+    <!-- Filtros para a tabela -->
+    <div class="filters" style="margin-bottom: 20px;">
+        <form id="filterForm">
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group">
+                    <label for="filterVinha">Vinha:</label>
+                    <input type="text" id="filterVinha" class="form-control" placeholder="Ex: Vinha A">
+                </div>
+                <div class="form-group">
+                    <label for="filterCasta">Casta:</label>
+                    <input type="text" id="filterCasta" class="form-control" placeholder="Ex: Casta X">
+                </div>
+                <div class="form-group">
+                    <label for="filterDataInicio">Data de início:</label>
+                    <input type="date" id="filterDataInicio" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="filterDataFim">Data de fim:</label>
+                    <input type="date" id="filterDataFim" class="form-control">
+                </div>
+                <div class="form-group" style="margin-top:24px; width:10%">
+                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <table class="table table-bordered" id="harvestTable">
         <thead>
             <tr>
                 <th>Vinha</th>
@@ -102,34 +135,63 @@
                             <button type="button" class="secondary-button" data-dismiss="modal">Cancelar</button>
                             <button type="submit" class="button" >Adicionar</button>
                         </div>
-                        <style>
-                            .secondary-button {
-                                background-color: #e9e8e2;
-                                color: black;
-                                padding: 10px;
-                                border: none;
-                                border-radius: 4px;
-                                cursor: pointer;
-                                margin-right: 8px;
-                            }
-                            
-                            .secondary-button:hover {
-                                background-color: #f4f4f1;
-                                color: black;
-                            }
-                        </style>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
+     <!-- Popup para adicionar nova colheita -->
+     <div class="popup-overlay" id="addHarvestModal">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h5>Adicionar colheita</h5>
+                <span class="modal-close" onclick="closeAddHarvestModal()">&times;</span>
+            </div>
+            <br>
+            <form id="addHarvestForm" onsubmit="addHarvest(event)">
+                <div style="display:flex; gap:10px">
+                    <div class="form-group">
+                        <label for="newVinha">Vinha:</label>
+                        <input type="text" id="newVinha" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newCasta">Casta:</label>
+                        <input type="text" id="newCasta" class="form-control" required>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px">
+                    <div class="form-group">
+                        <label for="newPesoTotal">Peso total (kg):</label>
+                        <input type="number" id="newPesoTotal" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newDataPesagem">Data da última pesagem:</label>
+                    <input type="date" id="newDataPesagem" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPeriodo">Período:</label>
+                    <input type="text" id="newPeriodo" class="form-control" placeholder="Ex: 2024-09-01 a 2024-10-15" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPrevisaoFim">Previsão do fim da colheita:</label>
+                    <input type="date" id="newPrevisaoFim" class="form-control" required>
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                    <button type="button" onclick="closeAddHarvestModal()" class="button">Cancelar</button>
+                    <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        const colheitaTable = document.getElementById('colheitaTable');
+        const harvestTable = document.getElementById('harvestTable');
         const cardContainer = document.getElementById('cardContainer');
         const pesagensTitle = document.getElementById('pesagensTitle');
 
-        // Exemplo de dados de pesagens
+        //DADOS DAS PESAGENS
         const pesagensData = {
             "Vinha A": [
                 { pesoBruto: "1000.00 kg", pesoLiquido: "950.00 kg", dataPesagem: "2024-10-01" },
@@ -140,17 +202,94 @@
             ]
         };
 
-        colheitaTable.addEventListener('click', function(event) {
+        //CLICAR NAS LINHAS DA TABELA
+        harvestTable.addEventListener('click', function(event) {
             const targetRow = event.target.closest('tr');
-            if (targetRow) {
+            const isHeader = event.target.closest('thead'); // Verifica se o clique foi no cabeçalho
+        
+            if (targetRow && !isHeader) { // Ignora o cabeçalho
                 const vinha = targetRow.getAttribute('data-vinha');
                 
                 // Redirecionar para a página de detalhe da colheita usando o nome da vinha
-                //window.location.href = `/harvestdetail/${encodeURIComponent(vinha)}`;
-                window.location.href = `/harvestdetail/`;
+                //window.location.href = `/backoffice/harvestdetail/${encodeURIComponent(vinha)}`;
+                window.location.href = `/backoffice/harvestdetail/`;
             }
         });
+
+        //FILTERS
+        document.getElementById('applyFilters').addEventListener('click', function() {
+            const filterVinha = document.getElementById('filterVinha').value.toLowerCase();
+            const filterCasta = document.getElementById('filterCasta').value.toLowerCase();
+            const filterDataInicio = document.getElementById('filterDataInicio').value;
+            const filterDataFim = document.getElementById('filterDataFim').value;
+    
+            const rows = document.querySelectorAll('#harvestTable tbody tr');
+    
+            rows.forEach(row => {
+                const vinha = row.getAttribute('data-vinha').toLowerCase();
+                const casta = row.getAttribute('data-casta').toLowerCase();
+                const dataPesagem = row.getAttribute('data-data-pesagem');
+    
+                const matchesVinha = !filterVinha || vinha.includes(filterVinha);
+                const matchesCasta = !filterCasta || casta.includes(filterCasta);
+                const matchesDataInicio = !filterDataInicio || dataPesagem >= filterDataInicio;
+                const matchesDataFim = !filterDataFim || dataPesagem <= filterDataFim;
+    
+                if (matchesVinha && matchesCasta && matchesDataInicio && matchesDataFim) {
+                    row.style.display = ''; // Mostra a linha
+                } else {
+                    row.style.display = 'none'; // Oculta a linha
+                }
+            });
+        });
         
+        //POPUP
+        function openAddHarvestModal() {
+            document.getElementById('addHarvestModal').style.display = 'flex';
+        }
+
+        // Function to close the add colheita modal
+        function closeAddHarvestModal() {
+            document.getElementById('addHarvestModal').style.display = 'none';
+        }
+
+        // Function to add a new colheita to the table
+        function addHarvest(event) {
+            event.preventDefault();
+
+            // Get the values from the form fields
+            const newVinha = document.getElementById('newVinha').value;
+            const newCasta = document.getElementById('newCasta').value;
+            const newPesoTotal = document.getElementById('newPesoTotal').value;
+            const newPreco = document.getElementById('newPreco').value;
+            const newDataPesagem = document.getElementById('newDataPesagem').value;
+            const newPeriodo = document.getElementById('newPeriodo').value;
+            const newPrevisaoFim = document.getElementById('newPrevisaoFim').value;
+            const newNotas = document.getElementById('newNotas').value;
+
+            // Create a new row for the table with the new colheita data
+            const newRow = `
+                <tr data-vinha="${newVinha}" data-casta="${newCasta}" data-peso-total="${newPesoTotal}" data-preco="${newPreco}" data-data-pesagem="${newDataPesagem}" data-periodo="${newPeriodo}" data-previsao="${newPrevisaoFim}" data-notas="${newNotas}">
+                    <td>${newVinha}</td>
+                    <td>${newCasta}</td>
+                    <td>${newPesoTotal}</td>
+                    <td>${newPreco}</td>
+                    <td>${newDataPesagem}</td>
+                    <td>${newPeriodo}</td>
+                    <td>${newPrevisaoFim}</td>
+                    <td>${newNotas}</td>
+                    <td>-</td>
+                </tr>
+            `;
+
+            // Add the new row to the table body
+            document.querySelector('#harvestTable tbody').insertAdjacentHTML('beforeend', newRow);
+
+            // Close the modal and reset the form
+            closeAddHarvestModal();
+            document.getElementById('addHarvestForm').reset();
+        }
+
     </script>
 </div>
 
