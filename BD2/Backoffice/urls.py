@@ -18,5 +18,8 @@ urlpatterns = [
     path('harvestdetail/',  views.harvestdetail, name='harvestdetail'),
     path('vineyards/',  views.vineyards, name='vineyards'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('pedidos/', views.pedidos, name='orders'),
+    path('pedidosdetail/', views.pedidos_detail, name='pedidosdetail'),
+
 
 ]
