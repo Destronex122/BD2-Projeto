@@ -105,3 +105,11 @@ def load_vineyards_view(request):
 @login_required
 def pedidos_detail(request):
     return render(request, 'pedidosdetail.html')
+
+@login_required
+def contractdetail(request):
+    return render(request, 'contractdetail.html')
+
+@login_required
+def pedidos(request):
+    return render(request, 'pedidos.html')
