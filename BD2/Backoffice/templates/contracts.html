@@ -7,7 +7,7 @@
 {% load static %}
 
 <style>
-    #deliveryTable tbody tr:hover {
+    #contractTable tbody tr:hover {
         background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
         cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
     }
@@ -39,7 +39,7 @@
     </div>
 
     <!-- Tabela de entregas -->
-    <table class="table table-bordered" id="deliveryTable">
+    <table class="table table-bordered" id="contractTable">
         <thead>
             <tr>
                 <th>Nº do Contrato</th>
@@ -60,7 +60,7 @@
                 <td>56.00$</td>
             </tr>
             <tr>
-                <td>QWE122</td>
+                <td>QWE123</td>
                 <td>Ivo Cunha</td>
                 <td>10-11-2026</td>
                 <td>10-11-2027</td>
@@ -70,5 +70,14 @@
         </tbody>
     </table>
 
+    <script>
+
+        document.getElementById('contractTable').addEventListener('click', function(event) {
+            const targetRow = event.target.closest('tr');
+            if (targetRow && !targetRow.closest('thead')) {
+                window.location.href = `/backoffice/contractdetail/`; // Adjust with appropriate URL logic
+            }
+        });
+    </script>
 
 {% endblock %}

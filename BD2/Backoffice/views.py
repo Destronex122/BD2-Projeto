@@ -99,3 +99,7 @@ def load_vineyards_view(request):
     vineyards = load_vineyards(request)
     return JsonResponse(vineyards, safe=False)
 
+@login_required
+def contractdetail(request):
+    return render(request, 'contractdetail.html')
+
