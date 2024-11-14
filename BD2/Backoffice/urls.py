@@ -17,6 +17,7 @@ urlpatterns = [
     path('harvest/',  views.harvest, name='harvest'),
     path('harvestdetail/',  views.harvestdetail, name='harvestdetail'),
     path('vineyards/',  views.vineyards, name='vineyards'),
+    path('contracts/',  views.contracts, name='contracts'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
 ]

@@ -61,6 +61,10 @@ def vineyards(request):
     return render(request, 'vineyards.html')
 
 @login_required
+def contracts(request):
+    return render(request, 'contracts.html')
+
+@login_required
 @csrf_exempt
 @require_http_methods(['POST'])
 def save_marker_view(request):

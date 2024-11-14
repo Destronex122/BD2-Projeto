@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Envios{% endblock %}
+
+{% block content %}
+
+{% load static %}
+
+<style>
+    #deliveryTable tbody tr:hover {
+        background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
+        cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
+    }
+</style>
+
+<div class="editable-area newPadding">    
+    <div style="display:flex; justify-content: space-between;">
+        <h1>Contratos</h1>
+    </div>
+    <p>Selecione um contracto para visualizar o detalhe do mesmo.</p> 
+
+    <!-- Filtros para a tabela -->
+    <div class="filters" style="margin-bottom: 20px;">
+        <form id="filterForm">
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group">
+                    <label for="filterNumber">Nº do contracto:</label>
+                    <input type="text" id="filterNumber" class="form-control" placeholder="Ex: E123123">
+                </div>
+                <div class="form-group">
+                    <label for="filterDate">Data de inicio do contracto:</label>
+                    <input type="date" id="filterDate" class="form-control">
+                </div>
+                <div class="form-group" style="margin-top:24px; width:10%">
+                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de entregas -->
+    <table class="table table-bordered" id="deliveryTable">
+        <thead>
+            <tr>
+                <th>Nº do Contrato</th>
+                <th>Cliente</th>
+                <th>Data de Inicio</th>
+                <th>Data de Fim</th>
+                <th>Quantidade Estimada</th>
+                <th>Preço Estimado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>QWE122</td>
+                <td>José Antonio</td>
+                <td>10-11-2025</td>
+                <td>10-11-2026</td>
+                <td>345.78</td>
+                <td>56.00$</td>
+            </tr>
+            <tr>
+                <td>QWE122</td>
+                <td>Ivo Cunha</td>
+                <td>10-11-2026</td>
+                <td>10-11-2027</td>
+                <td>370.89</td>
+                <td>100.00$</td>
+            </tr>
+        </tbody>
+    </table>
+
+
+{% endblock %}
