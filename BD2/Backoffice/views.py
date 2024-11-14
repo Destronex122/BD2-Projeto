@@ -8,6 +8,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseNotFound
+from django.apps import apps
 
 
 # Create your views here.
@@ -99,7 +101,7 @@ def load_vineyards_view(request):
     vineyards = load_vineyards(request)
     return JsonResponse(vineyards, safe=False)
 
-@login_required
-def contractdetail(request):
-    return render(request, 'contractdetail.html')
 
+@login_required
+def pedidos_detail(request):
+    return render(request, 'pedidosdetail.html')
