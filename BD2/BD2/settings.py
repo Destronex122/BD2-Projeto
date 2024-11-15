@@ -87,11 +87,11 @@ WSGI_APPLICATION = 'BD2.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bdII_21168',    # Nome da sua base de dados PostgreSQL
-        'USER': 'postgres',              # Nome de usuário do PostgreSQL
-        'PASSWORD': '123',            # Senha do PostgreSQL
-        'HOST': 'localhost',                # Endereço do servidor PostgreSQL
-        'PORT': '5432',                     # Porta do PostgreSQL (5432 é a padrão)
+        'NAME': 'GrapeFlow',    # Nome da sua base de dados PostgreSQL
+        'USER': 'postgres',        # Nome de usuário do PostgreSQL
+        'PASSWORD': 'admin',    # Senha do PostgreSQL
+        'HOST': 'localhost',    # Endereço do servidor PostgreSQL
+        'PORT': '5432',         # Porta do PostgreSQL (5432 é a padrão)
     }
 }
 
