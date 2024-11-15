@@ -23,8 +23,8 @@
 <div class="newPadding">
     <div style="display:flex; justify-content: space-between;">
         <h1>Vinhas</h1>
-        <div style="justify-self:right; text-align:center;">
-            <button id="addFieldButton" type="button"><img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+        <div style="justify-self:right; text-align:center; display:none;">
+            <button id="addFieldButton" type="button"><img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: auto; "></button>
         </div>
     </div>
     <br>
@@ -111,8 +111,6 @@
                 const coordinates = item.coordinates;
                 const vineyard = L.polygon(coordinates).bindPopup(item.description);
                 vineyardMarkers.addLayer(vineyard);
-                
-                // Abre a modal apenas ao clicar em uma vinha
                 vineyard.on('click', function() {
                     document.getElementById('vineyardInfo').innerHTML = item.description; 
                     openModal(); 
