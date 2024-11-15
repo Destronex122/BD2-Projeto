@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Envio{% endblock %}
+
+{% block content %}
+
+<style>
+    a {
+        color: #616646;
+    }
+
+    a:hover {
+        color: #616646;
+        text-decoration: underline;
+    }
+</style>
+<nav aria-label="breadcrumb" class="breadcrumb-container">
+    <ol class="separadores">
+        <li class="breadcrumb-item"><a href="{% url 'contracts' %}">Contratos</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Detalhe do Contrato</li>
+    </ol>
+</nav>
+
+<div class="editable-area; padding:0px 0px 20px 0px;">
+    <h1>Contrato: QWE22</h1>
+    <br>
+    <div class="dashboard">
+        <div class="info-sections">
+            <!-- Secção de informações -->
+            <div class="info-card">
+                <h2>Cliente</h2>
+                <div class="info-item">
+                    <span class="label">Nome:</span>
+                    <span class="value">Jose Carlos</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">NIF:</span>
+                    <span class="value">255433234</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Contacto:</span>
+                    <span class="value">961627384</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Morada:</span>
+                    <span class="value">Rua Santo Cristo,78</span>
+                </div>
+            </div>
+
+            <!-- Secção de estado da colheita -->
+            <div class="info-card">
+                <h2>Valores</h2>
+                <div class="info-item">
+                    <span class="label">Quantidade Estimada:</span>
+                    <span class="value">5460 TON</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Preço Estimado:</span>
+                    <span class="value">1245$ per TON</span>
+                </div>
+            </div>
+
+            <!-- Secção de notas -->
+            <div class="info-card">
+                <h2>Datas</h2>
+                <div class="info-item">
+                    <span class="label">Data de Inicio:</span>
+                    <span class="value">10/07/2024</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Data de Fim:</span>
+                    <span class="value">10/07/2025</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhe do Pedido{% endblock %}
+
+{% block content %}
+
+{% load static %}
+<style>
+    a {
+        color: #616646;
+    }
+
+    a:hover {
+        color: #616646;
+        text-decoration: underline;
+    }
+</style>
+<nav aria-label="breadcrumb" class="breadcrumb-container">
+    <ol class="separadores">
+        <li class="breadcrumb-item"><a href="{% url 'orders' %}">Pedidos</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Detalhe do Pedido</li>
+    </ol>
+</nav>
+
+<div class="editable-area" style="padding:0px 0px 20px 0px;">
+    <h1>Detalhe do Pedido</h1>
+    <br>
+    <div class="dashboard">
+        <div class="info-sections" style="display: flex; gap: 20px;">
+            
+            <div class="info-card">
+                <h2>Informações do Pedido</h2>
+                <div class="info-item">
+                    <span class="label">ID do Pedido:</span>
+                    <span class="value">123</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Cliente ID:</span>
+                    <span class="value">Tó Zé</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Aprovador ID:</span>
+                    <span class="value">Quim</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h2>Detalhes do Pedido</h2>
+                <div class="info-item">
+                    <span class="label">Data de Início:</span>
+                    <span class="value">2024-09-01</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Data de Fim:</span>
+                    <span class="value">2024-10-15</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Preço Estimado:</span>
+                    <span class="value">€5000.00</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h2>Notas do Pedido</h2>
+                <div class="info-item">
+                    <span class="label">Notas:</span>
+                    <span class="value">Pedido urgente. Entregar antes do final do mês.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
+        <h2 class="notas-title">Notas Adicionais</h2>
+        <button onclick="openNoteModal()">
+            <img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: 25px;">
+        </button>
+    </div>
+    <div id="notesContainer">
+        <div class="info-item">
+            <span class="label" style="width:60%">2024-09-10</span>
+            <span class="value">A colheita está a ir bem, sem pragas até o momento.</span>
+        </div>
+        <div class="info-item">
+            <span class="label" style="width:60%">2024-09-15</span>
+            <span class="value">Foram necessárias inspeções extras devido à previsão de chuvas.</span>
+        </div>
+        <!-- Mais notas adicionais podem ser adicionadas aqui -->
+    </div>
+</div>
+
+<div class="popup-overlay" id="noteModalOverlay">
+    <div class="popup-content">
+        <div class="popup-header">
+            <h5 class="modal-title">Adicionar nota</h5>
+            <div style="display:flex; justify-content: flex-end;">
+                <span class="close" onclick="closeNoteModal()">&times;</span>
+            </div>
+        </div>
+        <br>
+        <div>
+            <form id="noteForm" onsubmit="addNote(event)">
+                <div class="form-group">
+                    <label for="noteText">Nota</label>
+                    <textarea class="form-control" id="noteText" required></textarea>
+                </div>
+                <div style="display:flex; justify-content: flex-end;">
+                    <button type="button" class="secondary-button" onclick="closeNoteModal()">Cancelar</button>
+                    <button type="submit" style="margin-left:8px;" class="button">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openNoteModal() {
+        document.getElementById('noteModalOverlay').style.display = 'flex';
+    }
+
+    function closeNoteModal() {
+        document.getElementById('noteModalOverlay').style.display = 'none';
+    }
+
+    function addNote(event) {
+        event.preventDefault();
+
+        const noteText = document.getElementById('noteText').value;
+
+        const newNote = `
+            <div class="info-item">
+                <span class="label" style="width:60%">Nova Nota</span>
+                <span class="value">${noteText}</span>
+            </div>
+        `;
+
+        const notesContainer = document.getElementById('notesContainer');
+        notesContainer.insertAdjacentHTML('afterbegin', newNote); // Adiciona a nota no início
+
+        closeNoteModal();
+        document.getElementById('noteForm').reset();
+    }
+</script>
+
+{% endblock %}
