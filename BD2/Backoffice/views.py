@@ -110,13 +110,13 @@ def load_vineyards_view(request):
     return JsonResponse(vineyards, safe=False)
 
 @login_required
-def pedidos_detail(request):
-    return render(request, 'pedidosdetail.html')
+def requestdetail(request):
+    return render(request, 'requestdetail.html')
 
 @login_required
 def contractdetail(request):
     return render(request, 'contractdetail.html')
 
 @login_required
-def pedidos(request):
-    return render(request, 'pedidos.html')
+def request(request):
+    return render(request, 'request.html')
