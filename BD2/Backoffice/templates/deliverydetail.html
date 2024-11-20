@@ -13,6 +13,12 @@
         color: #616646;
         text-decoration: underline;
     }
+
+    #map {
+        height: 400px;
+        width: 100%;
+        margin-top: 20px;
+    }
 </style>
 <nav aria-label="breadcrumb" class="breadcrumb-container">
     <ol class="separadores">
@@ -31,7 +37,7 @@
                 <h2>Endereço</h2>
                 <div class="info-item">
                     <span class="label">Endereço:</span>
-                    <span class="value">Quinta do Douro</span>
+                    <span class="value" id="destino">Quinta do Douro</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Cidade:</span>
@@ -70,42 +76,72 @@
         </div>
     </div>
 </div>
-    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_API&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTI6TEnnZbJlgzAqvkiYA0yxcMErcFyPg&language=pt"></script>
 
     <br>
     <h2>Trajeto</h2>
-    <div id="map"></div>
+    <div id="map" style="margin-bottom: 50px"></div>
+    <div id="sidebar"></div>
     <script>
-        let map, directionsService, directionsRenderer;
+        let map;
 
         function initMap() {
+            // Inicializar o mapa com um ponto central genérico
             map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: -23.55052, lng: -46.633308 }, // Ponto inicial genérico (São Paulo)
+                center: { lat: 41.14961, lng: -8.61099 }, // Coordenadas do Porto
                 zoom: 12
             });
             directionsService = new google.maps.DirectionsService();
             directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
+
+            directionsRenderer.setPanel(document.getElementById("sidebar"))
+
+            // Definir o ponto de origem e destino para calcular a rota
+            calcularRota();
+            calculateAndDisplayRoute(directionsService, directionsRenderer);
+
+            function calculateAndDisplayRoute(directionsService, directionsRenderer) {
+                alert("oi");
+                const start = "Cabaços";
+                const end = "Viseu";
+              
+                directionsService
+                  .route({
+                    origin: start,
+                    destination: end,
+                    travelMode: google.maps.TravelMode.DRIVING,
+                  })
+                  .then((response) => {
+                    directionsRenderer.setDirections(response);
+                  })
+                  .catch((e) => window.alert("Directions request failed due to " + status));
+              }
+              
+              window.initMap = initMap;
+            
         }
 
         function calcularRota() {
-            const origem = document.getElementById("origem").value;
-            const destino = document.getElementById("destino").value;
+            const origem = "Vinha da Encomenda, Vila Real"; // Endereço fixo da vinha
+            const destino = document.getElementById("destino").textContent; // Destino da encomenda
 
             if (origem && destino) {
                 const request = {
-                    origin: origem,
-                    destination: destino,
+                    origin: "Cabaços",
+                    destination: "Viseu",
                     travelMode: 'DRIVING' // Modo de transporte (DRIVING, BICYCLING, TRANSIT, WALKING)
                 };
 
                 directionsService.route(request, function(result, status) {
                     if (status == 'OK') {
                         directionsRenderer.setDirections(result);
+                        // Adicionar a distância ao resultado
+                        const route = result.routes[0].legs[0];
                     } else {
                         alert('Não foi possível encontrar o trajeto: ' + status);
-                        }
-                    });
+                    }
+                });
             } else {
                 alert("Por favor, insira os endereços de partida e destino.");
             }
@@ -115,6 +151,5 @@
         window.onload = initMap;
     </script>
 </div>
-
 
 {% endblock %}
