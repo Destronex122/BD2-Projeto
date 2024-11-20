@@ -22,8 +22,8 @@ urlpatterns = [
     path('contracts/',  views.contracts, name='contracts'),
     path('contractdetail/',  views.contractdetail, name='contractdetail'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    path('pedidos/', views.pedidos, name='orders'),
-    path('pedidosdetail/', views.pedidos_detail, name='pedidosdetail'),
+    path('request/', views.pedidos, name='orders'),
+    path('requestdetail/', views.pedidos_detail, name='pedidosdetail'),
 
 
 ]
