@@ -13,13 +13,18 @@
             <div class="col-md-4 text-center">
                 <img src="{% static 'userIcon.png' %}" alt="Imagem do perfil" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px;">
                 <h3 id="nome" contenteditable="false" class="editable">João Silva</h3>
-                <p id="email" class="text-muted editable" contenteditable="false">joao.silva@example.com</p>
+                <p id="job-text" class="text-muted" style="display: block;">Administrador</p>
+                <select id="job-select" class="form-select editable" style="display: none;">
+                    <option value="Cliente">Cliente</option>
+                    <option value="Colaborador">Colaborador</option>
+                    <option value="Administrador">Administrador</option>
+                </select>
             </div>
             
             <!-- Coluna para as informações do perfil -->
             <div class="col-md-8">
                 <div style="display:flex; justify-content: space-between;">
-                    <h4 style="color:#616646; margin-left:14px;" class="mb-4">Informações do Perfil</h4>
+                    <h4 style="color:#616646; margin-left:14px;" class="mb-4">Detalhe do utilizador</h4>
                     {% if is_admin %}
                     <div style="justify-self:right; text-align:center;">
                         <button class="button" id="editar-btn">
@@ -33,8 +38,9 @@
                     <li class="list-group-item"><strong>Nome:</strong> <span id="nome-list" contenteditable="false" class="editable">João Silva</span></li>
                     <li class="list-group-item"><strong>Email:</strong> <span id="email-list" contenteditable="false" class="editable">joao.silva@example.com</span></li>
                     <li class="list-group-item"><strong>Telefone:</strong> <span id="telefone" contenteditable="false" class="editable">+351 912 345 678</span></li>
-                    <li class="list-group-item"><strong>Endereço:</strong> <span id="endereco" contenteditable="false" class="editable">Rua das Flores, 123, Lisboa</span></li>
-                    <li class="list-group-item"><strong>Descrição:</strong> <span id="descricao" contenteditable="false" class="editable">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus lacinia odio vitae vestibulum vestibulum.</span></li>
+                    <li class="list-group-item"><strong>Morada:</strong> <span id="endereco" contenteditable="false" class="editable">Rua das Flores, 123</span></li>
+                    <li class="list-group-item"><strong>Código postal:</strong> <span id="postalcode" contenteditable="false" class="editable">3000-100</span></li>
+                    <li class="list-group-item"><strong>Cidade:</strong> <span id="city" contenteditable="false" class="editable">Lisboa</span></li>
                 </ul>
                 <div style="display:flex; justify-content: flex-end;">
                     {% if is_admin %}
@@ -53,11 +59,19 @@
     const editarBtn = document.getElementById('editar-btn');
     const salvarBtn = document.getElementById('salvar-btn');
     const cancelarBtn = document.getElementById('cancelar-btn');
+
     const editables = document.querySelectorAll('.editable');
+    const jobText = document.getElementById('job-text');
+    const jobSelect = document.getElementById('job-select');
 
     // Função para ativar a edição
     editarBtn.addEventListener('click', () => {
         editables.forEach(el => el.contentEditable = "true");
+
+        // Mostrar o dropdown para o cargo e ocultar o texto
+        jobText.style.display = 'none';
+        jobSelect.style.display = 'block';
+
         editarBtn.style.display = 'none';
         salvarBtn.style.display = 'inline-block';
         cancelarBtn.style.display = 'inline-block';
@@ -66,18 +80,30 @@
     // Função para salvar alterações
     salvarBtn.addEventListener('click', () => {
         editables.forEach(el => el.contentEditable = "false");
+
+        // Atualizar o texto com o valor selecionado no dropdown
+        jobText.textContent = jobSelect.value;
+
+        // Ocultar o dropdown e mostrar o texto
+        jobText.style.display = 'block';
+        jobSelect.style.display = 'none';
+
         editarBtn.style.display = 'inline-block';
         salvarBtn.style.display = 'none';
         cancelarBtn.style.display = 'none';
-
-        // Atualizar valores nos dois lugares (caso existam duplicados)
-        document.getElementById('nome-list').textContent = document.getElementById('nome').textContent;
-        document.getElementById('email-list').textContent = document.getElementById('email').textContent;
     });
 
     // Função para cancelar edição
     cancelarBtn.addEventListener('click', () => {
         editables.forEach(el => el.contentEditable = "false");
+
+        // Reverter o valor do dropdown ao texto original
+        jobSelect.value = jobText.textContent;
+
+        // Ocultar o dropdown e mostrar o texto
+        jobText.style.display = 'block';
+        jobSelect.style.display = 'none';
+
         editarBtn.style.display = 'inline-block';
         salvarBtn.style.display = 'none';
         cancelarBtn.style.display = 'none';
@@ -85,29 +111,17 @@
 </script>
 
 <style>
-    .container {
-        padding: 20px;
-    }
-    
-    .card {
-        border-radius: 10px;
-        border: none;
-    }
-    
     .list-group-item {
         border: none;
         padding: 10px 15px;
     }
     
-    h4 {
-        font-weight: bold;
-    }
-
     .editable[contenteditable="true"] {
-        border: 1px dashed #ccc;
-        padding: 2px;
+        border: 1px solid #ccc;
+        padding: 0px 5px;
         border-radius: 5px;
     }
 </style>
+
 
 {% endblock %}

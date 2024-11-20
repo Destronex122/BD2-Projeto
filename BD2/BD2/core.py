@@ -5,4 +5,4 @@ def admin_status(request):
     #     cursor.execute("SELECT IsAdmin(%s)", [request.user.id])
     #     result = cursor.fetchone()
     #     is_admin = result[0]
-    return {'is_admin': 1}
+    return {'is_admin': 1, 'role' : "admin"}
