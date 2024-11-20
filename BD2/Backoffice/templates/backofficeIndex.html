@@ -8,9 +8,9 @@
 
 <div class="editable-area newPadding">
     <div class="container-fluid py-4">
-        <div class="row">
+        <div class="row justify-content-center">
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
+                <div class="card h-100">
                     <div class="card-body p-3">
                         <div class="row">
                             <div class="col-8">
@@ -30,7 +30,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
+                <div class="card h-100">
                     <div class="card-body p-3">
                         <div class="row">
                             <div class="col-8">
@@ -50,7 +50,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6">
-                <div class="card">
+                <div class="card h-100">
                     <div class="card-body p-3">
                         <div class="row">
                             <div class="col-8">
@@ -75,16 +75,16 @@
             <div class="col-lg-6 mb-lg-0 mb-4">
                 <div class="card z-index-2">
                     <div class="card-body p-3">
-                        <!-- Canvas element for the temperature chart -->
-                        <canvas id="chart-temperature" class="chart-canvas" height="170"></canvas>
+                        <!-- Canvas element for the contract requests chart -->
+                        <canvas id="chart-contract-requests" class="chart-canvas" height="200"></canvas>
                     </div>
                 </div>
             </div>
             <div class="col-lg-6">
                 <div class="card z-index-2">
                     <div class="card-body p-3">
-                        <!-- Canvas element for the humidity chart -->
-                        <canvas id="chart-humidity" class="chart-canvas" height="170"></canvas>
+                        <!-- Canvas element for the vineyard count by grape variety chart -->
+                        <canvas id="chart-vineyard-count" class="chart-canvas" height="200"></canvas>
                     </div>
                 </div>
             </div>
@@ -94,8 +94,8 @@
             <div class="col-lg-6">
                 <div class="card h-100">
                     <div class="card-body p-3">
-                        <!-- Canvas element for the rainfall chart -->
-                        <canvas id="chart-rainfall" class="chart-canvas" height="200"></canvas>
+                        <!-- Canvas element for the finalized receipts chart -->
+                        <canvas id="chart-receipts" class="chart-canvas" height="250"></canvas>
                     </div>
                 </div>
             </div>
@@ -103,7 +103,7 @@
                 <div class="card h-100">
                     <div class="card-body p-3">
                         <!-- Canvas element for the grape production chart -->
-                        <canvas id="chart-grape-production" class="chart-canvas" height="200"></canvas>
+                        <canvas id="chart-grape-production" class="chart-canvas" height="250"></canvas>
                     </div>
                 </div>
             </div>
@@ -115,17 +115,17 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    // Gráfico de Temperatura
-    var ctxTemperature = document.getElementById("chart-temperature").getContext("2d");
-    new Chart(ctxTemperature, {
+    // Gráfico de Pedidos de Contrato por Ano
+    var ctxContractRequests = document.getElementById("chart-contract-requests").getContext("2d");
+    new Chart(ctxContractRequests, {
         type: "line",
         data: {
-            // Labels representing each month of the year
-            labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
+            // Labels representing different years
+            labels: ["2018", "2019", "2020", "2021", "2022", "2023"],
             datasets: [{
-                label: "Temperatura (°C)",
-                // Temperature data for each month
-                data: [8, 10, 15, 18, 22, 25, 30, 28, 24, 18, 12, 9],
+                label: "Pedidos de Contrato",
+                // Data for contract requests per year
+                data: [120, 150, 170, 200, 230, 250],
                 borderColor: "#ff6384", // Line color for the chart
                 fill: false // Line chart without filling the area below the line
             }]
@@ -136,19 +136,18 @@
         }
     });
 
-    // Gráfico de Humidade
-    var ctxHumidity = document.getElementById("chart-humidity").getContext("2d");
-    new Chart(ctxHumidity, {
-        type: "line",
+    // Gráfico de Vinhas por Casta
+    var ctxVineyardCount = document.getElementById("chart-vineyard-count").getContext("2d");
+    new Chart(ctxVineyardCount, {
+        type: "pie",
         data: {
-            // Labels representing each month of the year
-            labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
+            // Labels representing different grape varieties
+            labels: ["Touriga Nacional", "Arinto", "Syrah", "Fernão Pires", "Baga"],
             datasets: [{
-                label: "Humidade (%)",
-                // Humidity data for each month
-                data: [60, 55, 50, 45, 40, 35, 30, 32, 40, 50, 55, 60],
-                borderColor: "#36a2eb", // Line color for the chart
-                fill: false // Line chart without filling the area below the line
+                label: "Vinhas por Casta",
+                // Count of vineyards by grape variety
+                data: [30, 25, 20, 15, 10],
+                backgroundColor: ["#ff6384", "#36a2eb", "#ffcd56", "#4caf50", "#ff9800"] // Colors for each pie slice
             }]
         },
         options: {
@@ -157,17 +156,17 @@
         }
     });
 
-    // Gráfico de Precipitação
-    var ctxRainfall = document.getElementById("chart-rainfall").getContext("2d");
-    new Chart(ctxRainfall, {
+    // Gráfico de Recibos Finalizados por Ano
+    var ctxReceipts = document.getElementById("chart-receipts").getContext("2d");
+    new Chart(ctxReceipts, {
         type: "bar",
         data: {
-            // Labels representing each month of the year
-            labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
+            // Labels representing different years
+            labels: ["2018", "2019", "2020", "2021", "2022", "2023"],
             datasets: [{
-                label: "Precipitação (mm)",
-                // Rainfall data for each month
-                data: [100, 80, 60, 40, 30, 20, 10, 15, 25, 50, 80, 90],
+                label: "Recibos Finalizados",
+                // Data for finalized receipts per year
+                data: [100, 120, 150, 170, 180, 200],
                 backgroundColor: "#4caf50" // Bar color for the chart
             }]
         },
