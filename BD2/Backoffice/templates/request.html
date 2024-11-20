@@ -7,7 +7,7 @@
 {% load static %}
 
 <style>
-    #pedidosTable tbody tr:hover {
+    #requestTable tbody tr:hover {
         background-color: #f1f1f1;
         cursor: pointer;
     }
@@ -37,7 +37,7 @@
     <div style="display:flex; justify-content: space-between;">
         <h1>Pedidos</h1>
         <div style="justify-self:right; text-align:center;">
-            <button type="button" onclick="openAddPedidosModal()">
+            <button type="button" onclick="openAddRequestModal()">
                 <img src="{% static 'add.png' %}" alt="add" style="height: 25px; width: auto;">
             </button>
         </div>
@@ -66,13 +66,13 @@
         </form>
     </div>
 
-    <table class="table table-bordered" id="pedidosTable">
+    <table class="table table-bordered" id="requestTable">
         <thead>
             <tr>
-                <th>Data Início</th>
-                <th>Data Fim</th>
+                <th>Data de início</th>
+                <th>Data de fim</th>
                 <th>Pedido</th>
-                <th>Preço Estimado (€)</th>
+                <th>Preço estimado (€)</th>
                 <th>Notas</th>
             </tr>
         </thead>
@@ -95,28 +95,28 @@
     </table>
 
     <!-- Modal para Adicionar Pedido -->
-    <div class="popup-overlay" id="addPedidosModal">
+    <div class="popup-overlay" id="addRequestModal">
         <div class="popup-content">
             <div class="popup-header">
-                <h5>Adicionar Pedido</h5>
-                <span class="modal-close" onclick="closeAddPedidosModal()">&times;</span>
+                <h5>Adicionar novo pedido</h5>
+                <span class="modal-close" onclick="closeAddRequestModal()">&times;</span>
             </div>
             <br>
-            <form id="addPedidosForm" onsubmit="addPedido(event)">
+            <form id="addRequestForm" onsubmit="addRequest(event)">
                 <div class="form-group">
-                    <label for="newPedido">Nome do Pedido:</label>
-                    <input type="text" id="newPedido" class="form-control" required>
+                    <label for="newRequest">Nome:</label>
+                    <input type="text" id="newRequest" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="newDataInicio">Data de Início:</label>
+                    <label for="newDataInicio">Data de início:</label>
                     <input type="date" id="newDataInicio" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="newDataFim">Data de Fim:</label>
+                    <label for="newDataFim">Data de fim:</label>
                     <input type="date" id="newDataFim" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="newPrecoEstimado">Preço Estimado (€):</label>
+                    <label for="newPrecoEstimado">Preço estimado (€):</label>
                     <input type="number" id="newPrecoEstimado" class="form-control" required>
                 </div>
                 <div class="form-group">
@@ -124,7 +124,7 @@
                     <textarea id="newNotas" class="form-control" required></textarea>
                 </div>
                 <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-                    <button type="button" onclick="closeAddPedidosModal()" class="button">Cancelar</button>
+                    <button type="button" onclick="closeAddRequestModal()" class="secondary-button">Cancelar</button>
                     <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
                 </div>
             </form>
@@ -133,21 +133,21 @@
 
     <script>
         // Função para abrir o modal de adicionar pedido
-        function openAddPedidosModal() {
-            document.getElementById('addPedidosModal').style.display = 'flex';
+        function openAddRequestModal() {
+            document.getElementById('addRequestModal').style.display = 'flex';
         }
 
         // Função para fechar o modal de adicionar pedido
-        function closeAddPedidosModal() {
-            document.getElementById('addPedidosModal').style.display = 'none';
+        function closeAddRequestModal() {
+            document.getElementById('addRequestModal').style.display = 'none';
         }
 
         // Função para adicionar um novo pedido na tabela
-        function addPedido(event) {
+        function addRequest(event) {
             event.preventDefault();
 
             // Obtém os valores dos campos do formulário
-            const newPedido = document.getElementById('newPedido').value;
+            const newRequest = document.getElementById('newRequest').value;
             const newDataInicio = document.getElementById('newDataInicio').value;
             const newDataFim = document.getElementById('newDataFim').value;
             const newPrecoEstimado = document.getElementById('newPrecoEstimado').value;
@@ -165,17 +165,17 @@
             `;
 
             // Adiciona a nova linha ao corpo da tabela
-            document.querySelector('#pedidosTable tbody').insertAdjacentHTML('beforeend', newRow);
+            document.querySelector('#requestTable tbody').insertAdjacentHTML('beforeend', newRow);
 
             // Fecha o modal e reseta o formulário
-            closeAddPedidosModal();
-            document.getElementById('addPedidosForm').reset();
+            closeAddRequestModal();
+            document.getElementById('addRequestForm').reset();
         }
 
         // Adiciona o redirecionamento para os detalhes do pedido ao clicar na linha da tabela
-        const pedidosTable = document.getElementById('pedidosTable');
+        const requestTable = document.getElementById('requestTable');
 
-        pedidosTable.addEventListener('click', function(event) {
+        requestTable.addEventListener('click', function(event) {
             const targetRow = event.target.closest('tr');
             const isHeader = event.target.closest('thead');
 
