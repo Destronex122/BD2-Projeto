@@ -9,11 +9,17 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+from pathlib import Path
+from .ssh_db_tunnel import create_ssh_tunnel
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Iniciar o túnel SSH
+tunnel = create_ssh_tunnel()
+tunnel.start()
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -84,16 +90,21 @@ WSGI_APPLICATION = 'BD2.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# Configuração do banco de dados usando o túnel SSH
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'GrapeFlow',    # Nome da sua base de dados PostgreSQL
-        'USER': 'postgres',        # Nome de usuário do PostgreSQL
-        'PASSWORD': 'admin',    # Senha do PostgreSQL
-        'HOST': 'localhost',    # Endereço do servidor PostgreSQL
-        'PORT': '5432',         # Porta do PostgreSQL (5432 é a padrão)
+        'NAME': 'aluno6',           # Nome da sua base de dados PostgreSQL
+        'USER': 'aluno6',           # Nome de usuário do PostgreSQL
+        'PASSWORD': 'di!912877',    # Senha do PostgreSQL
+        'HOST': '127.0.0.1',        # Endereço local (túnel SSH redireciona para o host remoto)
+        'PORT': tunnel.local_bind_port,  # Porta local atribuída pelo túnel SSH
     }
 }
+
+# Garanta que o túnel seja fechado ao terminar
+import atexit
+atexit.register(tunnel.stop)
 
 
 # Password validation
