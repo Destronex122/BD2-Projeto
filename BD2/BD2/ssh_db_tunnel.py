@@ -8,5 +8,6 @@ def create_ssh_tunnel():
         ssh_username='aluno6',  # Nome de usuário SSH
         ssh_password='di!912877',  # Senha do SSH
         remote_bind_address=('127.0.0.1', 5432),  # Endereço e porta do PostgreSQL no servidor remoto
-        local_bind_address=('localhost',)  # Deixe o Python escolher uma porta livre
+        local_bind_address=('localhost',),  # Deixe o Python escolher uma porta livre
+        set_keepalive=10  # Enviar pacotes keep-alive a cada 10 segundos para manter a conexão ativa
     )
