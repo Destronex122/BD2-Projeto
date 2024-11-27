@@ -64,25 +64,28 @@
     <table class="table table-bordered" id="userTable">
         <thead>
             <tr>
+                <th>Username</th>
                 <th>Nome</th>
                 <th>Email</th>
                 <th>Telefone</th>
+                <th>Endereço</th>
+                <th>Campo</th>
                 <th>Cargo</th>
             </tr>
         </thead>
         <tbody>
+            {% for user in users %}
             <tr>
-                <td>João Silva</td>
-                <td>joao.silva@example.com</td>
-                <td>+351 912 345 678</td>
-                <td>Administrador</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.nome }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.telefone }}</td>
+                <td>{{ user.endereco }}</td>
+                <td>{% if user.campoid %}{{ user.campoid.morada }}{% else %}-{% endif %}</td>
+                <td>{% if user.cargoid %}{{ user.cargoid.nome }}{% else %}-{% endif %}</td>
+
             </tr>
-            <tr>
-                <td>Ana Pereira</td>
-                <td>ana.pereira@example.com</td>
-                <td>+351 934 567 890</td>
-                <td>Cliente</td>
-            </tr>
+            {% endfor %}
         </tbody>
     </table>
 

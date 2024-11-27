@@ -10,6 +10,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotFound
 from django.apps import apps
+from .models import Users
 
 
 # Create your views here.
@@ -48,7 +49,8 @@ def userdetail(request):
 
 @login_required
 def users(request):
-    return render(request, 'users.html')
+    users = Users.objects.select_related('campoid', 'cargoid').all()
+    return render(request, 'users.html', {'users': users})
 
 @login_required
 def delivery(request):
