@@ -106,117 +106,7 @@
             </table>
         </div>
     </div>
-
-    <script>
-        var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
     
-        map.removeControl(map.attributionControl);
-    
-        var layerControl = L.control.layers({}, {}).addTo(map);
-    
-        // Adiciona a camada de mapa como camada inicial
-        var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        }).addTo(map); // <-- Configurado para abrir no modo "Mapa"
-    
-        var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        });
-    
-        layerControl.addBaseLayer(osmLayer, 'Mapa');
-        layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
-    
-        var croplandMarkers = L.layerGroup().addTo(map);
-        var vineyardsLayer = L.layerGroup().addTo(map);
-    
-        fetch('/backoffice/load_vineyards/', { method: 'GET' })
-            .then(response => response.json())
-            .then(data => addVineyards(data))
-            .catch(error => console.error('Error loading vineyards:', error));
-    
-        fetch('/backoffice/load_croplands/', { method: 'GET' })
-            .then(response => response.json())
-            .then(data => addCroplandsToMap(data))
-            .catch(error => console.error('Error loading markers:', error));
-    
-        function addCroplandsToMap(markers) {
-            let jsonArray = JSON.parse(markers);
-            jsonArray.forEach(item => {
-                const latLng = [item.lat, item.lng];
-                const markerLayer = L.marker(latLng).bindPopup(item.description);
-                
-                // Abre a modal e exibe o formulário ao clicar no marcador de terreno
-                markerLayer.on('click', function() {
-                    document.getElementById('formContainer').style.display = 'block';
-                    openModal();
-                });
-    
-                croplandMarkers.addLayer(markerLayer);
-            });
-        }
-    
-        function addVineyards(vineyards) {
-            let jsonArray = JSON.parse(vineyards);
-            jsonArray.forEach(item => {
-                const coordinates = item.coordinates;
-                const vineyard = L.polygon(coordinates).bindPopup(item.description);
-                
-                vineyard.on('click', function() {
-                    openModal();
-                });
-    
-                vineyardsLayer.addLayer(vineyard);
-            });
-        }
-    
-        layerControl.addOverlay(croplandMarkers, 'Marcadores de terrenos');
-        layerControl.addOverlay(vineyardsLayer, 'Marcadores de vinhas');
-        L.drawLocal.draw.toolbar.buttons.polygon = 'Criar vinha';
-        L.drawLocal.draw.toolbar.buttons.marker = 'Marcar terreno';
-    
-        var drawControl = new L.Control.Draw({
-            draw: {
-                polygon: { allowIntersection: false, showArea: true }
-            },
-            edit: { featureGroup: new L.FeatureGroup() },
-            remove: true
-        }).addTo(map);
-    
-        map.on('draw:created', function(e) {
-            var type = e.layerType, layer = e.layer;
-            var csrfToken = '{{ csrf_token }}'; 
-            if (type == 'marker') {
-                /*fetch('/backoffice/save_marker/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                    body: JSON.stringify({
-                        lat: layer.getLatLng().lat,
-                        lng: layer.getLatLng().lng,
-                        title: "Novo Terreno",
-                        description: ""
-                    })
-                });*/
-                console.log("aqui");
-                document.getElementById('coordinates').textContent = `Lat: ${layer.getLatLng().lat}, Lng: ${layer.getLatLng().lng}`;
-                croplandMarkers.addLayer(layer);
-                openModal();
-            } else if (type == 'polygon') {
-                fetch('/backoffice/save_polygon/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                    body: JSON.stringify({
-                        coordinates: layer.getLatLngs(),
-                        title: "Nova Vinha",
-                        description: ""
-                    })
-                });
-                vineyardsLayer.addLayer(layer);
-            }
-        });
-    </script>
-    
-
     <div id="myModal" class="sidebar">
         <div class="p-3">
             <div style="text-align:right; padding:0px 24px;">
@@ -242,6 +132,103 @@
     </div>
 
     <script>
+        var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
+    
+        map.removeControl(map.attributionControl);
+    
+        var layerControl = L.control.layers({}, {}).addTo(map);
+    
+        // Adiciona a camada de mapa como camada inicial
+        var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        }).addTo(map); // <-- Configurado para abrir no modo "Mapa"
+    
+        var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+    
+        layerControl.addBaseLayer(osmLayer, 'Mapa');
+        layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
+    
+        var croplandMarkers = L.layerGroup().addTo(map);
+    
+        fetch('/backoffice/load_croplands/', { method: 'GET' })
+            .then(response => response.json())
+            .then(data => addCroplandsToMap(data))
+            .catch(error => console.error('Erro ao carregar campos:', error));
+    
+        // Função para adicionar campos no mapa
+        function addCroplandsToMap(markers) {
+            let jsonArray = JSON.parse(markers); // Recebe array de campos
+            jsonArray.forEach(item => {
+                const latLng = [item.lat, item.lng]; // Posição do campo
+                const markerLayer = L.marker(latLng).bindPopup(item.description); // Mostra descrição ao clicar
+                
+                // Abre a modal e exibe o formulário ao clicar no marcador do campo
+                markerLayer.on('click', function() {
+                    document.getElementById('formContainer').style.display = 'block';
+                    openModal();
+                });
+                croplandMarkers.addLayer(markerLayer);
+            });
+        }
+    
+        // Substituir o texto do botão de marcador
+        layerControl.addOverlay(croplandMarkers, 'Marcadores de campos');
+        L.drawLocal.draw.toolbar.buttons.marker = 'Marcar campo';
+    
+        // Configurar controlo de desenho para permitir apenas marcadores
+        var drawControl = new L.Control.Draw({
+            draw: {                
+                marker: true, // Habilitar apenas marcador
+                polygon: false, // Desabilitar polígonos
+                circle: false,
+                rectangle: false,
+                circlemarker: false,
+                polyline: false
+            },
+            edit: false // Desabilitar edição
+        }).addTo(map);
+    
+
+        map.on('draw:created', function(e) {
+            var type = e.layerType, layer = e.layer;
+            var csrfToken = '{{ csrf_token }}'; 
+            if (type == 'marker') {
+                document.getElementById('coordinates').textContent = `Lat: ${layer.getLatLng().lat}, Lng: ${layer.getLatLng().lng}`;
+                openModal();
+                // Adicionar um event listener para o botão de submissão do formulário da modal
+                document.querySelector('#formContainer form').onsubmit = function(event) {
+                    event.preventDefault();  // Evita a submissão padrão do formulário
+                    
+                    // Obter os valores do formulário
+                    var nomeCampo = document.getElementById('name').value;
+                    var cidade = document.getElementById('cidade').value;  // Obter o valor do campo cidade
+                    
+                    // Salvar o marcador no MongoDB e PostgreSQL
+                    fetch('/backoffice/save_marker/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                        body: JSON.stringify({
+                            lat: layer.getLatLng().lat, // Latitude
+                            lng: layer.getLatLng().lng, // Longitude
+                            title: cidade, // Cidade fornecida na modal
+                            description: nomeCampo  // Nome do campo fornecido na modal
+                        })
+                    }).then(response => response.json())
+                    .then(data => console.log('Campo guardado com sucesso:', data))
+                    .catch(error => console.error('Erro ao salvar campo:', error));
+                    
+                    document.getElementById('coordinates').textContent = `Lat: ${layer.getLatLng().lat}, Lng: ${layer.getLatLng().lng}`;
+                    croplandMarkers.addLayer(layer);
+                    openModal();
+                }
+            } 
+        });
+
+
+        //SIDEBAR
         const modal = document.getElementById('myModal');
         const span = document.getElementsByClassName('close')[0];
         const addFieldButton = document.getElementById('addFieldButton');
@@ -254,6 +241,7 @@
         span.onclick = function() {
             modal.classList.remove('open');
         }
-    </script>
+    </script> 
 </div>
+
 {% endblock %}

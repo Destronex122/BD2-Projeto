@@ -24,6 +24,7 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('request/', views.request, name='request'),
     path('requestdetail/', views.requestdetail, name='requestdetail'),
-
+    path('grapevariety/', views.grapevariety, name='grapevariety'),
+    path('addvariety/', views.addvariety, name='addvariety'),
 
 ]
