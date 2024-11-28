@@ -12,6 +12,7 @@ from django.http import HttpResponseNotFound
 from django.db import connection
 from pymongo import MongoClient
 import datetime
+from .models import Casta
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
@@ -55,7 +56,8 @@ def userdetail(request):
 
 @login_required
 def users(request):
-    return render(request, 'users.html')
+    users = Users.objects.select_related('campoid', 'cargoid').all()
+    return render(request, 'users.html', {'users': users})
 
 @login_required
 def delivery(request):
@@ -132,41 +134,32 @@ def request(request):
 def grapevariety(request):
     return render(request, 'grapevariety.html')
 
-@login_required
+@csrf_exempt
 def addvariety(request):
     if request.method == 'POST':
-        import json
+        # Recupera o nome da casta
+        name = request.POST.get('varietyName')
+
+        if not name:
+            return JsonResponse({'message': 'O nome da casta é obrigatório!'}, status=400)
+
         try:
-            # Parse o corpo da requisição JSON
-            data = json.loads(request.body)
-            name = data.get('name')
-
-            if not name:
-                return JsonResponse({'message': 'O nome da casta é obrigatório!'}, status=400)
-
-            # Chamar o procedimento armazenado para adicionar ao banco de dados
+            # Insere a casta no banco de dados usando o procedimento armazenado
             with connection.cursor() as cursor:
-                cursor.callproc('public.inserircasta', [None, name])  # Passa NULL para o ID
-                cursor.execute("SELECT Nome FROM Castas WHERE Nome = %s;", [name])
-                new_name = cursor.fetchone()[0]  # Obter o nome recém-adicionado para confirmação
+                cursor.execute("CALL public.inserircasta(%s);", [name])
 
-            return JsonResponse({'name': new_name}, status=200)
+            # Redireciona para a mesma página para ver a lista de castas atualizada
+            return redirect('addvariety')  # Redireciona para a view 'addvariety'
 
         except Exception as e:
+            print("Erro:", e)
             return JsonResponse({'message': str(e)}, status=500)
 
-        
+    # Se for um GET, renderiza a página com a lista de castas
+    grape_varieties = Casta.objects.all()  # Busque as castas na base de dados
+    return render(request, 'addvariety.html', {'grape_varieties': grape_varieties})
 
-@csrf_exempt
-def grape_varieties_view(request):
-    # Consultar dados diretamente do PostgreSQL
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT Nome FROM Castas")
-        grape_varieties = cursor.fetchall()  # Lista de  nome
 
-    return render(request, 'grapevariety.html', {'grape_varieties': grape_varieties})
-
-@csrf_exempt
 def save_marker(request):
     if request.method == 'POST':
         try:

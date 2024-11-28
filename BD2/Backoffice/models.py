@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from pymongo import MongoClient 
 from bson.json_util import dumps
+from django.db import models
 
 dbname='Interaction_Database'
 dbcollection="coordinates"
@@ -79,5 +80,53 @@ def load_vineyards(request):
     print(json_data)
     
     return json_data
+#Modelo Cargo
+
+class Cargo(models.Model):
+    cargoid = models.IntegerField(primary_key=True)
+    nome = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'cargo'
+
+
+#Modelo Campos
+
+class Campos(models.Model):
+    campoid = models.IntegerField(primary_key=True)
+    coordenadas = models.CharField(max_length=255)
+    morada = models.CharField(max_length=255)
+    cidade = models.CharField(max_length=100)
+    pais = models.CharField(max_length=100)
+    datacriacao = models.DateField()
+
+    class Meta:
+        managed = False
+        db_table = 'campos'
+
+#Modelo User
+
+class Users(models.Model):
+    userid = models.IntegerField(primary_key=True)
+    username = models.CharField(unique=True, max_length=50)
+    nome = models.CharField(max_length=100)
+    email = models.CharField(unique=True, max_length=100)
+    password = models.CharField(max_length=255)
+    telefone = models.CharField(max_length=15)
+    endereco = models.CharField(max_length=255)
+    campoid = models.ForeignKey(Campos, models.DO_NOTHING, db_column='campoid', blank=True, null=True)
+    cargoid = models.ForeignKey(Cargo, models.DO_NOTHING, db_column='cargoid', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'users'
+
+
+class Casta(models.Model):
+    nome = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.nome
 
 
