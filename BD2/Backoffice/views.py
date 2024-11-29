@@ -13,6 +13,7 @@ from django.db import connection
 from pymongo import MongoClient
 import datetime
 from .models import Casta
+from .models import Users
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
