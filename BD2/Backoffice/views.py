@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotFound
 from django.db import connection
 from pymongo import MongoClient
+from django.shortcuts import render, get_object_or_404
 import datetime
 from .models import Casta
 from .models import Users
@@ -52,9 +53,10 @@ def backofficeIndex(request):
     return render(request, 'backofficeIndex.html')
 
 @login_required
-def userdetail(request):
-    return render(request, 'userdetail.html')
-
+def userdetail(request, userid):
+    user = get_object_or_404(Users, userid=userid)
+    
+    return render(request, 'userdetail.html', {'user': user})
 @login_required
 def users(request):
     users = Users.objects.select_related('campoid', 'cargoid').all()

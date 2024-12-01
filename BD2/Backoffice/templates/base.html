@@ -71,7 +71,7 @@
                             <img src="{% static 'userIcon.png' %}" alt="Utilizador" style="height: 40px; width: auto; cursor: pointer;">
                         </div>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-                            <a class="dropdown-item" href="{% url 'userdetail' %}">Perfil</a>
+                           <!-- <a class="dropdown-item" href="{% url 'userdetail' request.user.id %}">Perfil</a>-->
                             {% if is_admin %}
                             <a class="dropdown-item" href="{% url 'users' %}">Utilizadores</a>
                             <a class="dropdown-item" href="{% url 'fields' %}">Gerir campos</a>

@@ -75,7 +75,7 @@
         </thead>
         <tbody>
             {% for user in users %}
-            <tr>
+            <tr data-userid="{{ user.userid }}">
                 <td>{{ user.username }}</td>
                 <td>{{ user.nome }}</td>
                 <td>{{ user.email }}</td>
@@ -124,6 +124,18 @@
     </div>
 
     <script>
+        // Adiciona o evento de clique na tabela
+        document.getElementById('userTable').addEventListener('click', function(event) {
+            const targetRow = event.target.closest('tr'); // Captura a linha clicada
+            if (targetRow && !targetRow.closest('thead')) { // Garante que não seja o cabeçalho
+                const userId = targetRow.dataset.userid;  // Obtém o atributo data-userid
+                if (userId) {
+                    console.log(`Redirecionando para userdetail com ID: ${userId}`); // Verifica no console
+                    window.location.href = `/backoffice/userdetail/${userId}/`; // Redireciona
+                }
+            }
+        });
+    
         // Função para abrir o modal de adicionar utilizador
         function openAddUserModal() {
             document.getElementById('addUserModal').style.display = 'flex';
@@ -161,41 +173,35 @@
             closeAddUserModal();
             document.getElementById('addUserForm').reset();
         }
-
-        document.getElementById('userTable').addEventListener('click', function(event) {
-            const targetRow = event.target.closest('tr');
-            if (targetRow && !targetRow.closest('thead')) {
-                window.location.href = `/backoffice/userdetail/`; // Ajuste com a lógica apropriada para o detalhe do utilizador
-            }
-        });
-
-
+    
+        // Filtragem na tabela de utilizadores
         document.getElementById('applyFilters').addEventListener('click', function() {
-    const nameFilter = document.getElementById('filterName').value.toLowerCase();
-    const emailFilter = document.getElementById('filterEmail').value.toLowerCase();
-    const cargoFilter = document.getElementById('filterCargo').value;
-
-    const rows = document.querySelectorAll('#userTable tbody tr');
-
-    rows.forEach(row => {
-        const name = row.cells[0].textContent.toLowerCase();
-        const email = row.cells[1].textContent.toLowerCase();
-        const cargo = row.cells[3].textContent;
-
-        // Verifica se a linha corresponde aos filtros
-        const matchesName = name.includes(nameFilter);
-        const matchesEmail = email.includes(emailFilter);
-        const matchesCargo = cargoFilter === "" || cargo === cargoFilter;
-
-        // Mostra ou esconde a linha baseado nos filtros
-        if (matchesName && matchesEmail && matchesCargo) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
-});
+            const nameFilter = document.getElementById('filterName').value.toLowerCase();
+            const emailFilter = document.getElementById('filterEmail').value.toLowerCase();
+            const cargoFilter = document.getElementById('filterCargo').value;
+    
+            const rows = document.querySelectorAll('#userTable tbody tr');
+    
+            rows.forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                const email = row.cells[1].textContent.toLowerCase();
+                const cargo = row.cells[3].textContent;
+    
+                // Verifica se a linha corresponde aos filtros
+                const matchesName = name.includes(nameFilter);
+                const matchesEmail = email.includes(emailFilter);
+                const matchesCargo = cargoFilter === "" || cargo === cargoFilter;
+    
+                // Mostra ou esconde a linha baseado nos filtros
+                if (matchesName && matchesEmail && matchesCargo) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
     </script>
+    
 </div>
 
 {% endblock %}
