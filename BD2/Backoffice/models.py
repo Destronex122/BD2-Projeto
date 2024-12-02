@@ -122,11 +122,74 @@ class Users(models.Model):
         managed = False
         db_table = 'users'
 
-
+#Modelo Casta
 class Casta(models.Model):
     nome = models.CharField(max_length=255)
 
     def __str__(self):
         return self.nome
 
+#Modelo Periodos
+class Periodos(models.Model):
+    periodoid = models.IntegerField(primary_key=True)
+    datainicio = models.DateField()
+    datafim = models.DateField()
+    ano = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'periodos'
+
+#Modelo Castas
+
+class Castas(models.Model):
+    castaid = models.IntegerField(primary_key=True)
+    nome = models.CharField(unique=True, max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'castas'
+
+#Modelo Vinhas
+class Vinhas(models.Model):
+    vinhaid = models.IntegerField(primary_key=True)
+    castaid = models.ForeignKey(Castas, models.DO_NOTHING, db_column='castaid', blank=True, null=True)
+    campoid = models.ForeignKey(Campos, models.DO_NOTHING, db_column='campoid', blank=True, null=True)
+    coordenadas = models.CharField(max_length=255)
+    dataplantacao = models.DateField(blank=True, null=True)
+    hectares = models.DecimalField(max_digits=65535, decimal_places=65535)
+
+    class Meta:
+        managed = False
+        db_table = 'vinhas'
+
+#Modelo Colheitas 
+class Colheitas(models.Model):
+    colheitaid = models.IntegerField(primary_key=True)
+    vinhaid = models.ForeignKey('Vinhas', models.DO_NOTHING, db_column='vinhaid', blank=True, null=True)
+    pesototal = models.DecimalField(max_digits=65535, decimal_places=65535)
+    precoportonelada = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
+    datapesagem = models.DateField(blank=True, null=True)
+    periodoid = models.ForeignKey('Periodos', models.DO_NOTHING, db_column='periodoid', blank=True, null=True)
+    previsaofimcolheita = models.DateField(blank=True, null=True)
+    terminada = models.BooleanField()
+
+    class Meta:
+        managed = False
+        db_table = 'colheitas'
+#Modelo Pesagens
+class Pesagens(models.Model):
+    pesagemid = models.AutoField(primary_key=True)  
+    colheitaid = models.ForeignKey(
+        'Colheitas', 
+        on_delete=models.CASCADE, 
+        db_column='colheitaid'
+    )  
+    pesobruto = models.DecimalField(max_digits=10, decimal_places=2)  
+    pesoliquido = models.DecimalField(max_digits=10, decimal_places=2)  
+    datadepesagem = models.DateField() 
+
+    class Meta:
+        managed = False 
+        db_table = 'pesagens' 
 

@@ -13,8 +13,9 @@ from django.db import connection
 from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
+from django.db.models import Max
 from .models import Casta
-from .models import Users
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
@@ -72,11 +73,52 @@ def deliverydetail(request):
 
 @login_required
 def harvest(request):
-    return render(request, 'harvest.html')
+    colheitas = Colheitas.objects.select_related('vinhaid', 'vinhaid__castaid', 'periodoid').all()
+    colheitas_context = []
+
+    for colheita in colheitas:
+        # Calcular a data de término baseada no status de 'terminada'
+        if colheita.terminada:
+            ultima_pesagem = Pesagens.objects.filter(colheitaid=colheita).aggregate(ultima_data=Max('datadepesagem'))['ultima_data']
+            data_termino = ultima_pesagem
+        else:
+            data_termino = "Não terminada"
+
+        colheitas_context.append({
+            'colheitaid': colheita.colheitaid,  # Inclua colheitaid no contexto
+            'vinha_hectares': colheita.vinhaid.hectares if colheita.vinhaid else None,
+            'casta_nome': colheita.vinhaid.castaid.nome if colheita.vinhaid and colheita.vinhaid.castaid else None,
+            'peso_total': colheita.pesototal,
+            'preco_por_tonelada': colheita.precoportonelada,
+            'data_ultima_pesagem': colheita.datapesagem,
+            'periodo': colheita.periodoid,
+            'previsao_fim_colheita': colheita.previsaofimcolheita,
+            'terminada': "Sim" if colheita.terminada else "Não",
+            'data_termino': data_termino,
+        })
+
+    return render(request, 'harvest.html', {'colheitas': colheitas_context})
 
 @login_required
-def harvestdetail(request):
-    return render(request, 'harvestdetail.html')
+def harvestdetail(request, colheitaid):
+    colheita = get_object_or_404(Colheitas, colheitaid=colheitaid)
+
+    # Extraia as informações relevantes para o template
+    colheita_context = {
+        'vinha_nome': colheita.vinhaid.hectares if colheita.vinhaid else None,
+        'casta_nome': colheita.vinhaid.castaid.nome if colheita.vinhaid and colheita.vinhaid.castaid else None,
+        'peso_total': colheita.pesototal,
+        'preco_por_tonelada': colheita.precoportonelada,
+        'periodo': colheita.periodoid.ano,
+        'data_pesagem': colheita.datapesagem,
+        'previsao_fim_colheita': colheita.previsaofimcolheita,
+        'terminada': "Sim" if colheita.terminada else "Não",
+        'data_termino': colheita.datapesagem if colheita.terminada else "Não terminada",
+    }
+
+    # Renderize o template
+    return render(request, 'harvestdetail.html', {'colheita': colheita_context})
+
 
 @login_required
 def vineyards(request):

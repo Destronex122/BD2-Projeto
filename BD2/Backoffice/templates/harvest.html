@@ -56,7 +56,7 @@
     <table class="table table-bordered" id="harvestTable">
         <thead>
             <tr>
-                <th>Vinha</th>
+                <th>Vinha Hec.</th>
                 <th>Casta</th>
                 <th>Peso total (kg)</th>
                 <th>Preço por tonelada (€)</th>
@@ -67,7 +67,7 @@
                 <th>Data de término</th>
             </tr>
         </thead>
-        <tbody>
+       <!-- <tbody>
             <tr data-vinha="Vinha A" data-casta="Casta X" data-peso-total="10,000" data-preco="200.00" data-data-pesagem="2024-10-01" data-periodo="2024-09-01 a 2024-10-15" data-previsao="2024-10-15" data-notas="A colheita está indo muito bem." data-termino="2024-10-10">
                 <td>Vinha A</td>
                 <td>Casta X</td>
@@ -90,6 +90,22 @@
                 <td>Colheita com um bom rendimento, mas observar a humidade.</td>
                 <td>-</td>
             </tr>
+        </tbody>-->
+        <tbody>
+            {% for colheita in colheitas %}
+            <tr  data-colheitaid="{{ colheita.colheitaid }}">
+                <td>{{ colheita.vinha_hectares }}</td>
+                <td>{{ colheita.casta_nome }}</td>
+                <td>{{ colheita.peso_total }}</td>
+                <td>{{ colheita.preco_por_tonelada }}</td>
+                <td>{{ colheita.data_ultima_pesagem }}</td>
+                <td>{{ colheita.periodo }}</td>
+                <td>{{ colheita.previsao_fim_colheita }}</td>
+                <td>{% if colheita.terminada %}Sim{% else %}Não{% endif %}</td>
+                <td>{{ colheita.data_termino }}</td>
+                
+            </tr>
+            {% endfor %}
         </tbody>
     </table>
     <br>
@@ -201,21 +217,18 @@
                 { pesoBruto: "1200.00 kg", pesoLiquido: "1150.00 kg", dataPesagem: "2024-10-03" },
             ]
         };
-
-        //CLICAR NAS LINHAS DA TABELA
         harvestTable.addEventListener('click', function(event) {
-            const targetRow = event.target.closest('tr');
-            const isHeader = event.target.closest('thead'); // Verifica se o clique foi no cabeçalho
-        
-            if (targetRow && !isHeader) { // Ignora o cabeçalho
-                const vinha = targetRow.getAttribute('data-vinha');
-                
-                // Redirecionar para a página de detalhe da colheita usando o nome da vinha
-                //window.location.href = `/backoffice/harvestdetail/${encodeURIComponent(vinha)}`;
-                window.location.href = `/backoffice/harvestdetail/`;
-            }
-        });
-
+    const targetRow = event.target.closest('tr'); // Obtém a linha clicada
+    const isHeader = event.target.closest('thead'); // Ignora cliques no cabeçalho
+    
+    if (targetRow && !isHeader) { 
+        const colheitaId = targetRow.getAttribute('data-colheitaid'); // Obtém o atributo "data-colheitaid"
+        if (colheitaId) {
+            // Redireciona para a URL correspondente
+            window.location.href = `/backoffice/harvestdetail/${colheitaId}/`;
+        }
+    }
+});
         //FILTERS
         document.getElementById('applyFilters').addEventListener('click', function() {
             const filterVinha = document.getElementById('filterVinha').value.toLowerCase();
