@@ -14,8 +14,8 @@ from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
-from .models import Users, Campos, Casta, Colheitas, Vinhas,Pesagens
-from django.utils import timezone
+from .models import Casta
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, contratos
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
@@ -126,8 +126,11 @@ def vineyards(request):
 
 @login_required
 def contracts(request):
-    return render(request, 'contracts.html')
+    contrato = contratos.objects.all()
+    return render(request, 'contracts.html', {'contracts': contrato})
+    
 
+@login_required
 @csrf_exempt
 @require_http_methods(['POST'])
 def save_marker_view(request):
@@ -219,8 +222,9 @@ def load_vineyards_view(request):
     return JsonResponse(vineyards, safe=False)
 
 @login_required
-def requestdetail(request):
-    return render(request, 'requestdetail.html')
+def requestdetail(request, pedidoid):
+    pedido = get_object_or_404(Pedidos, pedidoid=pedidoid)
+    return render(request, 'request_detail.html', {'pedido': pedido})
 
 @login_required
 def contractdetail(request):
@@ -228,7 +232,14 @@ def contractdetail(request):
 
 @login_required
 def request(request):
-    return render(request, 'request.html')
+    pedidos = Pedidos.objects.all()
+    users = Users.objects.all()
+    clientes = Clientes.objects.all()
+    return render(request, 'request.html', {
+        'clientes': clientes, 
+        'users': users,
+        'pedidos': pedidos,  
+    })
 
 @login_required
 def grapevariety(request):
