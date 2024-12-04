@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from .models import save_marker, load_markers, load_vineyards
+from .models import load_vineyards
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
@@ -14,8 +14,8 @@ from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
-from .models import Casta
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens
+from .models import Users, Campos, Casta, Colheitas, Vinhas,Pesagens
+from django.utils import timezone
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
@@ -128,16 +128,44 @@ def vineyards(request):
 def contracts(request):
     return render(request, 'contracts.html')
 
-@login_required
 @csrf_exempt
 @require_http_methods(['POST'])
 def save_marker_view(request):
     try:
-        request_body = json.loads(request.body.decode('utf-8'))
-        save_marker(request_body)
-        return JsonResponse({'message': 'Marcador salvo com sucesso!'})
+        data = json.loads(request.body.decode('utf-8'))
+        coordenadas = data.get('coordenadas')
+        nome = data.get('nome')
+        morada = data.get('morada')
+        cidade = data.get('cidade')
+
+        if not coordenadas or not nome or not morada or not cidade:
+            return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
+
+        campo = Campos.objects.create(
+            coordenadas=coordenadas,  # Coordenadas como JSON ou string
+            nome=nome,
+            morada=morada,
+            cidade=cidade,
+            pais="Portugal",
+            datacriacao=timezone.now()
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'campo': {
+                'campoid': campo.campoid,
+                'nome': campo.nome,
+                'morada': campo.morada,
+                'cidade': campo.cidade,
+                'pais': campo.pais,
+                'coordenadas': campo.coordenadas,
+                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
+            }
+        })
+
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
 
 @login_required    
 @csrf_exempt
@@ -151,15 +179,42 @@ def save_polygon_view(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@login_required
+@require_http_methods(['GET'])
 def load_markers_view(request):
-    markers = load_markers(request)
-    return JsonResponse(markers, safe=False)
+    try:
+        # Carregar todos os campos do banco de dados
+        campos = Campos.objects.all()
+        markers = []
+
+        for campo in campos:
+            markers.append({
+                'campoid': campo.campoid,
+                'coordenadas': campo.coordenadas,
+                'nome': campo.nome,
+                'morada': campo.morada,
+                'cidade': campo.cidade,
+                'pais': campo.pais,
+                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+        # Retorna os dados no formato JSON
+        return JsonResponse(markers, safe=False)
+
+    except Exception as e:
+        # Se ocorrer um erro, retorna uma resposta com erro
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+def load_croplands(request):
+    campos = Campos.objects.all().values('nome', 'cidade', 'morada', 'coordenadas')  # Obtém nome, cidade e coordenadas
+    campos_list = list(campos)  # Converte a QuerySet para lista de dicionários
+    return JsonResponse({'status': 'success', 'campos': campos_list})
+
+def mapa_campos(request):
+    campos = Campos.objects.all()  # Traz os dados da BD
+    return render(request, 'mapa.html', {'campos': campos})  # Passa a variável campos para o template
 
 @login_required
 def load_vineyards_view(request):
-    print(request)
-
     vineyards = load_vineyards(request)
     return JsonResponse(vineyards, safe=False)
 
@@ -204,48 +259,54 @@ def addvariety(request):
     grape_varieties = Casta.objects.all()  # Busque as castas na base de dados
     return render(request, 'addvariety.html', {'grape_varieties': grape_varieties})
 
-
+@csrf_exempt
+@require_http_methods(['POST'])
 def save_marker(request):
-    if request.method == 'POST':
+    try:
+        data = json.loads(request.body.decode('utf-8'))  # Recebe a requisição em JSON
+        #print('Dados recebidos:', data)  # Para depuração, veja os dados recebidos no console
+
+        coordenadas = data.get('coordenadas')
+        nome = data.get('nome')
+        morada = data.get('morada')
+        cidade = data.get('cidade')
+
+        # Verifique se todos os dados obrigatórios estão presentes
+        if not coordenadas or not nome or not morada or not cidade:
+            return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
+
+        # Separando as coordenadas em lat e lng
         try:
-            # Parse request data
-            data = json.loads(request.body)  # Parseando o JSON que vem do request
-            lat = data['lat']
-            lng = data['lng']
-            title = data['title']  # Nome do campo preenchido na modal
-            description = data['description']  # Cidade preenchida na modal
-            
-            # Salvar no MongoDB
-            mongo_data = {
-                "lat": lat,
-                "lng": lng,
-                "title": title,
-                "description": description,
-                "created_at": datetime.datetime.now()
+            lat, lng = map(float, coordenadas.split(','))
+            coordenadas_json = {'lat': lat, 'lng': lng}  # Salvar como JSON
+        except ValueError:
+            return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas'}, status=400)
+
+        # Criar um novo registro no banco de dados
+        print(coordenadas_json)
+        print("OOIOIO")
+        campo = Campos.objects.create(
+            coordenadas=coordenadas_json,  # Salvar as coordenadas como JSON
+            nome=nome,
+            morada=morada,
+            cidade=cidade,
+            pais="Portugal",  # País por padrão
+            datacriacao=timezone.now()  # Data de criação é a data e hora atual
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'campo': {
+                'campoid': campo.campoid,
+                'nome': campo.nome,
+                'morada': campo.morada,
+                'cidade': campo.cidade,
+                'pais': campo.pais,
+                'coordenadas': campo.coordenadas,  # Retorna o JSON das coordenadas
+                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
             }
-            collection.insert_one(mongo_data)
+        })
+    except Exception as e:
+        print(f"Erro ao salvar marcador: {str(e)}")  # Exibe o erro para depuração
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-            # Salvar no PostgreSQL
-            coordenadas = f"Lat: {lat}, Lng: {lng}"
-            morada = title #Nome do campo 
-            cidade = description  # 'Cidade' vem da descrição do formulário (campos da modal)
-            pais = "Portugal"  # Ajustar conforme necessário
-            data_criacao = datetime.datetime.now().date()
-
-            # Executar a stored procedure para inserir no PostgreSQL
-            with connection.cursor() as cursor:
-                cursor.callproc('inserircampo', [
-                    None,  # p_campoid - Coloque `None` se for autogerado
-                    coordenadas,  # p_coordenadas - Coordenadas formatadas
-                    morada,  # p_morada - Nome do campo preenchida na modal
-                    cidade,  # p_cidade - A cidade preenchida na modal
-                    pais,  # p_pais - Ajustado como 'Portugal'
-                    data_criacao  # p_datacriacao - Data atual
-                ])
-
-            return JsonResponse({'status': 'success', 'message': 'Campo guardado com sucesso no MongoDB e PostgreSQL.'})
-
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
-    
-    return JsonResponse({'status': 'error', 'message': 'Método não permitido'}, status=405)

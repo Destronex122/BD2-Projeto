@@ -1,7 +1,11 @@
 from pymongo import MongoClient
 from pymongo import MongoClient 
 from bson.json_util import dumps
+import json
+from django.http import JsonResponse
+from django.db import connection
 from django.db import models
+
 
 dbname='Interaction_Database'
 dbcollection="coordinates"
@@ -9,12 +13,12 @@ dbcollection="coordinates"
 client = MongoClient('mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/')
 db = client[dbname]
 
+# def save_marker(request):
+#     markers_collection = db[dbcollection]
+#     markers_collection.insert_one(request)
+#     return
 
 
-def save_marker(request):
-    markers_collection = db[dbcollection]
-    markers_collection.insert_one(request)
-    return
 
 # def save_polygon(request):
 #     markers_collection = db[dbcollection]
@@ -49,21 +53,54 @@ def save_polygon(request):
 
 
 
+# def load_markers(request):
+#     """
+#     Load markers from the database and return them as a list of JSON objects.
+    
+#     Returns:
+#         str: A JSON string representing the list of markers.
+#     """
+#     markers_collection = db[dbcollection]
+#     markers = markers_collection.find({"lat": {"$exists": True}})
+    
+#     # Convert the cursor to a list and then to JSON in one step
+#     json_data = dumps([marker for marker in markers], indent=2)
+#     print(json_data)
+    
+#     return json_data
+
 def load_markers(request):
-    """
-    Load markers from the database and return them as a list of JSON objects.
-    
-    Returns:
-        str: A JSON string representing the list of markers.
-    """
-    markers_collection = db[dbcollection]
-    markers = markers_collection.find({"lat": {"$exists": True}})
-    
-    # Convert the cursor to a list and then to JSON in one step
-    json_data = dumps([marker for marker in markers], indent=2)
-    print(json_data)
-    
-    return json_data
+    try:
+        # Query para buscar os dados dos campos
+        query = """
+            SELECT campoid, coordenadas, nome, morada, cidade, pais, datacriacao
+            FROM campos
+            WHERE coordenadas IS NOT NULL;
+        """
+        
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+        
+        # Formatando os dados para retornar como JSON
+        markers = []
+        for row in rows:
+            marker = {
+                'campoid': row[0],
+                'coordenadas': row[1],
+                'nome': row[2],
+                'morada': row[3],
+                'cidade': row[4],
+                'pais': row[5],
+                'datacriacao': row[6]
+            }
+            markers.append(marker)
+        
+        # Retornando os dados no formato JSON
+        return JsonResponse(markers, safe=False)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 def load_vineyards(request):
     """
@@ -80,6 +117,7 @@ def load_vineyards(request):
     print(json_data)
     
     return json_data
+
 #Modelo Cargo
 
 class Cargo(models.Model):
@@ -94,16 +132,19 @@ class Cargo(models.Model):
 #Modelo Campos
 
 class Campos(models.Model):
-    campoid = models.IntegerField(primary_key=True)
-    coordenadas = models.CharField(max_length=255)
-    morada = models.CharField(max_length=255)
-    cidade = models.CharField(max_length=100)
-    pais = models.CharField(max_length=100)
-    datacriacao = models.DateField()
+    campoid = models.AutoField(primary_key=True)  # Use AutoField para auto-incremento
+    coordenadas = models.JSONField()
+    nome = models.TextField()
+    morada = models.TextField()
+    cidade = models.TextField()
+    pais = models.TextField(default="Portugal")
+    datacriacao = models.DateTimeField()
 
     class Meta:
-        managed = False
-        db_table = 'campos'
+        db_table = 'campos'  # Definindo explicitamente o nome da tabela
+
+    def __str__(self):
+        return self.nome
 
 #Modelo User
 

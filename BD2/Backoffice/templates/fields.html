@@ -28,7 +28,7 @@
     <div style="display:flex; justify-content: space-between;">
         <div id="map" style="width: 650px; height: 450px; margin-right:24px"></div>
         <div style="width:50%;">
-            <table>
+            <table id="fields-table">
                 <thead>
                     <tr>
                         <th>Nome do campo</th>
@@ -37,94 +37,61 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Quinta do Douro</td>
-                        <td>Porto</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Quinta do Dão</td>
-                        <td>Viseu</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Quinta do Alentejo</td>
-                        <td>Alentejo</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Quinta de Mirandela</td>
-                        <td>Mirandela</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Quinta de Lagos</td>
-                        <td>Lagos</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height:25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
+                    {% if campos %}
+                        {% for campo in campos %}
+                            <tr>
+                                <td>{{ campo.nome }}</td>
+                                <td>{{ campo.cidade }}</td>
+                                <td>
+                                    <form method="GET" style="display:inline;">
+                                        <button type="submit">
+                                            <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                                        </button>
+                                    </form>
+                                    <form method="POST" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit">
+                                            <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="3" class="no-data-message">Ainda não há campos adicionados.</td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
-    
+
+    <!-- Modal para adicionar ou editar um campo -->
     <div id="myModal" class="sidebar">
         <div class="p-3">
             <div style="text-align:right; padding:0px 24px;">
                 <span class="close">&times;</span>
             </div>
-            <h2>Adicionar novo campo</h2>
-            <div id="formContainer" style=" margin-top: 15px;">
+            {% if campos.campoid != 0 %}
+                <h2>Editar campo</h2>
+            {% else %}
+                <h2>Adicionar campo</h2>
+            {% endif %}
+            <div id="formContainer" style="margin-top: 15px;">
                 <form method="POST">
                     {% csrf_token %}
                     <label for="name">Nome do campo:</label>
-                    <input style="width: 50%;" type="text" id="name" name="name" required>
+                    <input style="width: 50%;" type="text" id="name" name="nome" required>
 
-                    <label for="name">Localidade:</label>
-                    <input style="width: 50%;" type="text" id="name" name="name" required>
+                    <label for="morada">Morada:</label>
+                    <input style="width: 50%;" type="text" id="morada" name="morada" required>
+
+                    <label for="cidade">Cidade:</label>
+                    <input style="width: 50%;" type="text" id="cidade" name="cidade" required>
 
                     <label for="coordinates">Coordenadas:</label>
-                    <span id="coordinates" style="display: inline-block; width: 50%; padding: 5px; border: 1px solid #ccc; background-color: #f9f9f9;">Selecionar no mapa</span><br>
-                    <br/>
+                    <span id="coordinates" style="display: inline-block; width: 50%; padding: 5px; border: 1px solid #ccc; background-color: #f9f9f9;">Selecionar no mapa</span><br><br/>
                     <button type="submit">Guardar</button> 
                 </form>
             </div>
@@ -133,115 +100,147 @@
 
     <script>
         var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
-    
+
         map.removeControl(map.attributionControl);
-    
+
         var layerControl = L.control.layers({}, {}).addTo(map);
-    
-        // Adiciona a camada de mapa como camada inicial
+
         var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        }).addTo(map); // <-- Configurado para abrir no modo "Mapa"
-    
+        }).addTo(map);
+
         var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         });
-    
+
         layerControl.addBaseLayer(osmLayer, 'Mapa');
         layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
-    
+
         var croplandMarkers = L.layerGroup().addTo(map);
-    
-        fetch('/backoffice/load_croplands/', { method: 'GET' })
+
+        fetch('/load_croplands/', { method: 'GET' })
             .then(response => response.json())
-            .then(data => addCroplandsToMap(data))
+            .then(data => {
+                if (data.status === 'success') {
+                    addCroplandsToMap(data.campos);
+                } else {
+                    console.error('Erro ao carregar campos:', data.message);
+                }
+            })
             .catch(error => console.error('Erro ao carregar campos:', error));
-    
-        // Função para adicionar campos no mapa
-        function addCroplandsToMap(markers) {
-            let jsonArray = JSON.parse(markers); // Recebe array de campos
-            jsonArray.forEach(item => {
-                const latLng = [item.lat, item.lng]; // Posição do campo
-                const markerLayer = L.marker(latLng).bindPopup(item.description); // Mostra descrição ao clicar
-                
-                // Abre a modal e exibe o formulário ao clicar no marcador do campo
-                markerLayer.on('click', function() {
-                    document.getElementById('formContainer').style.display = 'block';
-                    openModal();
-                });
-                croplandMarkers.addLayer(markerLayer);
+
+        function addCroplandsToMap(campos) {
+            campos.forEach(item => {
+                if (item.coordenadas && item.coordenadas.lat && item.coordenadas.lng) {
+                    const latLng = [item.coordenadas.lat, item.coordenadas.lng];
+
+                    const markerLayer = L.marker(latLng)
+                        .bindPopup(`${item.nome}<br>${item.cidade}`)
+                        .on('click', function () {
+                            openModalWithData(item);
+                        });
+
+                    croplandMarkers.addLayer(markerLayer);
+                }
             });
         }
-    
-        // Substituir o texto do botão de marcador
+
         layerControl.addOverlay(croplandMarkers, 'Marcadores de campos');
-        L.drawLocal.draw.toolbar.buttons.marker = 'Marcar campo';
-    
-        // Configurar controlo de desenho para permitir apenas marcadores
+
         var drawControl = new L.Control.Draw({
-            draw: {                
-                marker: true, // Habilitar apenas marcador
-                polygon: false, // Desabilitar polígonos
+            draw: {
+                marker: true,
+                polygon: false,
                 circle: false,
                 rectangle: false,
                 circlemarker: false,
                 polyline: false
             },
-            edit: false // Desabilitar edição
+            edit: false
         }).addTo(map);
-    
 
         map.on('draw:created', function(e) {
             var type = e.layerType, layer = e.layer;
-            var csrfToken = '{{ csrf_token }}'; 
+            var csrfToken = '{{ csrf_token }}';  
+
             if (type == 'marker') {
                 document.getElementById('coordinates').textContent = `Lat: ${layer.getLatLng().lat}, Lng: ${layer.getLatLng().lng}`;
                 openModal();
-                // Adicionar um event listener para o botão de submissão do formulário da modal
+
                 document.querySelector('#formContainer form').onsubmit = function(event) {
-                    event.preventDefault();  // Evita a submissão padrão do formulário
-                    
-                    // Obter os valores do formulário
+                    event.preventDefault(); 
+
                     var nomeCampo = document.getElementById('name').value;
-                    var cidade = document.getElementById('cidade').value;  // Obter o valor do campo cidade
-                    
-                    // Salvar o marcador no MongoDB e PostgreSQL
+                    var morada = document.getElementById('morada').value;
+                    var cidade = document.getElementById('cidade').value;
+                    var coordenadas = layer.getLatLng(); // Coordenadas em formato lat/lng
+
                     fetch('/backoffice/save_marker/', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
                         body: JSON.stringify({
-                            lat: layer.getLatLng().lat, // Latitude
-                            lng: layer.getLatLng().lng, // Longitude
-                            title: cidade, // Cidade fornecida na modal
-                            description: nomeCampo  // Nome do campo fornecido na modal
+                            nome: nomeCampo,
+                            morada: morada,
+                            cidade: cidade,
+                            coordenadas: coordenadas
                         })
-                    }).then(response => response.json())
-                    .then(data => console.log('Campo guardado com sucesso:', data))
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const newRow = document.createElement('tr');
+                            newRow.innerHTML = `
+                                <td>${data.campo.nome}</td>
+                                <td>${data.campo.cidade}</td>
+                                <td>
+                                    <form method="GET" style="display:inline;">
+                                        <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
+                                    </form>
+                                    <form method="POST" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
+                                    </form>
+                                </td>
+                            `;
+                            document.querySelector('table tbody').appendChild(newRow);
+                            croplandMarkers.addLayer(layer);
+                            closeModal();
+                        } else {
+                            console.error('Erro ao salvar campo:', data.message);
+                        }
+                    })
                     .catch(error => console.error('Erro ao salvar campo:', error));
-                    
-                    document.getElementById('coordinates').textContent = `Lat: ${layer.getLatLng().lat}, Lng: ${layer.getLatLng().lng}`;
-                    croplandMarkers.addLayer(layer);
-                    openModal();
                 }
-            } 
+            }
         });
 
+        function openModalWithData(item) {
+            document.getElementById('name').value = item.nome;
+            document.getElementById('morada').value = item.morada || '';
+            document.getElementById('cidade').value = item.cidade || '';
+            document.getElementById('coordinates').textContent = `Lat: ${item.coordenadas.lat}, Lng: ${item.coordenadas.lng}`;
+            openModal();
+        }
 
-        //SIDEBAR
         const modal = document.getElementById('myModal');
-        const span = document.getElementsByClassName('close')[0];
-        const addFieldButton = document.getElementById('addFieldButton');
-        const formContainer = document.getElementById('formContainer');
-        
+        const closeBtn = document.querySelector('.close');
+
         function openModal() {
             modal.classList.add('open');
         }
 
-        span.onclick = function() {
+        function closeModal() {
             modal.classList.remove('open');
         }
-    </script> 
+
+        closeBtn.onclick = closeModal;
+
+    </script>
+
 </div>
 
 {% endblock %}
