@@ -250,3 +250,18 @@ class NotasPedidos(models.Model):
         managed = False
         db_table = 'notas_pedidos'
 
+#Modelo Campos
+class Pesagens(models.Model):
+    pesagemid = models.AutoField(primary_key=True)  
+    colheitaid = models.ForeignKey(
+        'Colheitas', 
+        on_delete=models.CASCADE, 
+        db_column='colheitaid'
+    )  
+    pesobruto = models.DecimalField(max_digits=10, decimal_places=2)  
+    pesoliquido = models.DecimalField(max_digits=10, decimal_places=2)  
+    datadepesagem = models.DateField() 
+
+    class Meta:
+        managed = False 
+        db_table = 'pesagens' 
