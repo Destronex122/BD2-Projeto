@@ -30,11 +30,11 @@
                     <li class="nav-item active">
                         <a class="nav-link" href="/backoffice/home">Início</a>
                     </li>
-                    <!-- {% if is_admin %}
+                    {% if is_admin %}
                         <li class="nav-item">
                             <a class="nav-link" href="/backoffice/fields">Campo</a>
                         </li>
-                    {% endif %} -->
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="/backoffice/vineyards">Vinhas</a>
                     </li>
@@ -52,18 +52,15 @@
                     </li>
                 </ul>
                 <div class="ml-auto d-flex align-items-center"> <!-- Alinhamento à direita com ícone de logout -->
+                    {% if is_admin %}
                     <select class="custom-select mr-3" name="vineyard" required>
-                        {% comment %}
                         {% for quinta in quintas %}
-                            <option value="{{ quinta.id }}">{{ quinta.nome }}</option>
+                            <option value={{ quinta.campoid }}>{{ quinta.nome }}</option>
                         {% endfor %}
-                        {% endcomment %}
-                        <option>Quinta do Douro</option>
-                        <option>Quinta do Dão</option>
-                        <option>Quinta do Alentejo</option>
-                        <option>Quinta de Mirandela</option>
-                        <option>Quinta de Lagos</option>
                     </select>
+                {% endif %}
+                
+
 
                     <!-- Dropdown do utilizador -->
                     <div class="dropdown">
