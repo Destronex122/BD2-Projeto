@@ -15,6 +15,7 @@ from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
 from .models import Casta
+from .models import contratos
 from .models import Users,Castas, Colheitas,Vinhas,Pesagens
 
 # Conectar ao MongoDB
@@ -126,7 +127,9 @@ def vineyards(request):
 
 @login_required
 def contracts(request):
-    return render(request, 'contracts.html')
+    contrato = contratos.objects.all()
+    return render(request, 'contracts.html', {'contracts': contrato})
+    
 
 @login_required
 @csrf_exempt

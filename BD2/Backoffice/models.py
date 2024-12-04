@@ -193,3 +193,16 @@ class Pesagens(models.Model):
         managed = False 
         db_table = 'pesagens' 
 
+#Modelo Contratos
+class contratos(models.Model):
+    contratoid = models.IntegerField(primary_key=True)
+    clienteid = models.ForeignKey('Clientes', models.DO_NOTHING, db_column='clienteid', blank=True, null=True)
+    idpedido_item = models.ForeignKey('PedidoItem', models.DO_NOTHING, db_column='pedidoitemid', blank=True, null=True)
+    datainicio = models.DateField(blank=True, null=True)
+    datafim = models.DateField(blank=True, null=True)
+    qtdeestimada = models.DecimalField(max_digits=65535, decimal_places=65535)
+    precoestimada = models.DecimalField(max_digits=65535, decimal_places=65535)
+
+    class Meta:
+        managed = False
+        db_table = 'contratos'
