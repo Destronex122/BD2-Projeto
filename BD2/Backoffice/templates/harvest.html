@@ -105,6 +105,10 @@
                 <td>{{ colheita.data_termino }}</td>
                 
             </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">Nenhuma colheita encontrada.</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>

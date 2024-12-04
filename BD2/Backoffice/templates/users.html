@@ -85,6 +85,10 @@
                 <td>{% if user.cargoid %}{{ user.cargoid.nome }}{% else %}-{% endif %}</td>
 
             </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">Nenhum utilizador encontrado.</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>

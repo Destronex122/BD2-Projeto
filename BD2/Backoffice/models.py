@@ -193,16 +193,75 @@ class Pesagens(models.Model):
         managed = False 
         db_table = 'pesagens' 
 
-#Modelo Contratos
-class contratos(models.Model):
-    contratoid = models.IntegerField(primary_key=True)
-    clienteid = models.ForeignKey('Clientes', models.DO_NOTHING, db_column='clienteid', blank=True, null=True)
-    idpedido_item = models.ForeignKey('PedidoItem', models.DO_NOTHING, db_column='pedidoitemid', blank=True, null=True)
-    datainicio = models.DateField(blank=True, null=True)
-    datafim = models.DateField(blank=True, null=True)
-    qtdeestimada = models.DecimalField(max_digits=65535, decimal_places=65535)
-    precoestimada = models.DecimalField(max_digits=65535, decimal_places=65535)
+#Modelo Estados Aprovações
+class Estadosaprovacoes(models.Model):
+    idaprovacao = models.IntegerField(primary_key=True)
+    nome = models.CharField(max_length=100)
 
     class Meta:
         managed = False
-        db_table = 'contratos'
+        db_table = 'estadosaprovacoes'
+
+#Modelo Clientes
+class Clientes(models.Model):
+    clienteid = models.IntegerField(primary_key=True)
+    isempresa = models.BooleanField()
+    nif = models.IntegerField()
+    contacto = models.CharField(max_length=100)
+    morada = models.CharField(max_length=255)
+
+    class Meta:
+        managed = False
+        db_table = 'clientes'
+
+#Modelo pedidos
+class Pedidos(models.Model):
+    pedidoid = models.IntegerField(primary_key=True)
+    clienteid = models.ForeignKey(Clientes, models.DO_NOTHING, db_column='clienteid', blank=True, null=True)
+    datainicio = models.DateField()
+    datafim = models.DateField(blank=True, null=True)
+    aprovadorid = models.ForeignKey('Users', models.DO_NOTHING, db_column='aprovadorid', blank=True, null=True)
+    precoestimado = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'pedidos'
+        
+#Modelo pedidositem
+class PedidosItem(models.Model):
+    idpedido_item = models.IntegerField(primary_key=True)
+    idpedido = models.ForeignKey(Pedidos, models.DO_NOTHING, db_column='idpedido', blank=True, null=True)
+    castaid = models.ForeignKey(Castas, models.DO_NOTHING, db_column='castaid', blank=True, null=True)
+    quantidade = models.DecimalField(max_digits=65535, decimal_places=65535)
+    estadoaprovacaoid = models.ForeignKey(Estadosaprovacoes, models.DO_NOTHING, db_column='estadoaprovacaoid', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'pedidos_item'
+
+#Modelo NotasPedidos
+class NotasPedidos(models.Model):
+    notaid = models.IntegerField(primary_key=True)
+    pedidoid = models.ForeignKey('Pedidos', models.DO_NOTHING, db_column='pedidoid', blank=True, null=True)
+    notas = models.CharField(max_length=500, blank=True, null=True)
+    data = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'notas_pedidos'
+
+#Modelo Campos
+class Pesagens(models.Model):
+    pesagemid = models.AutoField(primary_key=True)  
+    colheitaid = models.ForeignKey(
+        'Colheitas', 
+        on_delete=models.CASCADE, 
+        db_column='colheitaid'
+    )  
+    pesobruto = models.DecimalField(max_digits=10, decimal_places=2)  
+    pesoliquido = models.DecimalField(max_digits=10, decimal_places=2)  
+    datadepesagem = models.DateField() 
+
+    class Meta:
+        managed = False 
+        db_table = 'pesagens' 
