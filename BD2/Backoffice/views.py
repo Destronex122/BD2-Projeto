@@ -15,7 +15,7 @@ from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
 from .models import Casta
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
@@ -164,8 +164,9 @@ def load_vineyards_view(request):
     return JsonResponse(vineyards, safe=False)
 
 @login_required
-def requestdetail(request):
-    return render(request, 'requestdetail.html')
+def requestdetail(request, pedidoid):
+    pedido = get_object_or_404(Pedidos, pedidoid=pedidoid)
+    return render(request, 'request_detail.html', {'pedido': pedido})
 
 @login_required
 def contractdetail(request):
@@ -173,7 +174,14 @@ def contractdetail(request):
 
 @login_required
 def request(request):
-    return render(request, 'request.html')
+    pedidos = Pedidos.objects.all()
+    users = Users.objects.all()
+    clientes = Clientes.objects.all()
+    return render(request, 'request.html', {
+        'clientes': clientes, 
+        'users': users,
+        'pedidos': pedidos,  
+    })
 
 @login_required
 def grapevariety(request):
