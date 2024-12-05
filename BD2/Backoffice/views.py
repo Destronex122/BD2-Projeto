@@ -15,7 +15,7 @@ from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
 from .models import Casta
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, contratos, Campos,Transportes
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes
 from django.utils import timezone
 
 # Conectar ao MongoDB
