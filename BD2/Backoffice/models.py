@@ -357,7 +357,7 @@ class Estadostransporte(models.Model):
 #Modelo recibos
 class Recibos(models.Model):
     reciboid = models.AutoField(primary_key=True)
-    idcontrato = models.ForeignKey(contratos, models.DO_NOTHING, db_column='idcontrato', blank=True, null=True)
+    idcontrato = models.ForeignKey(Contratos, models.DO_NOTHING, db_column='idcontrato', blank=True, null=True)
     datainicio = models.DateField()
     precofinal = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
     colheitaid = models.ForeignKey(Colheitas, models.DO_NOTHING, db_column='colheitaid', blank=True, null=True)

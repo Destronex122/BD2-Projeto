@@ -70,8 +70,9 @@ def delivery(request):
     return render(request, 'delivery.html', {'Transportes' : transporte })
 
 @login_required
-def deliverydetail(request):
-    return render(request, 'deliverydetail.html')
+def deliverydetail(request,transposteid):
+    transporte = get_object_or_404 (Transportes, idtransposte = transposteid ) 
+    return render(request, 'deliverydetail.html', {'Transportes' : transporte })
 
 @login_required
 def harvest(request):
