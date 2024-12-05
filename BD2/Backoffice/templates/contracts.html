@@ -52,7 +52,7 @@
         </thead>
         <tbody>
             {% for contrato in contrato %}
-            <tr>
+            <tr  data-contratoid="{{ contrato.contratoid}}">
                 <td>{{ contrato.contratoid}}</td>
                 <td>{{ contrato.clienteid.nif}}</td>
                 <td>{{ contrato.datainicio }}</td>
@@ -70,11 +70,14 @@
     
 
     <script>
-
-        document.getElementById('contractTable').addEventListener('click', function(event) {
+        document.getElementById('contractTable').addEventListener('click', function(event){
             const targetRow = event.target.closest('tr');
-            if (targetRow && !targetRow.closest('thead')) {
-                window.location.href = `/backoffice/contractdetail/`; // Adjust with appropriate URL logic
+            if(targetRow && !targetRow.closest('thead')){
+                const contratoid = targetRow.dataset.contratoid;
+                if(contratoid){
+                    console.log(`Redirecionando para userdetail com ID: ${contratoid}`);
+                    window.location.href = `/backoffice/contractdetail/${contratoid}/`;
+                }
             }
         });
     </script>

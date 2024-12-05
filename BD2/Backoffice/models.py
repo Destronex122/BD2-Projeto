@@ -312,10 +312,10 @@ class Pesagens(models.Model):
 class Contratos(models.Model):
     contratoid = models.IntegerField(primary_key=True)
     clienteid = models.ForeignKey(
-        'Clientes', models.DO_NOTHING, db_column='clienteid', blank=True, null=True
+        Clientes, models.DO_NOTHING, db_column='clienteid', blank=True, null=True
     )
     idpedido_item = models.ForeignKey(
-        'PedidosItem', models.DO_NOTHING, db_column='idpedido_item', blank=True, null=True
+        PedidosItem, models.DO_NOTHING, db_column='idpedido_item', blank=True, null=True
     )
     datainicio = models.DateField(blank=True, null=True)
     datafim = models.DateField(blank=True, null=True)
