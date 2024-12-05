@@ -228,8 +228,12 @@ def requestdetail(request, pedidoid):
     return render(request, 'requestdetail.html', {'pedido': pedido})
 
 @login_required
-def contractdetail(request):
-    return render(request, 'contractdetail.html')
+def contractdetail(request, contratoid):
+    contrato = get_object_or_404(Contratos, contratoid=contratoid)
+    cliente = contrato.clienteid  
+    return render(request, 'contractdetail.html', {'contrato': contrato, 'cliente': cliente})
+
+
 
 @login_required
 def request(request):
