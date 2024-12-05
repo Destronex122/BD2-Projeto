@@ -127,8 +127,8 @@ def vineyards(request):
 
 @login_required
 def contracts(request):
-    contrato = contratos.objects.all()
-    return render(request, 'contracts.html', {'contracts': contrato})
+    contratos_list = contratos.objects.all()
+    return render(request, 'contracts.html', {'contrato': contratos_list})
     
 
 @login_required
