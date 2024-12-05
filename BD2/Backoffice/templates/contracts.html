@@ -51,18 +51,23 @@
             </tr>
         </thead>
         <tbody>
-            {% for contrato in contratos %}
+            {% for contrato in contrato %}
             <tr>
-                <td>{{ contrato.clienteid }}</td>
-                <td>{{ contrato.idpedido_item}}</td>
-                <td>{{ contrato.datainicio}}</td>
+                <td>{{ contrato.contratoid}}</td>
+                <td>{{ contrato.clienteid.nif}}</td>
+                <td>{{ contrato.datainicio }}</td>
                 <td>{{ contrato.datafim}}</td>
-                <td>{{ contrato.qtdeestimada}}</td>
-                <td>{{ contrato.precoestimado}}</td>
+                <td>{{ contrato.qtdeestimada }}</td>
+                <td>{{ contrato.precoestimado }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">No contracts found.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    
 
     <script>
 
