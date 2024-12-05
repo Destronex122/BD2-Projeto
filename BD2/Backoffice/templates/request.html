@@ -158,72 +158,16 @@
     </div>
 
     <script>
- 
-
-        // Função para adicionar o pedido via AJAX
-        function addRequest(event) {
-            event.preventDefault();  // Impede o envio normal do formulário
-
-            // Obtém os valores dos campos do formulário
-            const clienteid = document.getElementById('clienteid').value;
-            const aprovadorid = document.getElementById('aprovadorid').value;
-            const datainicio = document.getElementById('newDataInicio').value;
-            const datafim = document.getElementById('newDataFim').value;
-            const precoestimado = document.getElementById('newPrecoEstimado').value;
-            const notas = document.getElementById('newNotas').value;
-
-            const data = {
-                clienteid: clienteid,
-                aprovadorid: aprovadorid,
-                datainicio: datainicio,
-                datafim: datafim,
-                precoestimado: precoestimado,
-                notas: notas
-            };
-
-            // Envia os dados para o servidor via AJAX
-            fetch('/backoffice/request/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Atualiza a tabela de pedidos com o novo pedido
-                    const pedidosTable = document.getElementById('requestTable').getElementsByTagName('tbody')[0];
-                    const newRow = pedidosTable.insertRow();
-                    newRow.innerHTML = `
-                        <tr>
-                            <td>${data.pedido.pedidoid}</td>
-                            <td>${data.pedido.datainicio}</td>
-                            <td>${data.pedido.datafim}</td>
-                            <td>${data.pedido.precoestimado}</td>
-                            <td>${data.pedido.aprovadorid}</td>
-                        </tr>
-                    `;
-                    closeAddRequestModal();  // Fecha a modal
-                } else {
-                    console.error('Erro ao adicionar pedido:', data.message);
+        document.getElementById('requestTable').addEventListener('click', function(event){
+            const targetRow = event.target.closest('tr');
+            if(targetRow && !targetRow.closest('thead')){
+                const pedidoid = targetRow.dataset.pedidoid;
+                if(pedidoid){
+                    console.log(`Redirecionando para userdetail com ID: ${pedidoid}`);
+                    window.location.href = `/backoffice/requestdetail/${pedidoid}/`;
                 }
-            })
-            .catch(error => console.error('Erro:', error));
-        }
-
-        document.getElementById('requestTable').addEventListener('click', function(event) {
-    const targetRow = event.target.closest('tr'); // Captura a linha clicada
-    if (targetRow && !targetRow.closest('thead')) { // Garante que não seja o cabeçalho
-        const pedidoId = targetRow.dataset.pedidoId;  // Obtém o atributo data-pedido-id (ID do pedido)
-        if (pedidoId) {
-            console.log(`Redirecionando para requestdetail com ID: ${pedidoId}`); // Verifica no console
-            window.location.href = `/backoffice/requestdetail/${pedidoId}/`; // Redireciona
-        }
-    }
-});
-
+            }
+        });
     </script>
 </div>
 

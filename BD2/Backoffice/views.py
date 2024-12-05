@@ -225,7 +225,7 @@ def load_vineyards_view(request):
 @login_required
 def requestdetail(request, pedidoid):
     pedido = get_object_or_404(Pedidos, pedidoid=pedidoid)
-    return render(request, 'request_detail.html', {'pedido': pedido})
+    return render(request, 'requestdetail.html', {'pedido': pedido})
 
 @login_required
 def contractdetail(request):
