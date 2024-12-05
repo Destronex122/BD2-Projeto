@@ -325,3 +325,60 @@ class Contratos(models.Model):
     class Meta:
         managed = False
         db_table = 'contratos'
+
+#Modelo metodospagamento
+class Metodospagamento(models.Model):
+    idmetodopagamento = models.AutoField(primary_key=True)
+    nome = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'metodospagamento'
+
+#Modelo estado recibo
+class Estadosrecibo(models.Model):
+    idestado = models.AutoField(primary_key=True)
+    nome = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'estadosrecibo'
+
+#Modelo estados transporte
+class Estadostransporte(models.Model):
+    idestado = models.AutoField(primary_key=True)
+    nome = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'estadostransporte'
+
+
+#Modelo recibos
+class Recibos(models.Model):
+    reciboid = models.AutoField(primary_key=True)
+    idcontrato = models.ForeignKey(contratos, models.DO_NOTHING, db_column='idcontrato', blank=True, null=True)
+    datainicio = models.DateField()
+    precofinal = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
+    colheitaid = models.ForeignKey(Colheitas, models.DO_NOTHING, db_column='colheitaid', blank=True, null=True)
+    metodopagamento = models.ForeignKey(Metodospagamento, models.DO_NOTHING, db_column='metodopagamento', blank=True, null=True)
+    estadoid = models.ForeignKey(Estadosrecibo, models.DO_NOTHING, db_column='estadoid', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'recibos'
+
+#Modelo Transporte
+class Transportes(models.Model):
+    idtransporte = models.AutoField(primary_key=True)
+    reciboid = models.ForeignKey(Recibos, models.DO_NOTHING, db_column='reciboid', blank=True, null=True)
+    morada = models.TextField()
+    data = models.DateField()
+    precotransporte = models.DecimalField(max_digits=65535, decimal_places=65535)
+    precokm = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
+    estadoid = models.ForeignKey(Estadostransporte, models.DO_NOTHING, db_column='estadoid', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'transportes'
+

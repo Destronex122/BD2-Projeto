@@ -49,23 +49,25 @@
             <tr>
                 <th>Nº da encomenda</th>
                 <th>Endereço</th>
-                <th>Código postal</th>
-                <th>Cidade</th>
+                <th>Data</th>
+                <th>Preço transporte</th>
+                <th>Estado </th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>E123123</td>
-                <td>Quinta do Douro</td>
-                <td>3000-100</td>
-                <td>Porto</td>
+            {% for transporte in Transportes %}
+            <tr data-idtransporte = "{{ transporte.idtransporte}}">
+                <td> transporte.idtransporte</td>
+                <td> transporte.morada</td>
+                <td>transporte.data</td>
+                <td>transporte.transporte</td>
+                <td>transporte.estadoid.nome</td>
             </tr>
+            {% empty %}
             <tr>
-                <td>E234432</td>
-                <td>Quinta do Dão</td>
-                <td>3500-100</td>
-                <td>Viseu</td>
+                <td colspan="5">Nenhuma encomenda encontrada.</td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
 
