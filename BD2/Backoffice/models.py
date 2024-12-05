@@ -309,7 +309,7 @@ class Pesagens(models.Model):
 
 
 #Modelo Contratos
-class contratos(models.Model):
+class Contratos(models.Model):
     contratoid = models.IntegerField(primary_key=True)
     clienteid = models.ForeignKey(
         'Clientes', models.DO_NOTHING, db_column='clienteid', blank=True, null=True
