@@ -124,13 +124,12 @@ def harvestdetail(request, colheitaid):
 
 
 @login_required
-def vineyards(request):
-    return render(request, 'vineyards.html')
-
-@login_required
 def contracts(request):
     contratos_list = Contratos.objects.all()
     return render(request, 'contracts.html', {'contrato': contratos_list})
+
+
+
     
 
 @login_required
