@@ -15,7 +15,7 @@ from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
 from .models import Casta
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo
 from django.utils import timezone
 
 # Conectar ao MongoDB
@@ -61,8 +61,33 @@ def userdetail(request, userid):
     return render(request, 'userdetail.html', {'user': user})
 @login_required
 def users(request):
+    #Filtros
+    filter_name = request.GET.get('filterName', '').strip()
+    filter_email = request.GET.get('filterEmail', '').strip()
+    filter_cargo = request.GET.get('filterCargo', '').strip()
+
+
     users = Users.objects.select_related('campoid', 'cargoid').all()
-    return render(request, 'users.html', {'users': users})
+
+    if filter_name:
+        users = users.filter(nome__icontains=filter_name)
+    if filter_email:
+        users = users.filter(email__icontains=filter_email)
+    if filter_cargo:
+        users = users.filter(cargoid__nome__icontains=filter_cargo)
+
+    #Cargos para a dropdown
+    cargos = Cargo.objects.all()
+
+    return render(request, 'users.html', {
+        'users': users,
+        'cargos':cargos,
+        'filters': {
+            'filterName': filter_name,
+            'filterEmail': filter_email,
+            'filterCargo': filter_cargo,
+        },
+    })
 
 @login_required
 def delivery(request):
