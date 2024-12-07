@@ -76,11 +76,23 @@ def deliverydetail(request,transposteid):
 
 @login_required
 def harvest(request):
+    #Filtros
+    filter_hectares = request.GET.get('filterHectares', '').strip()
+    filter_casta = request.GET.get('filterCasta', '').strip()
+    filter_data_inicio = request.GET.get('filterDataInicio', None)
+
     colheitas = Colheitas.objects.select_related('vinhaid', 'vinhaid__castaid', 'periodoid').all()
+    
+    if filter_hectares:
+        colheitas = colheitas.filter(vinhaid__hectares__exact=filter_hectares)
+    if filter_casta:
+        colheitas = colheitas.filter(vinhaid__castaid__nome__icontains=filter_casta)
+    if filter_data_inicio:
+        colheitas = colheitas.filter(datapesagem__gte=filter_data_inicio)
+
     colheitas_context = []
 
     for colheita in colheitas:
-        # Calcular a data de término baseada no status de 'terminada'
         if colheita.terminada:
             ultima_pesagem = Pesagens.objects.filter(colheitaid=colheita).aggregate(ultima_data=Max('datadepesagem'))['ultima_data']
             data_termino = ultima_pesagem
@@ -88,16 +100,16 @@ def harvest(request):
             data_termino = "Não terminada"
 
         colheitas_context.append({
-            'colheitaid': colheita.colheitaid,  # Inclua colheitaid no contexto
+            'colheitaid': colheita.colheitaid, 
             'vinha_hectares': colheita.vinhaid.hectares if colheita.vinhaid else None,
             'casta_nome': colheita.vinhaid.castaid.nome if colheita.vinhaid and colheita.vinhaid.castaid else None,
             'peso_total': colheita.pesototal,
             'preco_por_tonelada': colheita.precoportonelada,
             'data_ultima_pesagem': colheita.datapesagem,
-            'periodo': colheita.periodoid,
+            'periodo': f"{colheita.periodoid.datainicio} a {colheita.periodoid.datafim}" if colheita.periodoid else None,
             'previsao_fim_colheita': colheita.previsaofimcolheita,
             'terminada': "Sim" if colheita.terminada else "Não",
-            'data_termino': data_termino,
+            'data_termino': data_termino if data_termino else "Não terminada",
         })
 
     return render(request, 'harvest.html', {'colheitas': colheitas_context})
@@ -106,7 +118,6 @@ def harvest(request):
 def harvestdetail(request, colheitaid):
     colheita = get_object_or_404(Colheitas, colheitaid=colheitaid)
 
-    # Extraia as informações relevantes para o template
     colheita_context = {
         'vinha_nome': colheita.vinhaid.hectares if colheita.vinhaid else None,
         'casta_nome': colheita.vinhaid.castaid.nome if colheita.vinhaid and colheita.vinhaid.castaid else None,
@@ -119,7 +130,6 @@ def harvestdetail(request, colheitaid):
         'data_termino': colheita.datapesagem if colheita.terminada else "Não terminada",
     }
 
-    # Renderize o template
     return render(request, 'harvestdetail.html', {'colheita': colheita_context})
 
 

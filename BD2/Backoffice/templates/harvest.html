@@ -29,26 +29,40 @@
     <p>Selecione uma colheita para visualizar todo o detalhe e as pesagens efetuadas.</p> 
     <!-- Filtros para a tabela -->
     <div class="filters" style="margin-bottom: 20px;">
-        <form id="filterForm">
+        <form method="get" id="filterForm" style="margin-bottom: 20px;">
             <div style="display: flex; gap: 10px;">
                 <div class="form-group">
-                    <label for="filterVinha">Vinha:</label>
-                    <input type="text" id="filterVinha" class="form-control" placeholder="Ex: Vinha A">
+                    <label for="filterHectares">Hectares:</label>
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        id="filterHectares" 
+                        name="filterHectares" 
+                        class="form-control" 
+                        value="{{ request.GET.filterHectares|default:'' }}" 
+                        placeholder="Ex: 10.5">
                 </div>
                 <div class="form-group">
                     <label for="filterCasta">Casta:</label>
-                    <input type="text" id="filterCasta" class="form-control" placeholder="Ex: Casta X">
+                    <input 
+                        type="text" 
+                        id="filterCasta" 
+                        name="filterCasta" 
+                        class="form-control" 
+                        value="{{ request.GET.filterCasta|default:'' }}" 
+                        placeholder="Ex: Casta X">
                 </div>
                 <div class="form-group">
                     <label for="filterDataInicio">Data de início:</label>
-                    <input type="date" id="filterDataInicio" class="form-control">
+                    <input 
+                        type="date" 
+                        id="filterDataInicio" 
+                        name="filterDataInicio" 
+                        class="form-control" 
+                        value="{{ request.GET.filterDataInicio|default:'' }}">
                 </div>
-                <div class="form-group">
-                    <label for="filterDataFim">Data de fim:</label>
-                    <input type="date" id="filterDataFim" class="form-control">
-                </div>
-                <div class="form-group" style="margin-top:24px; width:10%">
-                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                <div class="form-group" style="margin-top: 24px;">
+                    <button type="submit" id="applyFilters" class="button">Aplicar</button>
                 </div>
             </div>
         </form>
@@ -67,30 +81,6 @@
                 <th>Data de término</th>
             </tr>
         </thead>
-       <!-- <tbody>
-            <tr data-vinha="Vinha A" data-casta="Casta X" data-peso-total="10,000" data-preco="200.00" data-data-pesagem="2024-10-01" data-periodo="2024-09-01 a 2024-10-15" data-previsao="2024-10-15" data-notas="A colheita está indo muito bem." data-termino="2024-10-10">
-                <td>Vinha A</td>
-                <td>Casta X</td>
-                <td>10,000</td>
-                <td>200.00</td>
-                <td>2024-10-01</td>
-                <td>2024-09-01 a 2024-10-15</td>
-                <td>2024-10-15</td>
-                <td>A colheita está a ir bem, sem pragas até o momento.</td>
-                <td>-</td>
-            </tr>
-            <tr data-vinha="Vinha B" data-casta="Casta Y" data-peso-total="8,500" data-preco="180.00" data-data-pesagem="2024-10-02" data-periodo="2024-08-15 a 2024-10-05" data-previsao="2024-10-05" data-notas="Colheita com um bom rendimento." data-termino="2024-10-03">
-                <td>Vinha B</td>
-                <td>Casta Y</td>
-                <td>8,500</td>
-                <td>180.00</td>
-                <td>2024-10-02</td>
-                <td>2024-08-15 a 2024-10-05</td>
-                <td>2024-10-05</td>
-                <td>Colheita com um bom rendimento, mas observar a humidade.</td>
-                <td>-</td>
-            </tr>
-        </tbody>-->
         <tbody>
             {% for colheita in colheitas %}
             <tr  data-colheitaid="{{ colheita.colheitaid }}">
