@@ -91,9 +91,29 @@ def users(request):
 
 @login_required
 def delivery(request):
-    transporte = Transportes.objects.all()
-    return render(request, 'delivery.html', {'Transportes' : transporte })
 
+    #Filtros
+    filter_number = request.GET.get('filterNumber', '').strip()
+    filter_date = request.GET.get('filterDate', None)
+    filter_state = request.GET.get('filterState', '').strip()
+
+    transporte = Transportes.objects.all()
+
+    if filter_number:
+        transporte = transporte.filter(idtransporte__icontains=filter_number)
+    if filter_date:
+        transporte = transporte.filter(data=filter_date)
+    if filter_state:
+        transporte = transporte.filter(estadoid__nome__icontains=filter_state)
+
+    return render(request, 'delivery.html', {
+        'Transportes': transporte,
+        'filters': {
+            'filterNumber': filter_number,
+            'filterDate': filter_date,
+            'filterState': filter_state,
+        },
+    })
 @login_required
 def deliverydetail(request,transposteid):
     transporte = get_object_or_404 (Transportes, idtransposte = transposteid ) 
