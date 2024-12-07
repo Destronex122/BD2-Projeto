@@ -19,24 +19,28 @@
     </div>
     <p>Selecione um contrato para visualizar o detalhe do mesmo.</p> 
 
-    <!-- Filtros para a tabela -->
-    <div class="filters" style="margin-bottom: 20px;">
-        <form id="filterForm">
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group">
-                    <label for="filterNumber">Nº do contrato:</label>
-                    <input type="text" id="filterNumber" class="form-control" placeholder="Ex: E123123">
-                </div>
-                <div class="form-group">
-                    <label for="filterDate">Data de início do contrato:</label>
-                    <input type="date" id="filterDate" class="form-control">
-                </div>
-                <div class="form-group" style="margin-top:24px; width:10%">
-                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
-                </div>
+   <!-- Filtros para a tabela -->
+<!-- Filtros para a tabela -->
+<div class="filters" style="margin-bottom: 20px;">
+    <form id="filterForm">
+        <div style="display: flex; gap: 10px;">
+            <div class="form-group">
+                <label for="filterNumber">Nº do contrato:</label>
+                <input type="text" id="filterNumber" class="form-control" placeholder="Ex: E123123">
             </div>
-        </form>
-    </div>
+            <div class="form-group">
+                <label for="filterDate">Data de início do contrato:</label>
+                <input type="date" id="filterDate" class="form-control">
+            </div>
+            <div class="form-group" style="margin-top:24px; width:10%">
+                <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+
 
     <!-- Tabela de entregas -->
     <table class="table table-bordered" id="contractTable">
@@ -51,25 +55,33 @@
             </tr>
         </thead>
         <tbody>
-            {% for contrato in contratos %}
-            <tr>
-                <td>{{ contrato.clienteid }}</td>
-                <td>{{ contrato.idpedido_item}}</td>
-                <td>{{ contrato.datainicio}}</td>
+            {% for contrato in contrato %}
+            <tr  data-contratoid="{{ contrato.contratoid}}">
+                <td>{{ contrato.contratoid}}</td>
+                <td>{{ contrato.clienteid.nif}}</td>
+                <td>{{ contrato.datainicio }}</td>
                 <td>{{ contrato.datafim}}</td>
-                <td>{{ contrato.qtdeestimada}}</td>
-                <td>{{ contrato.precoestimado}}</td>
+                <td>{{ contrato.qtdeestimada }}</td>
+                <td>{{ contrato.precoestimado }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">No contracts found.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    
 
     <script>
-
-        document.getElementById('contractTable').addEventListener('click', function(event) {
+        document.getElementById('contractTable').addEventListener('click', function(event){
             const targetRow = event.target.closest('tr');
-            if (targetRow && !targetRow.closest('thead')) {
-                window.location.href = `/backoffice/contractdetail/`; // Adjust with appropriate URL logic
+            if(targetRow && !targetRow.closest('thead')){
+                const contratoid = targetRow.dataset.contratoid;
+                if(contratoid){
+                    console.log(`Redirecionando para userdetail com ID: ${contratoid}`);
+                    window.location.href = `/backoffice/contractdetail/${contratoid}/`;
+                }
             }
         });
     </script>

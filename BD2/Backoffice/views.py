@@ -15,7 +15,7 @@ from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
 from .models import Casta
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, contratos, Campos
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes
 from django.utils import timezone
 
 # Conectar ao MongoDB
@@ -66,11 +66,13 @@ def users(request):
 
 @login_required
 def delivery(request):
-    return render(request, 'delivery.html')
+    transporte = Transportes.objects.all()
+    return render(request, 'delivery.html', {'Transportes' : transporte })
 
 @login_required
-def deliverydetail(request):
-    return render(request, 'deliverydetail.html')
+def deliverydetail(request,transposteid):
+    transporte = get_object_or_404 (Transportes, idtransposte = transposteid ) 
+    return render(request, 'deliverydetail.html', {'Transportes' : transporte })
 
 @login_required
 def harvest(request):
@@ -122,13 +124,12 @@ def harvestdetail(request, colheitaid):
 
 
 @login_required
-def vineyards(request):
-    return render(request, 'vineyards.html')
-
-@login_required
 def contracts(request):
-    contrato = contratos.objects.all()
-    return render(request, 'contracts.html', {'contracts': contrato})
+    contratos_list = Contratos.objects.all()
+    return render(request, 'contracts.html', {'contrato': contratos_list})
+
+
+
     
 
 @login_required
@@ -225,11 +226,15 @@ def load_vineyards_view(request):
 @login_required
 def requestdetail(request, pedidoid):
     pedido = get_object_or_404(Pedidos, pedidoid=pedidoid)
-    return render(request, 'request_detail.html', {'pedido': pedido})
+    return render(request, 'requestdetail.html', {'pedido': pedido})
 
 @login_required
-def contractdetail(request):
-    return render(request, 'contractdetail.html')
+def contractdetail(request, contratoid):
+    contrato = get_object_or_404(Contratos, contratoid=contratoid)
+    cliente = contrato.clienteid  
+    return render(request, 'contractdetail.html', {'contrato': contrato, 'cliente': cliente})
+
+
 
 @login_required
 def request(request):

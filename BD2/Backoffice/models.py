@@ -309,14 +309,76 @@ class Pesagens(models.Model):
 
 
 #Modelo Contratos
-class contratos(models.Model):
+class Contratos(models.Model):
     contratoid = models.IntegerField(primary_key=True)
-    clienteid = models.ForeignKey('Clientes', models.DO_NOTHING, db_column='clienteid', blank=True, null=True)
-    idpedido_item = models.ForeignKey('PedidosItem', models.DO_NOTHING, db_column='idpedido_item', blank=True, null=True)
+    clienteid = models.ForeignKey(
+        Clientes, models.DO_NOTHING, db_column='clienteid', blank=True, null=True
+    )
+    idpedido_item = models.ForeignKey(
+        PedidosItem, models.DO_NOTHING, db_column='idpedido_item', blank=True, null=True
+    )
     datainicio = models.DateField(blank=True, null=True)
     datafim = models.DateField(blank=True, null=True)
-    qtdeestimada = models.DecimalField(max_digits=65535, decimal_places=65535)
-    precoestimada = models.DecimalField(max_digits=65535, decimal_places=65535)
+    qtdeestimada = models.DecimalField(max_digits=10, decimal_places=2)
+    precoestimado = models.DecimalField(max_digits=12, decimal_places=2)
 
     class Meta:
         managed = False
+        db_table = 'contratos'
+
+#Modelo metodospagamento
+class Metodospagamento(models.Model):
+    idmetodopagamento = models.AutoField(primary_key=True)
+    nome = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'metodospagamento'
+
+#Modelo estado recibo
+class Estadosrecibo(models.Model):
+    idestado = models.AutoField(primary_key=True)
+    nome = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'estadosrecibo'
+
+#Modelo estados transporte
+class Estadostransporte(models.Model):
+    idestado = models.AutoField(primary_key=True)
+    nome = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'estadostransporte'
+
+
+#Modelo recibos
+class Recibos(models.Model):
+    reciboid = models.AutoField(primary_key=True)
+    idcontrato = models.ForeignKey(Contratos, models.DO_NOTHING, db_column='idcontrato', blank=True, null=True)
+    datainicio = models.DateField()
+    precofinal = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
+    colheitaid = models.ForeignKey(Colheitas, models.DO_NOTHING, db_column='colheitaid', blank=True, null=True)
+    metodopagamento = models.ForeignKey(Metodospagamento, models.DO_NOTHING, db_column='metodopagamento', blank=True, null=True)
+    estadoid = models.ForeignKey(Estadosrecibo, models.DO_NOTHING, db_column='estadoid', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'recibos'
+
+#Modelo Transporte
+class Transportes(models.Model):
+    idtransporte = models.AutoField(primary_key=True)
+    reciboid = models.ForeignKey(Recibos, models.DO_NOTHING, db_column='reciboid', blank=True, null=True)
+    morada = models.TextField()
+    data = models.DateField()
+    precotransporte = models.DecimalField(max_digits=65535, decimal_places=65535)
+    precokm = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
+    estadoid = models.ForeignKey(Estadostransporte, models.DO_NOTHING, db_column='estadoid', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'transportes'
+
