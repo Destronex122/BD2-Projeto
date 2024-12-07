@@ -210,7 +210,7 @@ def load_markers_view(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
 def load_croplands(request):
-    campos = Campos.objects.all().values('nome', 'cidade', 'morada', 'coordenadas')  # Obtém nome, cidade e coordenadas
+    campos = Campos.objects.all().values('campoid', 'nome', 'cidade', 'morada', 'coordenadas')  # Obtém id, nome, cidade e coordenadas
     campos_list = list(campos)  # Converte a QuerySet para lista de dicionários
     return JsonResponse({'status': 'success', 'campos': campos_list})
 
@@ -281,8 +281,6 @@ def addvariety(request):
 def save_marker(request):
     try:
         data = json.loads(request.body.decode('utf-8'))  # Recebe a requisição em JSON
-        #print('Dados recebidos:', data)  # Para depuração, veja os dados recebidos no console
-
         coordenadas = data.get('coordenadas')
         nome = data.get('nome')
         morada = data.get('morada')
@@ -300,8 +298,6 @@ def save_marker(request):
             return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas'}, status=400)
 
         # Criar um novo registro no banco de dados
-        print(coordenadas_json)
-        print("OOIOIO")
         campo = Campos.objects.create(
             coordenadas=coordenadas_json,  # Salvar as coordenadas como JSON
             nome=nome,
@@ -323,7 +319,58 @@ def save_marker(request):
                 'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
             }
         })
+        
     except Exception as e:
         print(f"Erro ao salvar marcador: {str(e)}")  # Exibe o erro para depuração
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+
+def get_campo_data(request, campoid):
+    try:
+        campo = Campos.objects.get(pk=campoid)
+        data = {
+            "campoid":campo.campoid,
+            "nome": campo.nome,
+            "morada": campo.morada,
+            "cidade": campo.cidade,
+            "coordenadas": {
+                "lat": campo.coordenadas.get("lat"),
+                "lng": campo.coordenadas.get("lng"),
+            },
+        }
+        return JsonResponse({"status": "success", "campo": data})
+    except Campos.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Campo não encontrado"}, status=404)
+    
+@csrf_exempt
+def update_campo(request, campoid):
+    if request.method == 'PUT':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            campo = Campos.objects.get(pk=campoid)
+
+            campo.nome = data.get('nome', campo.nome)
+            campo.morada = data.get('morada', campo.morada)
+            campo.cidade = data.get('cidade', campo.cidade)
+            campo.coordenadas = data.get('coordenadas', campo.coordenadas)
+            campo.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Campo atualizado com sucesso.'})
+        except Campos.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Campo não encontrado.'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'Método não permitido.'}, status=405)
+
+@csrf_exempt
+def delete_campo(request, campoid):
+    if request.method == 'DELETE':
+        try:
+            campo = Campos.objects.get(pk=campoid)
+            campo.delete()
+            return JsonResponse({"status": "success", "message": "Campo eliminado com sucesso."})
+        except Campos.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Campo não encontrado."}, status=404)
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    return JsonResponse({"status": "error", "message": "Método não permitido."}, status=405)

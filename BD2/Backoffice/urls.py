@@ -27,5 +27,7 @@ urlpatterns = [
     path('addvariety/', views.addvariety, name='addvariety'),
     path('mapa/', views.mapa_campos, name='mapa_campos'), 
     path('load_croplands/', views.load_croplands, name='load_croplands'),  
-
+    path('get_campo_data/<int:campoid>/', views.get_campo_data, name='get_campo_data'),
+    path('update_campo/<int:campoid>/', views.update_campo, name='update_campo'),
+    path('delete_campo/<int:campoid>/', views.delete_campo, name='delete_campo'),
 ]
