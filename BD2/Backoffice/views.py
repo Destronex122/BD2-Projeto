@@ -180,9 +180,29 @@ def harvestdetail(request, colheitaid):
 
 @login_required
 def contracts(request):
-    contratos_list = Contratos.objects.all()
-    return render(request, 'contracts.html', {'contrato': contratos_list})
 
+    #Filtros
+    filter_number = request.GET.get('filterNumber', '').strip()
+    filter_date = request.GET.get('filterDate', None)
+    filter_client_nif = request.GET.get('filterClientNif', '').strip()
+
+    contratos = Contratos.objects.all()
+
+    if filter_number:
+        contratos = contratos.filter(contratoid__icontains=filter_number)
+    if filter_date:
+        contratos = contratos.filter(datainicio=filter_date)
+    if filter_client_nif:
+        contratos = contratos.filter(clienteid__nif__icontains=filter_client_nif)
+
+    return render(request, 'contracts.html', {
+        'contrato': contratos,
+        'filters': {
+            'filterNumber': filter_number,
+            'filterDate': filter_date,
+            'filterClientNif': filter_client_nif,
+        },
+    })
 
 
     

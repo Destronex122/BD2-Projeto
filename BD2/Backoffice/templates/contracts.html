@@ -22,23 +22,33 @@
    <!-- Filtros para a tabela -->
 <!-- Filtros para a tabela -->
 <div class="filters" style="margin-bottom: 20px;">
-    <form id="filterForm">
+    <form method="get" id="filterForm">
         <div style="display: flex; gap: 10px;">
             <div class="form-group">
                 <label for="filterNumber">Nº do contrato:</label>
-                <input type="text" id="filterNumber" class="form-control" placeholder="Ex: E123123">
+                <input 
+                    type="text" 
+                    id="filterNumber" 
+                    name="filterNumber" 
+                    class="form-control" 
+                    placeholder="Ex: E123123" 
+                    value="{{ filters.filterNumber|default:'' }}">
             </div>
             <div class="form-group">
-                <label for="filterDate">Data de início do contrato:</label>
-                <input type="date" id="filterDate" class="form-control">
+                <label for="filterDate">Data de início:</label>
+                <input 
+                    type="date" 
+                    id="filterDate" 
+                    name="filterDate" 
+                    class="form-control" 
+                    value="{{ filters.filterDate|default:'' }}">
             </div>
             <div class="form-group" style="margin-top:24px; width:10%">
-                <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                <button type="submit" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
             </div>
         </div>
     </form>
 </div>
-
 
 
 
