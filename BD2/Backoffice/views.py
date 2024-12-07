@@ -273,13 +273,31 @@ def contractdetail(request, contratoid):
 
 @login_required
 def request(request):
+    #Filtros
+    filter_pedido = request.GET.get('filterPedido', '').strip()
+    filter_data_inicio = request.GET.get('filterDataInicio', None)
+    filter_data_fim = request.GET.get('filterDataFim', None)
+
     pedidos = Pedidos.objects.all()
     users = Users.objects.all()
     clientes = Clientes.objects.all()
+
+    if filter_pedido:
+        pedidos = pedidos.filter(pedidoid__icontains=filter_pedido)
+    if filter_data_inicio:
+        pedidos = pedidos.filter(datainicio__gte=filter_data_inicio)
+    if filter_data_fim:
+        pedidos = pedidos.filter(datafim__lte=filter_data_fim)
+
     return render(request, 'request.html', {
         'clientes': clientes, 
         'users': users,
-        'pedidos': pedidos,  
+        'pedidos': pedidos, 
+        'filters': {
+            'filterPedido': filter_pedido,
+            'filterDataInicio': filter_data_inicio,
+            'filterDataFim': filter_data_fim,
+        }, 
     })
 
 @login_required

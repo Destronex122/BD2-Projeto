@@ -45,22 +45,38 @@
     <p>Selecione um pedido para visualizar todos os detalhes.</p>
 
     <div class="filters" style="margin-bottom: 20px;">
-        <form id="filterForm">
+        <form method="get" id="filterForm">
             <div style="display: flex; gap: 10px;">
                 <div class="form-group">
                     <label for="filterPedido">Pedido:</label>
-                    <input type="text" id="filterPedido" class="form-control" placeholder="Ex: Pedido A">
+                    <input 
+                        type="text" 
+                        id="filterPedido" 
+                        name="filterPedido" 
+                        class="form-control" 
+                        placeholder="Ex: Pedido A" 
+                        value="{{ filters.filterPedido|default:'' }}">
                 </div>
                 <div class="form-group">
                     <label for="filterDataInicio">Data de início:</label>
-                    <input type="date" id="filterDataInicio" class="form-control">
+                    <input 
+                        type="date" 
+                        id="filterDataInicio" 
+                        name="filterDataInicio" 
+                        class="form-control" 
+                        value="{{ filters.filterDataInicio|default:'' }}">
                 </div>
                 <div class="form-group">
                     <label for="filterDataFim">Data de fim:</label>
-                    <input type="date" id="filterDataFim" class="form-control">
+                    <input 
+                        type="date" 
+                        id="filterDataFim" 
+                        name="filterDataFim" 
+                        class="form-control" 
+                        value="{{ filters.filterDataFim|default:'' }}">
                 </div>
                 <div class="form-group" style="margin-top:24px; width:10%">
-                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                    <button type="submit" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
                 </div>
             </div>
         </form>
