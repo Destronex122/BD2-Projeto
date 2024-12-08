@@ -217,6 +217,7 @@ def save_marker_view(request):
         nome = data.get('nome')
         morada = data.get('morada')
         cidade = data.get('cidade')
+        pais = data.get('pais')
 
         if not coordenadas or not nome or not morada or not cidade:
             return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
@@ -226,7 +227,7 @@ def save_marker_view(request):
             nome=nome,
             morada=morada,
             cidade=cidade,
-            pais="Portugal",
+            pais=pais,
             datacriacao=timezone.now()
         )
 
@@ -285,7 +286,7 @@ def load_markers_view(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
 def load_croplands(request):
-    campos = Campos.objects.all().values('campoid', 'nome', 'cidade', 'morada', 'coordenadas')  # Obtém id, nome, cidade e coordenadas
+    campos = Campos.objects.all().values('campoid', 'nome', 'cidade', 'morada', 'pais', 'coordenadas')  # Obtém id, nome, cidade, pais e coordenadas
     campos_list = list(campos)  # Converte a QuerySet para lista de dicionários
     return JsonResponse({'status': 'success', 'campos': campos_list})
 
@@ -378,9 +379,10 @@ def save_marker(request):
         nome = data.get('nome')
         morada = data.get('morada')
         cidade = data.get('cidade')
+        pais = data.get('pais')
 
         # Verifique se todos os dados obrigatórios estão presentes
-        if not coordenadas or not nome or not morada or not cidade:
+        if not coordenadas or not nome or not morada or not cidade or not pais:
             return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
 
         # Separando as coordenadas em lat e lng
@@ -396,7 +398,7 @@ def save_marker(request):
             nome=nome,
             morada=morada,
             cidade=cidade,
-            pais="Portugal",  # País por padrão
+            pais=pais, 
             datacriacao=timezone.now()  # Data de criação é a data e hora atual
         )
 
@@ -426,6 +428,7 @@ def get_campo_data(request, campoid):
             "nome": campo.nome,
             "morada": campo.morada,
             "cidade": campo.cidade,
+            "pais": campo.pais,
             "coordenadas": {
                 "lat": campo.coordenadas.get("lat"),
                 "lng": campo.coordenadas.get("lng"),
@@ -445,6 +448,7 @@ def update_campo(request, campoid):
             campo.nome = data.get('nome', campo.nome)
             campo.morada = data.get('morada', campo.morada)
             campo.cidade = data.get('cidade', campo.cidade)
+            campo.pais = data.get('pais', campo.pais)
             campo.coordenadas = data.get('coordenadas', campo.coordenadas)
             campo.save()
 

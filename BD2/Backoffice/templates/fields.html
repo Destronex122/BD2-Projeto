@@ -58,6 +58,11 @@
     <div style="display:flex; justify-content: space-between;">
         <div id="map" style="width: 650px; height: 450px; margin-right:24px"></div>
         <div style="width:50%;">
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="search-bar" placeholder="Pesquisar por nome ou cidade" style="width: 50%; padding: 8px; border: 1px solid #ccc;">
+                <button id="apply-filter" style="margin-bottom: 15px;gap: 10px;align-items: center;">Aplicar</button>
+                <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2;">Limpar</button>
+            </div>
             <table id="fields-table">
                 <thead>
                     <tr>
@@ -108,6 +113,9 @@
                     <label for="cidade">Cidade:</label>
                     <input style="width: 50%;" type="text" id="cidade" name="cidade" required>
 
+                    <label for="pais">País:</label>
+                    <input style="width: 50%;" type="text" id="pais" name="pais" required>
+
                     <label for="coordinates">Coordenadas:</label>
                     <span id="coordinates" style="display: inline-block; width: 50%; padding: 5px; border: 1px solid #ccc; background-color: #f9f9f9;">Selecionar no mapa</span><br><br/>
                     <button type="submit">Guardar</button> 
@@ -118,46 +126,98 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const searchBar = document.getElementById('search-bar');
+            const applyFilterButton = document.getElementById('apply-filter');
+            const clearFilterButton = document.getElementById('clear-filter');
+            const tableBody = document.getElementById('table-body');
+            const paginationContainer = document.getElementById('pagination');
+            const rowsPerPage = 5; // Número de linhas por página
+            let currentPage = 1; // Página inicial
+            let filteredRows = []; // Armazena as linhas filtradas
+
+            // Função para limpar o filtro
+            function clearFilter() {
+                searchBar.value = ''; // Limpa o texto da barra de pesquisa
+                filteredRows = Array.from(tableBody.querySelectorAll('tr')); // Reseta as linhas filtradas para todas as linhas
+                currentPage = 1; // Retorna à primeira página
+                updateTable(); // Atualiza a tabela
+            }
+
+            // Event listener para o botão de limpar filtro
+            clearFilterButton.addEventListener('click', clearFilter);
+
+            // Função para inicializar a paginação
             function initPagination() {
-                const rows = Array.from(document.querySelectorAll('#table-body tr'));
-                const paginationContainer = document.getElementById('pagination');
-                const rowsPerPage = 5; // Número de linhas por página
-                let currentPage = 1;
+                const rows = Array.from(tableBody.querySelectorAll('tr'));
+                filteredRows = rows; // Inicia com todas as linhas disponíveis
+                renderPaginationButtons(); // Renderizar os botões de paginação
+                updateTable(); // Exibir a primeira página
+            }
 
-                // Função para atualizar a tabela com base na página atual
-                function updateTable() {
-                    rows.forEach((row, index) => {
-                        row.style.display =
-                            index >= (currentPage - 1) * rowsPerPage && index < currentPage * rowsPerPage
-                                ? ''
-                                : 'none';
-                    });
-                    renderPaginationButtons();
-                }
+            // Função para aplicar o filtro e atualizar a paginação
+            function applyFilter() {
+                const query = searchBar.value.toLowerCase().trim(); // Texto do filtro
+                const allRows = Array.from(tableBody.querySelectorAll('tr'));
 
-                // Função para renderizar os botões de paginação
-                function renderPaginationButtons() {
-                    paginationContainer.innerHTML = '';
-                    const totalPages = Math.ceil(rows.length / rowsPerPage);
+                // Filtrar as linhas com base no texto de busca
+                filteredRows = allRows.filter(row => {
+                    const nome = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                    const cidade = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    return nome.includes(query) || cidade.includes(query);
+                });
 
-                    for (let i = 1; i <= totalPages; i++) {
-                        const button = document.createElement('button');
-                        button.textContent = i;
-                        button.classList.add('pagination-button');
-                        if (i === currentPage) {
-                            button.classList.add('active');
-                        }
-                        button.addEventListener('click', () => {
-                            currentPage = i;
-                            updateTable();
-                        });
-                        paginationContainer.appendChild(button);
-                    }
-                }
+                // Reiniciar para a primeira página após aplicar o filtro
+                currentPage = 1;
 
-                // Atualiza a tabela e renderiza a página inicial
+                // Atualizar a tabela e a paginação
                 updateTable();
             }
+
+            // Função para atualizar a tabela com base na página atual
+            function updateTable() {
+                const startIndex = (currentPage - 1) * rowsPerPage;
+                const endIndex = startIndex + rowsPerPage;
+
+                // Esconder todas as linhas e mostrar apenas as filtradas na página atual
+                Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+                filteredRows.slice(startIndex, endIndex).forEach(row => (row.style.display = ''));
+
+                renderPaginationButtons();
+            }
+
+            // Função para renderizar os botões de paginação
+            function renderPaginationButtons() {
+                paginationContainer.innerHTML = '';
+                const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) {
+                        button.classList.add('active');
+                    }
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+
+            // Inicializar tabela e paginação ao carregar
+            function init() {
+                const allRows = Array.from(tableBody.querySelectorAll('tr')); // Obter todas as linhas da tabela
+                
+                updateTable(); // Exibir as linhas na primeira página com paginação ativa
+            }
+
+            // Event listener para o botão de filtro
+            applyFilterButton.addEventListener('click', applyFilter);
+
+            // Inicializar tabela e paginação ao carregar a página
+            init();
+
 
             // Inicializar o mapa
             var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
@@ -184,6 +244,7 @@
                 document.getElementById('name').value = '';
                 document.getElementById('morada').value = '';
                 document.getElementById('cidade').value = '';
+                document.getElementById('pais').value = '';
                 document.getElementById('coordinates').textContent = 'Selecionar no mapa';
                 currentCampoId = null; // Limpar o campo ID ao limpar
             }
@@ -198,6 +259,7 @@
                 document.getElementById('name').value = item.nome || '';
                 document.getElementById('morada').value = item.morada || '';
                 document.getElementById('cidade').value = item.cidade || '';
+                document.getElementById('pais').value = item.pais || '';
                 document.getElementById('coordinates').textContent = `Lat: ${item.coordenadas.lat}, Lng: ${item.coordenadas.lng}`;
                 currentCampoId = item.campoid; // Armazenar o ID do campo para edição
                 openModal();
@@ -236,7 +298,7 @@
                             if (item.coordenadas && item.coordenadas.lat && item.coordenadas.lng) {
                                 const latLng = [item.coordenadas.lat, item.coordenadas.lng];
                                 const markerLayer = L.marker(latLng)
-                                    .bindPopup(`<b>${item.nome}</b><br>${item.cidade}`)
+                                    .bindPopup(`<b>${item.nome}</b>`)
                                     .on('click', () => openModalWithData(item)); // Modal com dados
                                 croplandMarkers.addLayer(markerLayer);
                             }
@@ -295,6 +357,7 @@
                     var nomeCampo = document.getElementById('name').value;
                     var morada = document.getElementById('morada').value;
                     var cidade = document.getElementById('cidade').value;
+                    var pais = document.getElementById('pais').value;
                     var coordenadas = layer.getLatLng();
 
                     fetch('/save_marker/', {
@@ -307,6 +370,7 @@
                             nome: nomeCampo,
                             morada: morada,
                             cidade: cidade,
+                            pais: pais,
                             coordenadas: { lat: coordenadas.lat, lng: coordenadas.lng }
                         })
                     })
@@ -357,6 +421,7 @@
                 const nomeCampo = document.getElementById('name').value;
                 const morada = document.getElementById('morada').value;
                 const cidade = document.getElementById('cidade').value;
+                const pais = document.getElementById('pais').value;
                 const coordenadasText = document.getElementById('coordinates').textContent;
                 const coordenadasMatch = coordenadasText.match(/Lat: ([\d.-]+), Lng: ([\d.-]+)/);
 
@@ -370,7 +435,7 @@
                     lng: parseFloat(coordenadasMatch[2])
                 };
 
-                const dataToSend = { nome: nomeCampo, morada: morada, cidade: cidade, coordenadas };
+                const dataToSend = { nome: nomeCampo, morada: morada, cidade: cidade, pais: pais, coordenadas };
                 // Endpoint e método dependem se é criação ou edição
                 const endpoint = currentCampoId ? `/update_campo/${currentCampoId}/` : '/save_marker/';
                 const method = currentCampoId ? 'PUT' : 'POST';
