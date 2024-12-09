@@ -14,7 +14,6 @@ from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
-from .models import Casta
 from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo
 from django.utils import timezone
 
@@ -114,6 +113,7 @@ def delivery(request):
             'filterState': filter_state,
         },
     })
+
 @login_required
 def deliverydetail(request,transposteid):
     transporte = get_object_or_404 (Transportes, idtransposte = transposteid ) 
@@ -286,7 +286,7 @@ def load_markers_view(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
 def load_croplands(request):
-    campos = Campos.objects.all().values('campoid', 'nome', 'cidade', 'morada', 'pais', 'coordenadas')  # Obtém id, nome, cidade, pais e coordenadas
+    campos = Campos.objects.all().values('campoid', 'nome', 'cidade', 'morada', 'pais', 'coordenadas').order_by('nome')  # Obtém id, nome, cidade, pais e coordenadas
     campos_list = list(campos)  # Converte a QuerySet para lista de dicionários
     return JsonResponse({'status': 'success', 'campos': campos_list})
 
@@ -341,34 +341,57 @@ def request(request):
         }, 
     })
 
-@login_required
 def grapevariety(request):
-    return render(request, 'grapevariety.html')
+    # Obtendo o filtro da query string
+    filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
+
+    # Buscando todos os objetos Castas
+    grapevarieties = Castas.objects.all().order_by('nome')
+
+    # Aplicando o filtro, se necessário
+    if filter_grapevariety:
+        grapevarieties = grapevarieties.filter(nome__icontains=filter_grapevariety)
+
+    # Renderizando o template com o contexto
+    return render(request, 'grapevariety.html', {
+        'castas': grapevarieties,  # Passando os dados para o template
+        'filters': {
+            'filter_grapevariety': filter_grapevariety
+        },
+    })
 
 @csrf_exempt
 def addvariety(request):
     if request.method == 'POST':
-        # Recupera o nome da casta
-        name = request.POST.get('varietyName')
+        nome = request.POST.get('varietyName', '').strip()
+        if nome:
+            # Cria a nova casta
+            new_variety = Castas.objects.create(nome=nome)
+            # Retorna a nova casta como resposta JSON
+            return JsonResponse({'success': True, 'id': new_variety.castaid, 'nome': new_variety.nome})
+        return JsonResponse({'success': False, 'message': 'Nome inválido.'})
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
-        if not name:
-            return JsonResponse({'message': 'O nome da casta é obrigatório!'}, status=400)
+@login_required
+def delete_variety(request, castaid):
+    if request.method == 'POST':
+        casta = get_object_or_404(Castas, castaid=castaid)
+        casta.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
-        try:
-            # Insere a casta no banco de dados usando o procedimento armazenado
-            with connection.cursor() as cursor:
-                cursor.execute("CALL public.inserircasta(%s);", [name])
+@login_required
+def editvariety(request, castaid):
+    if request.method == 'POST':
+        casta = get_object_or_404(Castas, castaid=castaid)
+        nome = request.POST.get('varietyName', '').strip()
+        if nome:
+            casta.nome = nome
+            casta.save()
+            return JsonResponse({'success': True, 'id': casta.castaid, 'nome': casta.nome})
+        return JsonResponse({'success': False, 'message': 'Nome inválido.'})
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
-            # Redireciona para a mesma página para ver a lista de castas atualizada
-            return redirect('addvariety')  # Redireciona para a view 'addvariety'
-
-        except Exception as e:
-            print("Erro:", e)
-            return JsonResponse({'message': str(e)}, status=500)
-
-    # Se for um GET, renderiza a página com a lista de castas
-    grape_varieties = Casta.objects.all()  # Busque as castas na base de dados
-    return render(request, 'addvariety.html', {'grape_varieties': grape_varieties})
 
 @csrf_exempt
 @require_http_methods(['POST'])
@@ -471,3 +494,4 @@ def delete_campo(request, campoid):
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
     return JsonResponse({"status": "error", "message": "Método não permitido."}, status=405)
+

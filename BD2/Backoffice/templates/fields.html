@@ -56,10 +56,13 @@
     </div>
     <br>
     <div style="display:flex; justify-content: space-between;">
-        <div id="map" style="width: 650px; height: 450px; margin-right:24px"></div>
+        <div id="map" style="width: 650px; height: 500px; margin-right:24px"></div>
         <div style="width:50%;">
             <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="search-bar" placeholder="Pesquisar por nome ou cidade" style="width: 50%; padding: 8px; border: 1px solid #ccc;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="search-bar" style="display: block;">Nome do campo ou cidade:</label>
+                    <input type="text" id="search-bar" placeholder="Pesquisar por nome ou cidade" style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                </div>
                 <button id="apply-filter" style="margin-bottom: 15px;gap: 10px;align-items: center;">Aplicar</button>
                 <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2;">Limpar</button>
             </div>
@@ -77,10 +80,10 @@
                             <td>{{ campo.nome }}</td>
                             <td>{{ campo.cidade }}</td>
                             <td>
-                                <button type="button" class="edit-btn" data-id="{{ campo.campoid }}">
+                                <button title="Editar campo" type="button" class="edit-btn" data-id="{{ campo.campoid }}">
                                     <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
                                 </button>
-                                <button type="button" class="delete-btn" data-id="{{ campo.campoid }}">
+                                <button title="Eliminar campo" type="button" class="delete-btn" data-id="{{ campo.campoid }}">
                                     <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
                                 </button>
                             </td>
@@ -175,9 +178,16 @@
 
             // Função para atualizar a tabela com base na página atual
             function updateTable() {
+                // Ordenar os campos por nome
+                filteredRows.sort((a, b) => {
+                    const nomeA = a.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                    const nomeB = b.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                    return nomeA.localeCompare(nomeB);
+                });
+                // Ordenar os campos por nome
                 const startIndex = (currentPage - 1) * rowsPerPage;
                 const endIndex = startIndex + rowsPerPage;
-
+                
                 // Esconder todas as linhas e mostrar apenas as filtradas na página atual
                 Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
                 filteredRows.slice(startIndex, endIndex).forEach(row => (row.style.display = ''));
@@ -205,11 +215,12 @@
                 }
             }
 
+             
+
             // Inicializar tabela e paginação ao carregar
             function init() {
-                const allRows = Array.from(tableBody.querySelectorAll('tr')); // Obter todas as linhas da tabela
-                
-                updateTable(); // Exibir as linhas na primeira página com paginação ativa
+                filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+                updateTable();
             }
 
             // Event listener para o botão de filtro
@@ -233,6 +244,26 @@
                 subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
             });
 
+
+        //Meter em português tudo que se encontra no mapa
+            //CANCELAR
+            L.drawLocal.draw.toolbar.actions = {
+                text: 'Cancelar'
+            };
+            //ADICIONAR NO MAPA
+            L.drawLocal.draw.handlers.marker = {
+                tooltip: {
+                    start: 'Clique no mapa para adicionar o marcador.' // Texto traduzido
+                }
+            };
+            //ZOOM IN E OUT
+            const zoomInButton = document.querySelector('.leaflet-control-zoom-in');
+            const zoomOutButton = document.querySelector('.leaflet-control-zoom-out');
+            if (zoomInButton) zoomInButton.setAttribute('title', 'Aproximar');
+            if (zoomOutButton) zoomOutButton.setAttribute('title', 'Afastar');
+            //ADICIONAR MARKER            
+            L.drawLocal.draw.toolbar.buttons.marker = 'Adicionar um marcador';
+            //VISUALIZAÇÃO DO MAPA
             layerControl.addBaseLayer(osmLayer, 'Mapa');
             layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
 
@@ -290,6 +321,9 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
+                        // Ordena os campos manualmente no JavaScript (opcional, já estão ordenados no backend)
+                        data.campos.sort((a, b) => a.nome.localeCompare(b.nome));
+                        
                         const tbody = document.querySelector('#fields-table tbody');
                         tbody.innerHTML = ''; // Limpar a tabela antes de preenchê-la
 
@@ -309,10 +343,10 @@
                                 <td>${item.nome}</td>
                                 <td>${item.cidade}</td>
                                 <td>
-                                    <button type="button" class="edit-btn" data-id="${item.campoid}">
+                                    <button title="Editar casta" type="button" class="edit-btn" data-id="${item.campoid}">
                                         <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
                                     </button>
-                                    <button type="button" class="delete-btn" data-id="${item.campoid}">
+                                    <button title="Eliminar casta" type="button" class="delete-btn" data-id="${item.campoid}">
                                         <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
                                     </button>
                                 </td>
@@ -321,6 +355,7 @@
                         });
                         // Inicializar paginação após carregar os dados
                         initPagination();
+        
                     } else {
                         console.error('Erro ao carregar campos:', data.message);
                     }
@@ -498,6 +533,9 @@
                                 if (data.status === 'success') {
                                     alert('Campo excluído com sucesso.');
                                     location.reload(); // Recarrega a tabela e o mapa
+                                    // Atualiza as linhas filtradas e a paginação
+                                    filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+                                    updateTable(); // Atualiza a tabela com a nova paginação
                                 } else {
                                     alert(`Erro ao excluir campo: ${data.message}`);
                                 }

@@ -163,13 +163,6 @@ class Users(models.Model):
         managed = False
         db_table = 'users'
 
-#Modelo Casta
-class Casta(models.Model):
-    nome = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.nome
-
 #Modelo Periodos
 class Periodos(models.Model):
     periodoid = models.IntegerField(primary_key=True)
@@ -184,7 +177,7 @@ class Periodos(models.Model):
 #Modelo Castas
 
 class Castas(models.Model):
-    castaid = models.IntegerField(primary_key=True)
+    castaid = models.AutoField(primary_key=True)
     nome = models.CharField(unique=True, max_length=100)
 
     class Meta:
