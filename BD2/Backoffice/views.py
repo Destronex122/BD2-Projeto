@@ -501,26 +501,6 @@ def get_campo_data(request, campoid):
         return JsonResponse({"status": "error", "message": "Campo não encontrado"}, status=404)
     
 @csrf_exempt
-# def update_campo(request, campoid):
-#     if request.method == 'PUT':
-#         try:
-#             data = json.loads(request.body.decode('utf-8'))
-#             campo = Campos.objects.get(pk=campoid)
-
-#             campo.nome = data.get('nome', campo.nome)
-#             campo.morada = data.get('morada', campo.morada)
-#             campo.cidade = data.get('cidade', campo.cidade)
-#             campo.pais = data.get('pais', campo.pais)
-#             campo.coordenadas = data.get('coordenadas', campo.coordenadas)
-#             campo.save()
-
-#             return JsonResponse({'status': 'success', 'message': 'Campo atualizado com sucesso.'})
-#         except Campos.DoesNotExist:
-#             return JsonResponse({'status': 'error', 'message': 'Campo não encontrado.'}, status=404)
-#         except Exception as e:
-#             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-#     return JsonResponse({'status': 'error', 'message': 'Método não permitido.'}, status=405)
-
 def update_campo(request, campoid):
     if request.method == 'PUT':
         try:
