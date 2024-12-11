@@ -394,17 +394,10 @@ def delete_request(request, pedidoid):
     return JsonResponse({'success': False, 'message': 'Método inválido.'})
 
 def grapevariety(request):
-    
     filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
-
-    
     grapevarieties = Castas.objects.all().order_by('nome')
-
-    
     if filter_grapevariety:
         grapevarieties = grapevarieties.filter(nome__icontains=filter_grapevariety)
-
-    
     return render(request, 'grapevariety.html', {
         'castas': grapevarieties,  
         'filters': {
@@ -471,35 +464,18 @@ def save_marker(request):
         if not coordenadas or not nome or not morada or not cidade or not pais:
             return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
 
-        # Separando as coordenadas em lat e lng
+        # Verifique se as coordenadas estão no formato correto
         try:
-            lat, lng = map(float, coordenadas.split(','))
-            coordenadas_json = {'lat': lat, 'lng': lng}  # Salvar como JSON
-        except ValueError:
+            lat = float(coordenadas['lat'])  # Extrai a latitude
+            lng = float(coordenadas['lng'])  # Extrai a longitude
+            coordenadas_json = {'lat': lat, 'lng': lng}  # Prepara o JSON
+        except (ValueError, KeyError, TypeError):
             return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas'}, status=400)
 
-        # Criar um novo registro no banco de dados
-        campo = Campos.objects.create(
-            coordenadas=coordenadas_json,  # Salvar as coordenadas como JSON
-            nome=nome,
-            morada=morada,
-            cidade=cidade,
-            pais=pais, 
-            datacriacao=timezone.now()  # Data de criação é a data e hora atual
-        )
-
-        return JsonResponse({
-            'status': 'success',
-            'campo': {
-                'campoid': campo.campoid,
-                'nome': campo.nome,
-                'morada': campo.morada,
-                'cidade': campo.cidade,
-                'pais': campo.pais,
-                'coordenadas': campo.coordenadas,  # Retorna o JSON das coordenadas
-                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
-            }
-        })
+        # Chamar o procedimento armazenado
+        with connection.cursor() as cursor:
+            cursor.callproc('create_campo', [json.dumps(coordenadas_json), nome, morada, cidade, pais])
+            campoid = cursor.fetchone()[0]  # Obter o campoid retornado pelo procedimento
         
     except Exception as e:
         print(f"Erro ao salvar marcador: {str(e)}")  # Exibe o erro para depuração
@@ -546,15 +522,34 @@ def update_campo(request, campoid):
     return JsonResponse({'status': 'error', 'message': 'Método não permitido.'}, status=405)
 
 @csrf_exempt
+# def delete_campo(request, campoid):
+#     if request.method == 'DELETE':
+#         try:
+#             campo = Campos.objects.get(pk=campoid)
+#             campo.delete()
+#             return JsonResponse({"status": "success", "message": "Campo eliminado com sucesso."})
+#         except Campos.DoesNotExist:
+#             return JsonResponse({"status": "error", "message": "Campo não encontrado."}, status=404)
+#         except Exception as e:
+#             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+#     return JsonResponse({"status": "error", "message": "Método não permitido."}, status=405)
 def delete_campo(request, campoid):
     if request.method == 'DELETE':
         try:
-            campo = Campos.objects.get(pk=campoid)
-            campo.delete()
+            # Chamar o procedimento armazenado usando CALL
+            with connection.cursor() as cursor:
+                cursor.execute("CALL delete_campo(%s)", [campoid])
+
+            # Retorno de sucesso
             return JsonResponse({"status": "success", "message": "Campo eliminado com sucesso."})
-        except Campos.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Campo não encontrado."}, status=404)
+
         except Exception as e:
+            # Captura exceções e retorna erro
+            print(f"Erro ao eliminar campo: {str(e)}")  # Log para depuração
+            if "não encontrado" in str(e):
+                return JsonResponse({"status": "error", "message": "Campo não encontrado."}, status=404)
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+    # Retorno para métodos não permitidos
     return JsonResponse({"status": "error", "message": "Método não permitido."}, status=405)
 
