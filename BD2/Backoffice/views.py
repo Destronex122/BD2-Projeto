@@ -120,9 +120,6 @@ def harvestdetail(request, colheitaid):
     return render(request, 'harvestdetail.html', {'colheita': colheita_context})
 
 
-@login_required
-def vineyards(request):
-    return render(request, 'vineyards.html')
 
 @login_required
 def contracts(request):
@@ -249,3 +246,10 @@ def save_marker(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     
     return JsonResponse({'status': 'error', 'message': 'Método não permitido'}, status=405)
+
+
+
+@login_required
+def vineyards(request):
+    Vineyards = Vinhas.objects.all().select_related('castaid', 'campoid')
+    return render(request, 'vineyards.html', {'Vinhas': Vineyards})

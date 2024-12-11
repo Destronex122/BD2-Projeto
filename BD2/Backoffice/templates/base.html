@@ -53,7 +53,7 @@
                 </ul>
                 <div class="ml-auto d-flex align-items-center"> <!-- Alinhamento à direita com ícone de logout -->
                     {% if is_admin %}
-                    <select class="custom-select mr-3" name="vineyard" required>
+                    <select class="custom-select mr-3" name="vineyard" id="vineyard" required>
                         {% for quinta in quintas %}
                             <option value={{ quinta.campoid }}>{{ quinta.nome }}</option>
                         {% endfor %}
