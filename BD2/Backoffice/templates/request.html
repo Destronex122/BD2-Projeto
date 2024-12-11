@@ -90,6 +90,7 @@
                 <th>Data de fim</th>
                 <th>Preço estimado (€)</th>
                 <th>Aprovador</th>
+                <th class="actions-column">Ações</th>
             </tr>
         </thead>
         <tbody>
@@ -100,6 +101,14 @@
                 <td>{{ pedido.datafim }}</td>
                 <td>{{ pedido.precoestimado }}</td>
                 <td>{{ pedido.aprovadorid.nome }}</td>
+                <td class="actions-column">
+                    <button type="button" class="btn btn-primary" onclick="openEditModal('{{ pedido.pedidoid }}')">
+                        Editar
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="deleteRequest('{{ pedido.pedidoid }}')">
+                        Eliminar
+                    </button>
+                </td>
             </tr>
             {% empty %}
             <tr>
@@ -110,60 +119,59 @@
     </table>
 
     <!-- Modal para Adicionar Pedido -->
-    <div class="popup-overlay" id="addRequestModal">
+    <div class="popup-overlay" id="addRequestModal" style="display: none;">
         <div class="popup-content">
             <div class="popup-header">
-                <h5>Adicionar novo pedido</h5>
+                <h5 id="modalTitle">Adicionar Novo Pedido</h5> <!-- Título dinâmico -->
                 <span class="modal-close" onclick="closeAddRequestModal()">&times;</span>
             </div>
-            <br>
-            <form id="addRequestForm" onsubmit="addRequest(event)">
+            <form id="addRequestForm" action="{% url 'add_request' %}" method="post">
+                {% csrf_token %}
                 <!-- Campo para o Cliente -->
                 <div class="form-group">
                     <label for="clienteid">Cliente:</label>
-                    <select id="clienteid" class="form-control" required>
+                    <select id="clienteid" name="clienteid" class="form-control" required>
                         <option value="">Selecione um cliente</option>
                         {% for cliente in clientes %}
-                            <option value="{{ cliente.id }}">{{ cliente.clienteid }}</option>
+                            <option value="{{ cliente.clienteid }}">{{ cliente.clienteid}}</option>
                         {% endfor %}
                     </select>
                 </div>
-    
+            
                 <!-- Campo para o Aprovador -->
                 <div class="form-group">
                     <label for="aprovadorid">Aprovador:</label>
-                    <select id="aprovadorid" class="form-control" required>
+                    <select id="aprovadorid" name="aprovadorid" class="form-control" required>
                         <option value="">Selecione um aprovador</option>
                         {% for aprovador in users %}
-                            <option value="{{ aprovador.userid }}">{{ aprovador.nome }}</option>  <!-- Alterado para o campo 'nome' -->
+                            <option value="{{ aprovador.userid }}">{{ aprovador.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
-    
+
+                <div class="form-group">
+                    <label for="newNome">Nome do Pedido:</label>
+                    <input type="text" id="newNome" name="newNome" class="form-control" required>
+                </div>
+            
                 <!-- Data de Início -->
                 <div class="form-group">
                     <label for="newDataInicio">Data de início:</label>
-                    <input type="date" id="newDataInicio" class="form-control" required>
+                    <input type="date" id="newDataInicio" name="newDataInicio" class="form-control" required>
                 </div>
-    
+            
                 <!-- Data de Fim -->
                 <div class="form-group">
                     <label for="newDataFim">Data de fim:</label>
-                    <input type="date" id="newDataFim" class="form-control" required>
+                    <input type="date" id="newDataFim" name="newDataFim" class="form-control" required>
                 </div>
-    
+            
                 <!-- Preço Estimado -->
                 <div class="form-group">
                     <label for="newPrecoEstimado">Preço estimado (€):</label>
-                    <input type="number" id="newPrecoEstimado" class="form-control" required>
+                    <input type="number" id="newPrecoEstimado" name="newPrecoEstimado" class="form-control" required>
                 </div>
-    
-                <!-- Notas -->
-                <div class="form-group">
-                    <label for="newNotas">Notas:</label>
-                    <textarea id="newNotas" class="form-control" required></textarea>
-                </div>
-    
+            
                 <!-- Botões -->
                 <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                     <button type="button" onclick="closeAddRequestModal()" class="secondary-button">Cancelar</button>
@@ -172,18 +180,64 @@
             </form>
         </div>
     </div>
+    
+    
 
     <script>
-        document.getElementById('requestTable').addEventListener('click', function(event){
-            const targetRow = event.target.closest('tr');
-            if(targetRow && !targetRow.closest('thead')){
-                const pedidoid = targetRow.dataset.pedidoid;
-                if(pedidoid){
-                    console.log(`Redirecionando para userdetail com ID: ${pedidoid}`);
-                    window.location.href = `/backoffice/requestdetail/${pedidoid}/`;
-                }
-            }
-        });
+function openAddRequestModal() {
+    const modal = document.getElementById('addRequestModal');
+    modal.style.display = 'flex'; 
+}
+
+
+function closeAddRequestModal() {
+    const modal = document.getElementById('addRequestModal');
+    modal.style.display = 'none'; 
+}
+
+function openEditModal(pedidoid) {
+    const targetRow = event.target.closest('tr');
+    if (pedidoid) {
+            window.location.href = `/backoffice/requestdetail/${pedidoid}/`;
+        }
+
+
+
+    // Preencha os campos no popup
+    document.getElementById('pedidoid').value = pedidoid;
+    document.getElementById('newNome').value = nome;
+    document.getElementById('newClienteId').value = clienteId;
+    document.getElementById('newAprovadorId').value = aprovadorId;
+    document.getElementById('newDataInicio').value = dataInicio;
+    document.getElementById('newDataFim').value = dataFim;
+    document.getElementById('newPrecoEstimado').value = precoEstimado;
+
+    // Altera o título do modal para "Editar Pedido"
+    document.getElementById('modalTitle').textContent = 'Editar Pedido';
+
+    // Mostra o popup
+    const modal = document.getElementById('addRequestModal');
+    modal.style.display = 'flex';
+}
+
+
+document.getElementById('requestTable').addEventListener('click', function (event) {
+    const targetCell = event.target.closest('td'); // Identifica a célula onde o clique ocorreu
+    const targetRow = event.target.closest('tr'); // Identifica a linha
+
+    // Verifica se clicou na coluna "Ações"
+    if (targetCell && targetCell.classList.contains('actions-column')) {
+        return; // Ignora o clique se for na coluna "Ações"
+    }
+
+    // Processa o clique na linha (fora da coluna "Ações")
+    if (targetRow && !targetRow.closest('thead')) {
+        const pedidoid = targetRow.dataset.pedidoid;
+        if (pedidoid) {
+            window.location.href = `/backoffice/requestdetail/${pedidoid}/`;
+        }
+    }
+});
     </script>
 </div>
 

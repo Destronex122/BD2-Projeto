@@ -341,6 +341,58 @@ def request(request):
         }, 
     })
 
+def add_request(request):
+    if request.method == "POST":
+        # Captura os dados enviados pelo formulário
+        clienteid = request.POST.get("clienteid")
+        aprovadorid = request.POST.get("aprovadorid")
+        nome = request.POST.get("newNome")  # Novo campo
+        datainicio = request.POST.get("newDataInicio")
+        datafim = request.POST.get("newDataFim")
+        precoestimado = request.POST.get("newPrecoEstimado")
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL add_pedido(%s, %s, %s, %s, %s, %s)",  # Incluí "nome"
+                    [clienteid, aprovadorid, nome, datainicio, datafim, precoestimado]
+                )
+            return redirect('/request')
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido.'})
+
+def update_request(request, pedidoid):
+    if request.method == "POST":
+        nome = request.POST.get("nome")
+        clienteid = request.POST.get("clienteid")
+        aprovadorid = request.POST.get("aprovadorid")
+        datainicio = request.POST.get("datainicio")
+        datafim = request.POST.get("datafim")
+        precoestimado = request.POST.get("precoestimado")
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL update_pedido(%s, %s, %s, %s, %s, %s)",
+                    [pedidoid, clienteid, aprovadorid, nome, datainicio, datafim, precoestimado]
+                )
+            return redirect('/request')
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+def delete_request(request, pedidoid):
+    if request.method == 'POST':
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("CALL delete_pedido(%s)", [pedidoid])
+            return redirect('/request')
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido.'})
+
 def grapevariety(request):
     # Obtendo o filtro da query string
     filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
