@@ -185,18 +185,21 @@ class AuthUserUserPermissions(models.Model):
         unique_together = (('user', 'permission'),)
 
 
+
 class Campos(models.Model):
-    campoid = models.AutoField(primary_key=True)
-    coordenadas = models.TextField()
+    campoid = models.AutoField(primary_key=True)  # Use AutoField para auto-incremento
+    coordenadas = models.JSONField()
     nome = models.TextField()
     morada = models.TextField()
     cidade = models.TextField()
-    pais = models.TextField()
-    datacriacao = models.DateField()
+    pais = models.TextField(default="Portugal")
+    datacriacao = models.DateTimeField()
 
     class Meta:
-        managed = False
-        db_table = 'campos'
+        db_table = 'campos'  # Definindo explicitamente o nome da tabela
+
+    def __str__(self):
+        return self.nome
 
 
 class Cargo(models.Model):
@@ -463,7 +466,7 @@ class Vinhas(models.Model):
     nome = models.TextField()
     castaid = models.ForeignKey(Castas, models.DO_NOTHING, db_column='castaid', blank=True, null=True)
     campoid = models.ForeignKey(Campos, models.DO_NOTHING, db_column='campoid', blank=True, null=True)
-    coordenadas = models.TextField()
+    coordenadas = models.JSONField()
     dataplantacao = models.DateField(blank=True, null=True)
     hectares = models.DecimalField(max_digits=65535, decimal_places=65535)
 
