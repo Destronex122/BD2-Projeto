@@ -186,6 +186,13 @@
                             </td>
                         `;
 
+                        // Verifica e remove a mensagem "Ainda não há castas adicionadas"
+                        const noDataMessage = tableBody.querySelector('.no-data-message');
+                        if (noDataMessage) {
+                            noDataMessage.parentElement.remove();
+                        }
+
+
                         // Adiciona a nova linha ao corpo da tabela
                         tableBody.appendChild(newRow);
 
@@ -245,7 +252,16 @@
 
                             // Atualiza as linhas filtradas e a paginação
                             filteredRows = Array.from(tableBody.querySelectorAll('tr'));
-                            updateTable(); // Atualiza a tabela com a nova paginação
+                            if (filteredRows.length === 0) {
+                                // Adiciona a mensagem de "sem dados" se não houver mais linhas
+                                const emptyRow = document.createElement('tr');
+                                emptyRow.innerHTML = `
+                                    <td colspan="2" class="no-data-message">Ainda não há castas adicionadas.</td>
+                                `;
+                                tableBody.appendChild(emptyRow);
+                            } else {
+                                updateTable(); // Atualiza a tabela com a nova paginação
+                            }
                         } else {
                             alert(data.message || 'Erro ao excluir a casta.');
                         }

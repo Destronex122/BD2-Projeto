@@ -417,30 +417,41 @@ def addvariety(request):
     if request.method == 'POST':
         nome = request.POST.get('varietyName', '').strip()
         if nome:
-            # Cria a nova casta
-            new_variety = Castas.objects.create(nome=nome)
-            # Retorna a nova casta como resposta JSON
-            return JsonResponse({'success': True, 'id': new_variety.castaid, 'nome': new_variety.nome})
+            try:
+                with connection.cursor() as cursor:
+                    # Chama o procedimento armazenado e obtém o ID gerado
+                    cursor.execute("CALL insert_casta(%s, %s)", [nome, None])
+                    new_castaid = cursor.fetchone()[0]  # Obtemos o ID retornado
+                return JsonResponse({'success': True, 'id': new_castaid, 'nome': nome})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': f'Erro ao criar a casta: {str(e)}'})
         return JsonResponse({'success': False, 'message': 'Nome inválido.'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 @login_required
 def delete_variety(request, castaid):
     if request.method == 'POST':
-        casta = get_object_or_404(Castas, castaid=castaid)
-        casta.delete()
-        return JsonResponse({'success': True})
+        try:
+            with connection.cursor() as cursor:
+                # Use o comando CALL para invocar o procedimento armazenado
+                cursor.execute("CALL delete_casta(%s)", [castaid])
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao excluir a casta: {str(e)}'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 @login_required
 def editvariety(request, castaid):
     if request.method == 'POST':
-        casta = get_object_or_404(Castas, castaid=castaid)
         nome = request.POST.get('varietyName', '').strip()
         if nome:
-            casta.nome = nome
-            casta.save()
-            return JsonResponse({'success': True, 'id': casta.castaid, 'nome': casta.nome})
+            try:
+                with connection.cursor() as cursor:
+                    # Chama o procedimento armazenado para atualizar o registro
+                    cursor.execute("CALL update_casta(%s, %s)", [castaid, nome])
+                return JsonResponse({'success': True, 'id': castaid, 'nome': nome})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': f'Erro ao editar a casta: {str(e)}'})
         return JsonResponse({'success': False, 'message': 'Nome inválido.'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
