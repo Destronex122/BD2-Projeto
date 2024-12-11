@@ -501,38 +501,70 @@ def get_campo_data(request, campoid):
         return JsonResponse({"status": "error", "message": "Campo não encontrado"}, status=404)
     
 @csrf_exempt
+# def update_campo(request, campoid):
+#     if request.method == 'PUT':
+#         try:
+#             data = json.loads(request.body.decode('utf-8'))
+#             campo = Campos.objects.get(pk=campoid)
+
+#             campo.nome = data.get('nome', campo.nome)
+#             campo.morada = data.get('morada', campo.morada)
+#             campo.cidade = data.get('cidade', campo.cidade)
+#             campo.pais = data.get('pais', campo.pais)
+#             campo.coordenadas = data.get('coordenadas', campo.coordenadas)
+#             campo.save()
+
+#             return JsonResponse({'status': 'success', 'message': 'Campo atualizado com sucesso.'})
+#         except Campos.DoesNotExist:
+#             return JsonResponse({'status': 'error', 'message': 'Campo não encontrado.'}, status=404)
+#         except Exception as e:
+#             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+#     return JsonResponse({'status': 'error', 'message': 'Método não permitido.'}, status=405)
+
 def update_campo(request, campoid):
     if request.method == 'PUT':
         try:
             data = json.loads(request.body.decode('utf-8'))
-            campo = Campos.objects.get(pk=campoid)
 
-            campo.nome = data.get('nome', campo.nome)
-            campo.morada = data.get('morada', campo.morada)
-            campo.cidade = data.get('cidade', campo.cidade)
-            campo.pais = data.get('pais', campo.pais)
-            campo.coordenadas = data.get('coordenadas', campo.coordenadas)
-            campo.save()
+            # Obter os valores enviados na requisição
+            nome = data.get('nome')
+            morada = data.get('morada')
+            cidade = data.get('cidade')
+            pais = data.get('pais')
+            coordenadas = data.get('coordenadas')
 
+            # Validar os dados obrigatórios
+            if not nome or not morada or not cidade or not pais or not coordenadas:
+                return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
+
+            # Preparar as coordenadas para JSON
+            try:
+                lat = float(coordenadas['lat'])
+                lng = float(coordenadas['lng'])
+                coordenadas_json = json.dumps({'lat': lat, 'lng': lng})
+            except (KeyError, ValueError, TypeError):
+                return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas'}, status=400)
+
+            # Chamar o procedimento armazenado
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL update_campo(%s, %s, %s, %s, %s, %s)",
+                    [campoid, coordenadas_json, nome, morada, cidade, pais]
+                )
+
+            # Retornar sucesso
             return JsonResponse({'status': 'success', 'message': 'Campo atualizado com sucesso.'})
-        except Campos.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Campo não encontrado.'}, status=404)
+
         except Exception as e:
+            print(f"Erro ao atualizar campo: {str(e)}")  # Log para depuração
+            if "não encontrado" in str(e):
+                return JsonResponse({'status': 'error', 'message': 'Campo não encontrado.'}, status=404)
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    # Retornar erro para métodos não permitidos
     return JsonResponse({'status': 'error', 'message': 'Método não permitido.'}, status=405)
 
 @csrf_exempt
-# def delete_campo(request, campoid):
-#     if request.method == 'DELETE':
-#         try:
-#             campo = Campos.objects.get(pk=campoid)
-#             campo.delete()
-#             return JsonResponse({"status": "success", "message": "Campo eliminado com sucesso."})
-#         except Campos.DoesNotExist:
-#             return JsonResponse({"status": "error", "message": "Campo não encontrado."}, status=404)
-#         except Exception as e:
-#             return JsonResponse({"status": "error", "message": str(e)}, status=500)
-#     return JsonResponse({"status": "error", "message": "Método não permitido."}, status=405)
 def delete_campo(request, campoid):
     if request.method == 'DELETE':
         try:
