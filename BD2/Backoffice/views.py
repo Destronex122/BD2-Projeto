@@ -355,7 +355,7 @@ def add_request(request):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL add_pedido(%s, %s, %s, %s, %s, %s)",  # Incluí "nome"
+                    "CALL add_pedido(%s, %s, %s, %s, %s, %s)", 
                     [clienteid, aprovadorid, nome, datainicio, datafim, precoestimado]
                 )
             return redirect('/request')
@@ -395,19 +395,12 @@ def delete_request(request, pedidoid):
     return JsonResponse({'success': False, 'message': 'Método inválido.'})
 
 def grapevariety(request):
-    # Obtendo o filtro da query string
     filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
-
-    # Buscando todos os objetos Castas
     grapevarieties = Castas.objects.all().order_by('nome')
-
-    # Aplicando o filtro, se necessário
     if filter_grapevariety:
         grapevarieties = grapevarieties.filter(nome__icontains=filter_grapevariety)
-
-    # Renderizando o template com o contexto
     return render(request, 'grapevariety.html', {
-        'castas': grapevarieties,  # Passando os dados para o template
+        'castas': grapevarieties,  
         'filters': {
             'filter_grapevariety': filter_grapevariety
         },
@@ -418,30 +411,41 @@ def addvariety(request):
     if request.method == 'POST':
         nome = request.POST.get('varietyName', '').strip()
         if nome:
-            # Cria a nova casta
-            new_variety = Castas.objects.create(nome=nome)
-            # Retorna a nova casta como resposta JSON
-            return JsonResponse({'success': True, 'id': new_variety.castaid, 'nome': new_variety.nome})
+            try:
+                with connection.cursor() as cursor:
+                    # Chama o procedimento armazenado e obtém o ID gerado
+                    cursor.execute("CALL insert_casta(%s, %s)", [nome, None])
+                    new_castaid = cursor.fetchone()[0]  # Obtemos o ID retornado
+                return JsonResponse({'success': True, 'id': new_castaid, 'nome': nome})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': f'Erro ao criar a casta: {str(e)}'})
         return JsonResponse({'success': False, 'message': 'Nome inválido.'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 @login_required
 def delete_variety(request, castaid):
     if request.method == 'POST':
-        casta = get_object_or_404(Castas, castaid=castaid)
-        casta.delete()
-        return JsonResponse({'success': True})
+        try:
+            with connection.cursor() as cursor:
+                # Use o comando CALL para invocar o procedimento armazenado
+                cursor.execute("CALL delete_casta(%s)", [castaid])
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao excluir a casta: {str(e)}'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 @login_required
 def editvariety(request, castaid):
     if request.method == 'POST':
-        casta = get_object_or_404(Castas, castaid=castaid)
         nome = request.POST.get('varietyName', '').strip()
         if nome:
-            casta.nome = nome
-            casta.save()
-            return JsonResponse({'success': True, 'id': casta.castaid, 'nome': casta.nome})
+            try:
+                with connection.cursor() as cursor:
+                    # Chama o procedimento armazenado para atualizar o registro
+                    cursor.execute("CALL update_casta(%s, %s)", [castaid, nome])
+                return JsonResponse({'success': True, 'id': castaid, 'nome': nome})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': f'Erro ao editar a casta: {str(e)}'})
         return JsonResponse({'success': False, 'message': 'Nome inválido.'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
@@ -461,35 +465,18 @@ def save_marker(request):
         if not coordenadas or not nome or not morada or not cidade or not pais:
             return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
 
-        # Separando as coordenadas em lat e lng
+        # Verifique se as coordenadas estão no formato correto
         try:
-            lat, lng = map(float, coordenadas.split(','))
-            coordenadas_json = {'lat': lat, 'lng': lng}  # Salvar como JSON
-        except ValueError:
+            lat = float(coordenadas['lat'])  # Extrai a latitude
+            lng = float(coordenadas['lng'])  # Extrai a longitude
+            coordenadas_json = {'lat': lat, 'lng': lng}  # Prepara o JSON
+        except (ValueError, KeyError, TypeError):
             return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas'}, status=400)
 
-        # Criar um novo registro no banco de dados
-        campo = Campos.objects.create(
-            coordenadas=coordenadas_json,  # Salvar as coordenadas como JSON
-            nome=nome,
-            morada=morada,
-            cidade=cidade,
-            pais=pais, 
-            datacriacao=timezone.now()  # Data de criação é a data e hora atual
-        )
-
-        return JsonResponse({
-            'status': 'success',
-            'campo': {
-                'campoid': campo.campoid,
-                'nome': campo.nome,
-                'morada': campo.morada,
-                'cidade': campo.cidade,
-                'pais': campo.pais,
-                'coordenadas': campo.coordenadas,  # Retorna o JSON das coordenadas
-                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
-            }
-        })
+        # Chamar o procedimento armazenado
+        with connection.cursor() as cursor:
+            cursor.callproc('create_campo', [json.dumps(coordenadas_json), nome, morada, cidade, pais])
+            campoid = cursor.fetchone()[0]  # Obter o campoid retornado pelo procedimento
         
     except Exception as e:
         print(f"Erro ao salvar marcador: {str(e)}")  # Exibe o erro para depuração
@@ -519,32 +506,63 @@ def update_campo(request, campoid):
     if request.method == 'PUT':
         try:
             data = json.loads(request.body.decode('utf-8'))
-            campo = Campos.objects.get(pk=campoid)
 
-            campo.nome = data.get('nome', campo.nome)
-            campo.morada = data.get('morada', campo.morada)
-            campo.cidade = data.get('cidade', campo.cidade)
-            campo.pais = data.get('pais', campo.pais)
-            campo.coordenadas = data.get('coordenadas', campo.coordenadas)
-            campo.save()
+            # Obter os valores enviados na requisição
+            nome = data.get('nome')
+            morada = data.get('morada')
+            cidade = data.get('cidade')
+            pais = data.get('pais')
+            coordenadas = data.get('coordenadas')
 
+            # Validar os dados obrigatórios
+            if not nome or not morada or not cidade or not pais or not coordenadas:
+                return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
+
+            # Preparar as coordenadas para JSON
+            try:
+                lat = float(coordenadas['lat'])
+                lng = float(coordenadas['lng'])
+                coordenadas_json = json.dumps({'lat': lat, 'lng': lng})
+            except (KeyError, ValueError, TypeError):
+                return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas'}, status=400)
+
+            # Chamar o procedimento armazenado
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL update_campo(%s, %s, %s, %s, %s, %s)",
+                    [campoid, coordenadas_json, nome, morada, cidade, pais]
+                )
+
+            # Retornar sucesso
             return JsonResponse({'status': 'success', 'message': 'Campo atualizado com sucesso.'})
-        except Campos.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Campo não encontrado.'}, status=404)
+
         except Exception as e:
+            print(f"Erro ao atualizar campo: {str(e)}")  # Log para depuração
+            if "não encontrado" in str(e):
+                return JsonResponse({'status': 'error', 'message': 'Campo não encontrado.'}, status=404)
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    # Retornar erro para métodos não permitidos
     return JsonResponse({'status': 'error', 'message': 'Método não permitido.'}, status=405)
 
 @csrf_exempt
 def delete_campo(request, campoid):
     if request.method == 'DELETE':
         try:
-            campo = Campos.objects.get(pk=campoid)
-            campo.delete()
+            # Chamar o procedimento armazenado usando CALL
+            with connection.cursor() as cursor:
+                cursor.execute("CALL delete_campo(%s)", [campoid])
+
+            # Retorno de sucesso
             return JsonResponse({"status": "success", "message": "Campo eliminado com sucesso."})
-        except Campos.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Campo não encontrado."}, status=404)
+
         except Exception as e:
+            # Captura exceções e retorna erro
+            print(f"Erro ao eliminar campo: {str(e)}")  # Log para depuração
+            if "não encontrado" in str(e):
+                return JsonResponse({"status": "error", "message": "Campo não encontrado."}, status=404)
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+    # Retorno para métodos não permitidos
     return JsonResponse({"status": "error", "message": "Método não permitido."}, status=405)
 

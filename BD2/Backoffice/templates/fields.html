@@ -321,13 +321,15 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
+                        // Atualiza a tabela com o novo campo
+        
                         // Ordena os campos manualmente no JavaScript (opcional, já estão ordenados no backend)
-                        data.campos.sort((a, b) => a.nome.localeCompare(b.nome));
+                        camposOrdenados = data.campos.sort((a, b) => a.nome.localeCompare(b.nome));
                         
                         const tbody = document.querySelector('#fields-table tbody');
                         tbody.innerHTML = ''; // Limpar a tabela antes de preenchê-la
 
-                        data.campos.forEach(item => {
+                        camposOrdenados.forEach(item => {
                             // Adicionar marcador ao mapa
                             if (item.coordenadas && item.coordenadas.lat && item.coordenadas.lng) {
                                 const latLng = [item.coordenadas.lat, item.coordenadas.lng];
@@ -420,6 +422,9 @@
 
                                 // Adicionar nova linha à tabela
                                 const tbody = document.querySelector('#fields-table tbody');
+                                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                                // Cria uma nova linha para o novo campo
                                 const newRow = document.createElement('tr');
                                 newRow.setAttribute('data-campoid', data.campo.campoid);
                                 newRow.innerHTML = `
@@ -436,8 +441,30 @@
                                             </button>
                                         </form>
                                     </td>
-                                `;
+                                `;                        
+                                        
                                 tbody.appendChild(newRow);
+                                // Adiciona a nova linha à lista de linhas
+                                rows.push(newRow);
+
+                                // Ordena as linhas alfabeticamente pelo nome
+                                rows.sort((a, b) => {
+                                    const nomeA = a.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                                    const nomeB = b.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                                    return nomeA.localeCompare(nomeB);
+                                });
+
+                                // Atualiza o corpo da tabela com as linhas ordenadas
+                                tbody.innerHTML = '';
+                                rows.forEach(row => tbody.appendChild(row));
+
+                                // Atualizar document.querySelector('#formContainer form').onsubmita paginação e a tabela
+                                filteredRows = rows;
+                                renderPaginationButtons();
+                                updateTable();
+
+                                // Define o `currentCampoId` para o ID do novo campo
+                                currentCampoId = data.campo.campoid;
 
                                 closeModal();
                             } else {
