@@ -45,22 +45,38 @@
     <p>Selecione um pedido para visualizar todos os detalhes.</p>
 
     <div class="filters" style="margin-bottom: 20px;">
-        <form id="filterForm">
+        <form method="get" id="filterForm">
             <div style="display: flex; gap: 10px;">
                 <div class="form-group">
                     <label for="filterPedido">Pedido:</label>
-                    <input type="text" id="filterPedido" class="form-control" placeholder="Ex: Pedido A">
+                    <input 
+                        type="text" 
+                        id="filterPedido" 
+                        name="filterPedido" 
+                        class="form-control" 
+                        placeholder="Ex: Pedido A" 
+                        value="{{ filters.filterPedido|default:'' }}">
                 </div>
                 <div class="form-group">
                     <label for="filterDataInicio">Data de início:</label>
-                    <input type="date" id="filterDataInicio" class="form-control">
+                    <input 
+                        type="date" 
+                        id="filterDataInicio" 
+                        name="filterDataInicio" 
+                        class="form-control" 
+                        value="{{ filters.filterDataInicio|default:'' }}">
                 </div>
                 <div class="form-group">
                     <label for="filterDataFim">Data de fim:</label>
-                    <input type="date" id="filterDataFim" class="form-control">
+                    <input 
+                        type="date" 
+                        id="filterDataFim" 
+                        name="filterDataFim" 
+                        class="form-control" 
+                        value="{{ filters.filterDataFim|default:'' }}">
                 </div>
                 <div class="form-group" style="margin-top:24px; width:10%">
-                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                    <button type="submit" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
                 </div>
             </div>
         </form>
@@ -73,56 +89,90 @@
                 <th>Data de início</th>
                 <th>Data de fim</th>
                 <th>Preço estimado (€)</th>
-                <th>Notas</th>
+                <th>Aprovador</th>
+                <th class="actions-column">Ações</th>
             </tr>
         </thead>
         <tbody>
-            <tr data-pedido-id="1" data-pedido="Pedido A" data-data-inicio="2024-09-01" data-data-fim="2024-10-15" data-preco-estimado="5000.00" data-notas="Pedido urgente.">
-                <td>Pedido A</td>
-                <td>2024-09-01</td>
-                <td>2024-10-15</td>
-                <td>5000.00</td>
-                <td>Pedido urgente.</td>
+            {% for pedido in pedidos %}
+            <tr data-pedidoid="{{ pedido.pedidoid }}" >
+                <td>{{ pedido.pedidoid }}</td>
+                <td>{{ pedido.datainicio }}</td>
+                <td>{{ pedido.datafim }}</td>
+                <td>{{ pedido.precoestimado }}</td>
+                <td>{{ pedido.aprovadorid.nome }}</td>
+                <td class="actions-column">
+                    <button type="button" class="btn btn-primary" onclick="openEditModal('{{ pedido.pedidoid }}')">
+                        Editar
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="deleteRequest('{{ pedido.pedidoid }}')">
+                        Eliminar
+                    </button>
+                </td>
             </tr>
-            <tr data-pedido-id="2" data-pedido="Pedido B" data-data-inicio="2024-08-15" data-data-fim="2024-10-05" data-preco-estimado="4500.00" data-notas="Pedido com observações.">
-                <td>Pedido B</td>
-                <td>2024-08-15</td>
-                <td>2024-10-05</td>
-                <td>4500.00</td>
-                <td>Pedido com observações.</td>
+            {% empty %}
+            <tr>
+                <td colspan="5">Nenhum pedido encontrado.</td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
 
     <!-- Modal para Adicionar Pedido -->
-    <div class="popup-overlay" id="addRequestModal">
+    <div class="popup-overlay" id="addRequestModal" style="display: none;">
         <div class="popup-content">
             <div class="popup-header">
-                <h5>Adicionar novo pedido</h5>
+                <h5 id="modalTitle">Adicionar Novo Pedido</h5> <!-- Título dinâmico -->
                 <span class="modal-close" onclick="closeAddRequestModal()">&times;</span>
             </div>
-            <br>
-            <form id="addRequestForm" onsubmit="addRequest(event)">
+            <form id="addRequestForm" action="{% url 'add_request' %}" method="post">
+                {% csrf_token %}
+                <!-- Campo para o Cliente -->
                 <div class="form-group">
-                    <label for="newRequest">Nome:</label>
-                    <input type="text" id="newRequest" class="form-control" required>
+                    <label for="clienteid">Cliente:</label>
+                    <select id="clienteid" name="clienteid" class="form-control" required>
+                        <option value="">Selecione um cliente</option>
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente.clienteid }}">{{ cliente.clienteid}}</option>
+                        {% endfor %}
+                    </select>
                 </div>
+            
+                <!-- Campo para o Aprovador -->
+                <div class="form-group">
+                    <label for="aprovadorid">Aprovador:</label>
+                    <select id="aprovadorid" name="aprovadorid" class="form-control" required>
+                        <option value="">Selecione um aprovador</option>
+                        {% for aprovador in users %}
+                            <option value="{{ aprovador.userid }}">{{ aprovador.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="newNome">Nome do Pedido:</label>
+                    <input type="text" id="newNome" name="newNome" class="form-control" required>
+                </div>
+            
+                <!-- Data de Início -->
                 <div class="form-group">
                     <label for="newDataInicio">Data de início:</label>
-                    <input type="date" id="newDataInicio" class="form-control" required>
+                    <input type="date" id="newDataInicio" name="newDataInicio" class="form-control" required>
                 </div>
+            
+                <!-- Data de Fim -->
                 <div class="form-group">
                     <label for="newDataFim">Data de fim:</label>
-                    <input type="date" id="newDataFim" class="form-control" required>
+                    <input type="date" id="newDataFim" name="newDataFim" class="form-control" required>
                 </div>
+            
+                <!-- Preço Estimado -->
                 <div class="form-group">
                     <label for="newPrecoEstimado">Preço estimado (€):</label>
-                    <input type="number" id="newPrecoEstimado" class="form-control" required>
+                    <input type="number" id="newPrecoEstimado" name="newPrecoEstimado" class="form-control" required>
                 </div>
-                <div class="form-group">
-                    <label for="newNotas">Notas:</label>
-                    <textarea id="newNotas" class="form-control" required></textarea>
-                </div>
+            
+                <!-- Botões -->
                 <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                     <button type="button" onclick="closeAddRequestModal()" class="secondary-button">Cancelar</button>
                     <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
@@ -130,60 +180,64 @@
             </form>
         </div>
     </div>
+    
+    
 
     <script>
-        // Função para abrir o modal de adicionar pedido
-        function openAddRequestModal() {
-            document.getElementById('addRequestModal').style.display = 'flex';
+function openAddRequestModal() {
+    const modal = document.getElementById('addRequestModal');
+    modal.style.display = 'flex'; 
+}
+
+
+function closeAddRequestModal() {
+    const modal = document.getElementById('addRequestModal');
+    modal.style.display = 'none'; 
+}
+
+function openEditModal(pedidoid) {
+    const targetRow = event.target.closest('tr');
+    if (pedidoid) {
+            window.location.href = `/backoffice/requestdetail/${pedidoid}/`;
         }
 
-        // Função para fechar o modal de adicionar pedido
-        function closeAddRequestModal() {
-            document.getElementById('addRequestModal').style.display = 'none';
+
+
+    // Preencha os campos no popup
+    document.getElementById('pedidoid').value = pedidoid;
+    document.getElementById('newNome').value = nome;
+    document.getElementById('newClienteId').value = clienteId;
+    document.getElementById('newAprovadorId').value = aprovadorId;
+    document.getElementById('newDataInicio').value = dataInicio;
+    document.getElementById('newDataFim').value = dataFim;
+    document.getElementById('newPrecoEstimado').value = precoEstimado;
+
+    // Altera o título do modal para "Editar Pedido"
+    document.getElementById('modalTitle').textContent = 'Editar Pedido';
+
+    // Mostra o popup
+    const modal = document.getElementById('addRequestModal');
+    modal.style.display = 'flex';
+}
+
+
+document.getElementById('requestTable').addEventListener('click', function (event) {
+    const targetCell = event.target.closest('td'); // Identifica a célula onde o clique ocorreu
+    const targetRow = event.target.closest('tr'); // Identifica a linha
+
+    // Verifica se clicou na coluna "Ações"
+    if (targetCell && targetCell.classList.contains('actions-column')) {
+        return; // Ignora o clique se for na coluna "Ações"
+    }
+
+    // Processa o clique na linha (fora da coluna "Ações")
+    if (targetRow && !targetRow.closest('thead')) {
+        const pedidoid = targetRow.dataset.pedidoid;
+        if (pedidoid) {
+            window.location.href = `/backoffice/requestdetail/${pedidoid}/`;
         }
-
-        // Função para adicionar um novo pedido na tabela
-        function addRequest(event) {
-            event.preventDefault();
-
-            // Obtém os valores dos campos do formulário
-            const newRequest = document.getElementById('newRequest').value;
-            const newDataInicio = document.getElementById('newDataInicio').value;
-            const newDataFim = document.getElementById('newDataFim').value;
-            const newPrecoEstimado = document.getElementById('newPrecoEstimado').value;
-            const newNotas = document.getElementById('newNotas').value;
-
-            // Cria uma nova linha na tabela com os dados do novo pedido
-            const newRow = `
-                <tr data-pedido="${newPedido}" data-data-inicio="${newDataInicio}" data-data-fim="${newDataFim}" data-preco-estimado="${newPrecoEstimado}" data-notas="${newNotas}">
-                    <td>${newDataInicio}</td>
-                    <td>${newDataFim}</td>
-                    <td>${newPedido}</td>
-                    <td>${newPrecoEstimado}</td>
-                    <td>${newNotas}</td>
-                </tr>
-            `;
-
-            // Adiciona a nova linha ao corpo da tabela
-            document.querySelector('#requestTable tbody').insertAdjacentHTML('beforeend', newRow);
-
-            // Fecha o modal e reseta o formulário
-            closeAddRequestModal();
-            document.getElementById('addRequestForm').reset();
-        }
-
-        // Adiciona o redirecionamento para os detalhes do pedido ao clicar na linha da tabela
-        const requestTable = document.getElementById('requestTable');
-
-        requestTable.addEventListener('click', function(event) {
-            const targetRow = event.target.closest('tr');
-            const isHeader = event.target.closest('thead');
-
-            if (targetRow && !isHeader) {
-                const pedidoId = targetRow.getAttribute('data-pedido-id');
-                window.location.href = `/backoffice/requestdetail/`;
-            }
-        });
+    }
+});
     </script>
 </div>
 

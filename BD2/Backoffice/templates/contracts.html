@@ -19,24 +19,38 @@
     </div>
     <p>Selecione um contrato para visualizar o detalhe do mesmo.</p> 
 
-    <!-- Filtros para a tabela -->
-    <div class="filters" style="margin-bottom: 20px;">
-        <form id="filterForm">
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group">
-                    <label for="filterNumber">Nº do contrato:</label>
-                    <input type="text" id="filterNumber" class="form-control" placeholder="Ex: E123123">
-                </div>
-                <div class="form-group">
-                    <label for="filterDate">Data de início do contrato:</label>
-                    <input type="date" id="filterDate" class="form-control">
-                </div>
-                <div class="form-group" style="margin-top:24px; width:10%">
-                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
-                </div>
+   <!-- Filtros para a tabela -->
+<!-- Filtros para a tabela -->
+<div class="filters" style="margin-bottom: 20px;">
+    <form method="get" id="filterForm">
+        <div style="display: flex; gap: 10px;">
+            <div class="form-group">
+                <label for="filterNumber">Nº do contrato:</label>
+                <input 
+                    type="text" 
+                    id="filterNumber" 
+                    name="filterNumber" 
+                    class="form-control" 
+                    placeholder="Ex: E123123" 
+                    value="{{ filters.filterNumber|default:'' }}">
             </div>
-        </form>
-    </div>
+            <div class="form-group">
+                <label for="filterDate">Data de início:</label>
+                <input 
+                    type="date" 
+                    id="filterDate" 
+                    name="filterDate" 
+                    class="form-control" 
+                    value="{{ filters.filterDate|default:'' }}">
+            </div>
+            <div class="form-group" style="margin-top:24px; width:10%">
+                <button type="submit" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
 
     <!-- Tabela de entregas -->
     <table class="table table-bordered" id="contractTable">
@@ -51,31 +65,33 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>QWE122</td>
-                <td>José Antonio</td>
-                <td>10-11-2025</td>
-                <td>10-11-2026</td>
-                <td>345.78</td>
-                <td>56.00€</td>
+            {% for contrato in contrato %}
+            <tr  data-contratoid="{{ contrato.contratoid}}">
+                <td>{{ contrato.contratoid}}</td>
+                <td>{{ contrato.clienteid.nif}}</td>
+                <td>{{ contrato.datainicio }}</td>
+                <td>{{ contrato.datafim}}</td>
+                <td>{{ contrato.qtdeestimada }}</td>
+                <td>{{ contrato.precoestimado }}</td>
             </tr>
+            {% empty %}
             <tr>
-                <td>QWE123</td>
-                <td>Ivo Cunha</td>
-                <td>10-11-2026</td>
-                <td>10-11-2027</td>
-                <td>370.89</td>
-                <td>100.00€</td>
+                <td colspan="6">Nenhum contrato encontrado.</td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
+    
 
     <script>
-
-        document.getElementById('contractTable').addEventListener('click', function(event) {
+        document.getElementById('contractTable').addEventListener('click', function(event){
             const targetRow = event.target.closest('tr');
-            if (targetRow && !targetRow.closest('thead')) {
-                window.location.href = `/backoffice/contractdetail/`; // Adjust with appropriate URL logic
+            if(targetRow && !targetRow.closest('thead')){
+                const contratoid = targetRow.dataset.contratoid;
+                if(contratoid){
+                    console.log(`Redirecionando para userdetail com ID: ${contratoid}`);
+                    window.location.href = `/backoffice/contractdetail/${contratoid}/`;
+                }
             }
         });
     </script>

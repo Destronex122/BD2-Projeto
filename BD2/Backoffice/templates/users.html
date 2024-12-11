@@ -28,33 +28,47 @@
 
     <!-- Filtros para a tabela de utilizadores -->
     <div class="filters mb-3">
-        <form id="filterForm" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <form method="get" id="filterForm" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
             <!-- Campo Nome -->
             <div class="form-group" style="flex: 1; min-width: 200px;">
                 <label for="filterName" style="display: block;">Nome:</label>
-                <input type="text" id="filterName" class="form-control" style="margin-bottom:0px" placeholder="Nome">
+                <input 
+                    type="text" 
+                    id="filterName" 
+                    name="filterName" 
+                    class="form-control" 
+                    value="{{ filters.filterName|default:'' }}" 
+                    placeholder="Nome">
             </div>
             
             <!-- Campo Email -->
             <div class="form-group" style="flex: 1; min-width: 200px;">
                 <label for="filterEmail" style="display: block;">Email:</label>
-                <input type="email" id="filterEmail" class="form-control" placeholder="Email">
+                <input 
+                    type="email" 
+                    id="filterEmail" 
+                    name="filterEmail" 
+                    class="form-control" 
+                    value="{{ filters.filterEmail|default:'' }}" 
+                    placeholder="Email">
             </div>
             
             <!-- Dropdown Cargo -->
             <div class="form-group" style="flex: 1; min-width: 200px;">
                 <label for="filterCargo" style="display: block;">Cargo:</label>
-                <select id="filterCargo" class="form-control">
-                    <option value="">Todos</option>
-                    <option value="Administrador">Administrador</option>
-                    <option value="Cliente">Cliente</option>
-                    <option value="Colaborador">Colaborador</option>
+                <select id="filterCargo" name="filterCargo" class="form-control">
+                    <option value="" {% if not filters.filterCargo %}selected{% endif %}>Todos</option>
+                    {% for cargo in cargos %}
+                    <option value="{{ cargo.nome }}" {% if filters.filterCargo == cargo.nome %}selected{% endif %}>
+                        {{ cargo.nome }}
+                    </option>
+                    {% endfor %}
                 </select>
             </div>
             
             <!-- Botão Aplicar -->
             <div class="col-md-2" style="margin-top:8px; width:10%">
-                <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                <button type="submit" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
             </div>
         </form>
     </div>
@@ -84,6 +98,10 @@
                 <td>{% if user.campoid %}{{ user.campoid.morada }}{% else %}-{% endif %}</td>
                 <td>{% if user.cargoid %}{{ user.cargoid.nome }}{% else %}-{% endif %}</td>
 
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">Nenhum utilizador encontrado.</td>
             </tr>
             {% endfor %}
         </tbody>

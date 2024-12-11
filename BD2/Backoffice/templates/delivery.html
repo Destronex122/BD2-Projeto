@@ -26,18 +26,29 @@
 
     <!-- Filtros para a tabela -->
     <div class="filters" style="margin-bottom: 20px;">
-        <form id="filterForm">
+        <form method="get" id="filterForm">
             <div style="display: flex; gap: 10px;">
                 <div class="form-group">
                     <label for="filterNumber">Nº da encomenda:</label>
-                    <input type="text" id="filterNumber" class="form-control" placeholder="Ex: E123123">
+                    <input 
+                        type="text" 
+                        id="filterNumber" 
+                        name="filterNumber" 
+                        class="form-control" 
+                        placeholder="Ex: E123123" 
+                        value="{{ filters.filterNumber|default:'' }}">
                 </div>
                 <div class="form-group">
                     <label for="filterDate">Data da entrega:</label>
-                    <input type="date" id="filterDate" class="form-control">
+                    <input 
+                        type="date" 
+                        id="filterDate" 
+                        name="filterDate" 
+                        class="form-control" 
+                        value="{{ filters.filterDate|default:'' }}">
                 </div>
                 <div class="form-group" style="margin-top:24px; width:10%">
-                    <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                    <button type="submit" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
                 </div>
             </div>
         </form>
@@ -49,23 +60,25 @@
             <tr>
                 <th>Nº da encomenda</th>
                 <th>Endereço</th>
-                <th>Código postal</th>
-                <th>Cidade</th>
+                <th>Data</th>
+                <th>Preço transporte</th>
+                <th>Estado </th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>E123123</td>
-                <td>Quinta do Douro</td>
-                <td>3000-100</td>
-                <td>Porto</td>
+            {% for transporte in Transportes %}
+            <tr data-idtransporte = "{{ transporte.idtransporte}}">
+                <td> {{transporte.idtransporte}}</td>
+                <td> {{transporte.morada}}</td>
+                <td>{{transporte.data}}</td>
+                <td>{{transporte.precotransporte}}</td>
+                <td>{{transporte.estadoid.nome}}</td>
             </tr>
+            {% empty %}
             <tr>
-                <td>E234432</td>
-                <td>Quinta do Dão</td>
-                <td>3500-100</td>
-                <td>Viseu</td>
+                <td colspan="5">Nenhuma encomenda encontrada.</td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
 

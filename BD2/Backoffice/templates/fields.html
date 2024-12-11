@@ -8,6 +8,11 @@
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<!-- DataTables CSS e JS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
 
 <style>
     .leaflet-draw-draw-polyline,
@@ -16,6 +21,31 @@
     .leaflet-draw-draw-circle {
         display: none !important;
     }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination button {
+        margin: 0 5px;
+        padding: 5px 10px;
+        border: 1px solid #e9e8e2;
+        background-color: #e9e8e2;
+        cursor: pointer;
+    }
+
+    .pagination button.active {
+        font-weight: bold;
+        background-color: #616646;
+    }
+
+    .pagination button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
 </style>
 
 {% csrf_token %}
@@ -26,9 +56,17 @@
     </div>
     <br>
     <div style="display:flex; justify-content: space-between;">
-        <div id="map" style="width: 650px; height: 450px; margin-right:24px"></div>
+        <div id="map" style="width: 650px; height: 500px; margin-right:24px"></div>
         <div style="width:50%;">
-            <table>
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="search-bar" style="display: block;">Nome do campo ou cidade:</label>
+                    <input type="text" id="search-bar" placeholder="Pesquisar por nome ou cidade" style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                </div>
+                <button id="apply-filter" style="margin-bottom: 15px;gap: 10px;align-items: center;">Aplicar</button>
+                <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2;">Limpar</button>
+            </div>
+            <table id="fields-table">
                 <thead>
                     <tr>
                         <th>Nome do campo</th>
@@ -36,95 +74,53 @@
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>Quinta do Douro</td>
-                        <td>Porto</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Quinta do Dão</td>
-                        <td>Viseu</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Quinta do Alentejo</td>
-                        <td>Alentejo</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Quinta de Mirandela</td>
-                        <td>Mirandela</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Quinta de Lagos</td>
-                        <td>Lagos</td>
-                        <td>
-                            <form method="GET" style="display:inline;">
-                                <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                            </form>
-                            <form method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height:25px; width: auto;"></button>
-                            </form>
-                        </td>
-                    </tr>
+                <tbody id="table-body">
+                    {% for campo in campos %}
+                        <tr data-campoid="{{ campo.campoid }}">
+                            <td>{{ campo.nome }}</td>
+                            <td>{{ campo.cidade }}</td>
+                            <td>
+                                <button title="Editar campo" type="button" class="edit-btn" data-id="{{ campo.campoid }}">
+                                    <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                                </button>
+                                <button title="Eliminar campo" type="button" class="delete-btn" data-id="{{ campo.campoid }}">
+                                    <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
+            <div class="pagination" id="pagination"></div>
         </div>
+        
     </div>
-    
+
+
+    <!-- Modal para visualizar ou editar informações -->
     <div id="myModal" class="sidebar">
         <div class="p-3">
             <div style="text-align:right; padding:0px 24px;">
                 <span class="close">&times;</span>
             </div>
-            <h2>Adicionar novo campo</h2>
-            <div id="formContainer" style=" margin-top: 15px;">
+            <h2>Detalhes do campo</h2>
+            <div id="formContainer" style="margin-top: 15px;">
                 <form method="POST">
                     {% csrf_token %}
                     <label for="name">Nome do campo:</label>
-                    <input style="width: 50%;" type="text" id="name" name="name" required>
+                    <input style="width: 50%;" type="text" id="name" name="nome" required>
 
-                    <label for="name">Localidade:</label>
-                    <input style="width: 50%;" type="text" id="name" name="name" required>
+                    <label for="morada">Morada:</label>
+                    <input style="width: 50%;" type="text" id="morada" name="morada" required>
+
+                    <label for="cidade">Cidade:</label>
+                    <input style="width: 50%;" type="text" id="cidade" name="cidade" required>
+
+                    <label for="pais">País:</label>
+                    <input style="width: 50%;" type="text" id="pais" name="pais" required>
 
                     <label for="coordinates">Coordenadas:</label>
-                    <span id="coordinates" style="display: inline-block; width: 50%; padding: 5px; border: 1px solid #ccc; background-color: #f9f9f9;">Selecionar no mapa</span><br>
-                    <br/>
+                    <span id="coordinates" style="display: inline-block; width: 50%; padding: 5px; border: 1px solid #ccc; background-color: #f9f9f9;">Selecionar no mapa</span><br><br/>
                     <button type="submit">Guardar</button> 
                 </form>
             </div>
@@ -132,116 +128,428 @@
     </div>
 
     <script>
-        var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
-    
-        map.removeControl(map.attributionControl);
-    
-        var layerControl = L.control.layers({}, {}).addTo(map);
-    
-        // Adiciona a camada de mapa como camada inicial
-        var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        }).addTo(map); // <-- Configurado para abrir no modo "Mapa"
-    
-        var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        });
-    
-        layerControl.addBaseLayer(osmLayer, 'Mapa');
-        layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
-    
-        var croplandMarkers = L.layerGroup().addTo(map);
-    
-        fetch('/backoffice/load_croplands/', { method: 'GET' })
-            .then(response => response.json())
-            .then(data => addCroplandsToMap(data))
-            .catch(error => console.error('Erro ao carregar campos:', error));
-    
-        // Função para adicionar campos no mapa
-        function addCroplandsToMap(markers) {
-            let jsonArray = JSON.parse(markers); // Recebe array de campos
-            jsonArray.forEach(item => {
-                const latLng = [item.lat, item.lng]; // Posição do campo
-                const markerLayer = L.marker(latLng).bindPopup(item.description); // Mostra descrição ao clicar
-                
-                // Abre a modal e exibe o formulário ao clicar no marcador do campo
-                markerLayer.on('click', function() {
-                    document.getElementById('formContainer').style.display = 'block';
-                    openModal();
-                });
-                croplandMarkers.addLayer(markerLayer);
-            });
-        }
-    
-        // Substituir o texto do botão de marcador
-        layerControl.addOverlay(croplandMarkers, 'Marcadores de campos');
-        L.drawLocal.draw.toolbar.buttons.marker = 'Marcar campo';
-    
-        // Configurar controlo de desenho para permitir apenas marcadores
-        var drawControl = new L.Control.Draw({
-            draw: {                
-                marker: true, // Habilitar apenas marcador
-                polygon: false, // Desabilitar polígonos
-                circle: false,
-                rectangle: false,
-                circlemarker: false,
-                polyline: false
-            },
-            edit: false // Desabilitar edição
-        }).addTo(map);
-    
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchBar = document.getElementById('search-bar');
+            const applyFilterButton = document.getElementById('apply-filter');
+            const clearFilterButton = document.getElementById('clear-filter');
+            const tableBody = document.getElementById('table-body');
+            const paginationContainer = document.getElementById('pagination');
+            const rowsPerPage = 5; // Número de linhas por página
+            let currentPage = 1; // Página inicial
+            let filteredRows = []; // Armazena as linhas filtradas
 
-        map.on('draw:created', function(e) {
-            var type = e.layerType, layer = e.layer;
-            var csrfToken = '{{ csrf_token }}'; 
-            if (type == 'marker') {
+            // Função para limpar o filtro
+            function clearFilter() {
+                searchBar.value = ''; // Limpa o texto da barra de pesquisa
+                filteredRows = Array.from(tableBody.querySelectorAll('tr')); // Reseta as linhas filtradas para todas as linhas
+                currentPage = 1; // Retorna à primeira página
+                updateTable(); // Atualiza a tabela
+            }
+
+            // Event listener para o botão de limpar filtro
+            clearFilterButton.addEventListener('click', clearFilter);
+
+            // Função para inicializar a paginação
+            function initPagination() {
+                const rows = Array.from(tableBody.querySelectorAll('tr'));
+                filteredRows = rows; // Inicia com todas as linhas disponíveis
+                renderPaginationButtons(); // Renderizar os botões de paginação
+                updateTable(); // Exibir a primeira página
+            }
+
+            // Função para aplicar o filtro e atualizar a paginação
+            function applyFilter() {
+                const query = searchBar.value.toLowerCase().trim(); // Texto do filtro
+                const allRows = Array.from(tableBody.querySelectorAll('tr'));
+
+                // Filtrar as linhas com base no texto de busca
+                filteredRows = allRows.filter(row => {
+                    const nome = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                    const cidade = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    return nome.includes(query) || cidade.includes(query);
+                });
+
+                // Reiniciar para a primeira página após aplicar o filtro
+                currentPage = 1;
+
+                // Atualizar a tabela e a paginação
+                updateTable();
+            }
+
+            // Função para atualizar a tabela com base na página atual
+            function updateTable() {
+                // Ordenar os campos por nome
+                filteredRows.sort((a, b) => {
+                    const nomeA = a.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                    const nomeB = b.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                    return nomeA.localeCompare(nomeB);
+                });
+                // Ordenar os campos por nome
+                const startIndex = (currentPage - 1) * rowsPerPage;
+                const endIndex = startIndex + rowsPerPage;
+                
+                // Esconder todas as linhas e mostrar apenas as filtradas na página atual
+                Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+                filteredRows.slice(startIndex, endIndex).forEach(row => (row.style.display = ''));
+
+                renderPaginationButtons();
+            }
+
+            // Função para renderizar os botões de paginação
+            function renderPaginationButtons() {
+                paginationContainer.innerHTML = '';
+                const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) {
+                        button.classList.add('active');
+                    }
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+
+             
+
+            // Inicializar tabela e paginação ao carregar
+            function init() {
+                filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+                updateTable();
+            }
+
+            // Event listener para o botão de filtro
+            applyFilterButton.addEventListener('click', applyFilter);
+
+            // Inicializar tabela e paginação ao carregar a página
+            init();
+
+
+            // Inicializar o mapa
+            var map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
+            map.removeControl(map.attributionControl);
+
+            var layerControl = L.control.layers({}, {}).addTo(map);
+            var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+            }).addTo(map);
+
+            var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+            });
+
+
+        //Meter em português tudo que se encontra no mapa
+            //CANCELAR
+            L.drawLocal.draw.toolbar.actions = {
+                text: 'Cancelar'
+            };
+            //ADICIONAR NO MAPA
+            L.drawLocal.draw.handlers.marker = {
+                tooltip: {
+                    start: 'Clique no mapa para adicionar o marcador.' // Texto traduzido
+                }
+            };
+            //ZOOM IN E OUT
+            const zoomInButton = document.querySelector('.leaflet-control-zoom-in');
+            const zoomOutButton = document.querySelector('.leaflet-control-zoom-out');
+            if (zoomInButton) zoomInButton.setAttribute('title', 'Aproximar');
+            if (zoomOutButton) zoomOutButton.setAttribute('title', 'Afastar');
+            //ADICIONAR MARKER            
+            L.drawLocal.draw.toolbar.buttons.marker = 'Adicionar um marcador';
+            //VISUALIZAÇÃO DO MAPA
+            layerControl.addBaseLayer(osmLayer, 'Mapa');
+            layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
+
+            var croplandMarkers = L.layerGroup().addTo(map);
+            let currentCampoId = null; // ID do campo a ser editado ou criado
+
+            // Função para limpar os campos da modal
+            function clearModalFields() {
+                document.getElementById('name').value = '';
+                document.getElementById('morada').value = '';
+                document.getElementById('cidade').value = '';
+                document.getElementById('pais').value = '';
+                document.getElementById('coordinates').textContent = 'Selecionar no mapa';
+                currentCampoId = null; // Limpar o campo ID ao limpar
+            }
+
+            // Função para abrir a modal com dados
+            function openModalWithData(item) {
+                if (!item || !item.coordenadas) {
+                    console.error('Dados inválidos para abrir a modal:', item);
+                    return;
+                }
+
+                document.getElementById('name').value = item.nome || '';
+                document.getElementById('morada').value = item.morada || '';
+                document.getElementById('cidade').value = item.cidade || '';
+                document.getElementById('pais').value = item.pais || '';
+                document.getElementById('coordinates').textContent = `Lat: ${item.coordenadas.lat}, Lng: ${item.coordenadas.lng}`;
+                currentCampoId = item.campoid; // Armazenar o ID do campo para edição
+                openModal();
+            }
+
+            function openModal() {
+                const modal = document.getElementById('myModal');
+                modal.classList.add('open');
+            }
+
+            function closeModal() {
+                const modal = document.getElementById('myModal');
+                modal.classList.remove('open');
+            }
+
+            const closeBtn = document.querySelector('.close');
+            closeBtn.onclick = closeModal;
+
+            document.addEventListener('click', function (event) {
+                const modal = document.getElementById('myModal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // Carregar campos e adicionar ao mapa e tabela
+            fetch('/load_croplands/', { method: 'GET' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Ordena os campos manualmente no JavaScript (opcional, já estão ordenados no backend)
+                        data.campos.sort((a, b) => a.nome.localeCompare(b.nome));
+                        
+                        const tbody = document.querySelector('#fields-table tbody');
+                        tbody.innerHTML = ''; // Limpar a tabela antes de preenchê-la
+
+                        data.campos.forEach(item => {
+                            // Adicionar marcador ao mapa
+                            if (item.coordenadas && item.coordenadas.lat && item.coordenadas.lng) {
+                                const latLng = [item.coordenadas.lat, item.coordenadas.lng];
+                                const markerLayer = L.marker(latLng)
+                                    .bindPopup(`<b>${item.nome}</b>`)
+                                    .on('click', () => openModalWithData(item)); // Modal com dados
+                                croplandMarkers.addLayer(markerLayer);
+                            }
+
+                            // Adicionar linha na tabela
+                            const newRow = document.createElement('tr');
+                            newRow.innerHTML = `
+                                <td>${item.nome}</td>
+                                <td>${item.cidade}</td>
+                                <td>
+                                    <button title="Editar casta" type="button" class="edit-btn" data-id="${item.campoid}">
+                                        <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                                    </button>
+                                    <button title="Eliminar casta" type="button" class="delete-btn" data-id="${item.campoid}">
+                                        <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(newRow);
+                        });
+                        // Inicializar paginação após carregar os dados
+                        initPagination();
+        
+                    } else {
+                        console.error('Erro ao carregar campos:', data.message);
+                    }
+                })
+                .catch(error => console.error('Erro ao carregar campos:', error));
+
+            
+
+            // Controle de desenho para adicionar novos marcadores
+            var drawControl = new L.Control.Draw({
+                draw: {
+                    marker: true,
+                    polygon: false,
+                    circle: false,
+                    rectangle: false,
+                    circlemarker: false,
+                    polyline: false
+                },
+                edit: false
+            }).addTo(map);
+
+            map.on('draw:created', function (e) {
+                var layer = e.layer;
+                var csrfToken = '{{ csrf_token }}';
+
+                clearModalFields(); // Limpar campos da modal ao criar novo marcador
+
                 document.getElementById('coordinates').textContent = `Lat: ${layer.getLatLng().lat}, Lng: ${layer.getLatLng().lng}`;
                 openModal();
-                // Adicionar um event listener para o botão de submissão do formulário da modal
-                document.querySelector('#formContainer form').onsubmit = function(event) {
-                    event.preventDefault();  // Evita a submissão padrão do formulário
-                    
-                    // Obter os valores do formulário
+
+                document.querySelector('#formContainer form').onsubmit = function (event) {
+                    event.preventDefault();
+
                     var nomeCampo = document.getElementById('name').value;
-                    var cidade = document.getElementById('cidade').value;  // Obter o valor do campo cidade
-                    
-                    // Salvar o marcador no MongoDB e PostgreSQL
-                    fetch('/backoffice/save_marker/', {
+                    var morada = document.getElementById('morada').value;
+                    var cidade = document.getElementById('cidade').value;
+                    var pais = document.getElementById('pais').value;
+                    var coordenadas = layer.getLatLng();
+
+                    fetch('/save_marker/', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
                         body: JSON.stringify({
-                            lat: layer.getLatLng().lat, // Latitude
-                            lng: layer.getLatLng().lng, // Longitude
-                            title: cidade, // Cidade fornecida na modal
-                            description: nomeCampo  // Nome do campo fornecido na modal
+                            nome: nomeCampo,
+                            morada: morada,
+                            cidade: cidade,
+                            pais: pais,
+                            coordenadas: { lat: coordenadas.lat, lng: coordenadas.lng }
                         })
-                    }).then(response => response.json())
-                    .then(data => console.log('Campo guardado com sucesso:', data))
-                    .catch(error => console.error('Erro ao salvar campo:', error));
-                    
-                    document.getElementById('coordinates').textContent = `Lat: ${layer.getLatLng().lat}, Lng: ${layer.getLatLng().lng}`;
-                    croplandMarkers.addLayer(layer);
-                    openModal();
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // Adicionar novo marcador ao mapa
+                                const markerLayer = L.marker([coordenadas.lat, coordenadas.lng])
+                                    .bindPopup(`${data.campo.nome}<br>${data.campo.cidade}`)
+                                    .on('click', () => openModalWithData(data.campo));
+                                croplandMarkers.addLayer(markerLayer);
+
+                                // Adicionar nova linha à tabela
+                                const tbody = document.querySelector('#fields-table tbody');
+                                const newRow = document.createElement('tr');
+                                newRow.setAttribute('data-campoid', data.campo.campoid);
+                                newRow.innerHTML = `
+                                    <td>${data.campo.nome}</td>
+                                    <td>${data.campo.cidade}</td>
+                                    <td>
+                                        <button type="button" class="edit-btn" data-id="${data.campo.campoid}">
+                                            <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                                        </button>
+                                        <form method="POST" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit">
+                                                <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                            </button>
+                                        </form>
+                                    </td>
+                                `;
+                                tbody.appendChild(newRow);
+
+                                closeModal();
+                            } else {
+                                console.error('Erro ao salvar campo:', data.message);
+                            }
+                        })
+                        .catch(error => console.error('Erro ao salvar campo:', error));
+                };
+            });
+
+            
+            // Evento para salvar criação ou edição
+            document.querySelector('#formContainer form').onsubmit = function (event) {
+                event.preventDefault();
+
+                const nomeCampo = document.getElementById('name').value;
+                const morada = document.getElementById('morada').value;
+                const cidade = document.getElementById('cidade').value;
+                const pais = document.getElementById('pais').value;
+                const coordenadasText = document.getElementById('coordinates').textContent;
+                const coordenadasMatch = coordenadasText.match(/Lat: ([\d.-]+), Lng: ([\d.-]+)/);
+
+                if (!coordenadasMatch) {
+                    console.error('Coordenadas inválidas.');
+                    return;
                 }
-            } 
+
+                const coordenadas = {
+                    lat: parseFloat(coordenadasMatch[1]),
+                    lng: parseFloat(coordenadasMatch[2])
+                };
+
+                const dataToSend = { nome: nomeCampo, morada: morada, cidade: cidade, pais: pais, coordenadas };
+                // Endpoint e método dependem se é criação ou edição
+                const endpoint = currentCampoId ? `/update_campo/${currentCampoId}/` : '/save_marker/';
+                const method = currentCampoId ? 'PUT' : 'POST';
+
+                fetch(endpoint, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(dataToSend)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            console.log('Dados salvos com sucesso:', data);
+                            location.reload(); // Recarregar os dados no mapa e tabela
+                        } else {
+                            console.error('Erro ao salvar dados:', data.message);
+                        }
+                    })
+                    .catch(error => console.error('Erro ao salvar dados:', error));
+            };
+
+            // Adicionar evento de clique nos botões de edição/remover na tabela
+            const table = document.getElementById('fields-table');
+            table.addEventListener('click', function (event) {
+                const editButton = event.target.closest('.edit-btn'); // Identifica o botão de edição
+                const deleteButton = event.target.closest('.delete-btn'); // Identifica o botão de exclusão
+
+                // Lógica para edição
+                if (editButton) {
+                    const campoid = editButton.getAttribute('data-id');
+                    fetch(`/get_campo_data/${campoid}/`, { method: 'GET' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                openModalWithData(data.campo);
+                            } else {
+                                console.error('Erro ao carregar dados:', data.message);
+                            }
+                        })
+                        .catch(error => console.error('Erro ao buscar dados:', error));
+                }
+
+                // Lógica para exclusão
+                if (deleteButton) {
+                    const campoid = deleteButton.getAttribute('data-id');
+                    const confirmDelete = confirm(`Tem certeza de que deseja excluir o campo?`);
+                    if (confirmDelete) {
+                        fetch(`/delete_campo/${campoid}/`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    alert('Campo excluído com sucesso.');
+                                    location.reload(); // Recarrega a tabela e o mapa
+                                    // Atualiza as linhas filtradas e a paginação
+                                    filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+                                    updateTable(); // Atualiza a tabela com a nova paginação
+                                } else {
+                                    alert(`Erro ao excluir campo: ${data.message}`);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Erro ao excluir campo:', error);
+                                alert('Ocorreu um erro ao tentar excluir o campo.');
+                            });
+                    }
+                }
+            });
         });
-
-
-        //SIDEBAR
-        const modal = document.getElementById('myModal');
-        const span = document.getElementsByClassName('close')[0];
-        const addFieldButton = document.getElementById('addFieldButton');
-        const formContainer = document.getElementById('formContainer');
-        
-        function openModal() {
-            modal.classList.add('open');
-        }
-
-        span.onclick = function() {
-            modal.classList.remove('open');
-        }
-    </script> 
+       
+    </script>
 </div>
 
 {% endblock %}
