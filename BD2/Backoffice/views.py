@@ -354,7 +354,7 @@ def add_request(request):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL add_pedido(%s, %s, %s, %s, %s, %s)",  # Incluí "nome"
+                    "CALL add_pedido(%s, %s, %s, %s, %s, %s)", 
                     [clienteid, aprovadorid, nome, datainicio, datafim, precoestimado]
                 )
             return redirect('/request')
@@ -394,19 +394,19 @@ def delete_request(request, pedidoid):
     return JsonResponse({'success': False, 'message': 'Método inválido.'})
 
 def grapevariety(request):
-    # Obtendo o filtro da query string
+    
     filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
 
-    # Buscando todos os objetos Castas
+    
     grapevarieties = Castas.objects.all().order_by('nome')
 
-    # Aplicando o filtro, se necessário
+    
     if filter_grapevariety:
         grapevarieties = grapevarieties.filter(nome__icontains=filter_grapevariety)
 
-    # Renderizando o template com o contexto
+    
     return render(request, 'grapevariety.html', {
-        'castas': grapevarieties,  # Passando os dados para o template
+        'castas': grapevarieties,  
         'filters': {
             'filter_grapevariety': filter_grapevariety
         },

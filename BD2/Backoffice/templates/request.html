@@ -122,7 +122,7 @@
     <div class="popup-overlay" id="addRequestModal" style="display: none;">
         <div class="popup-content">
             <div class="popup-header">
-                <h5 id="modalTitle">Adicionar Novo Pedido</h5> <!-- Título dinâmico -->
+                <h5 id="modalTitle">Adicionar Novo Pedido</h5> 
                 <span class="modal-close" onclick="closeAddRequestModal()">&times;</span>
             </div>
             <form id="addRequestForm" action="{% url 'add_request' %}" method="post">
@@ -203,7 +203,6 @@ function openEditModal(pedidoid) {
 
 
 
-    // Preencha os campos no popup
     document.getElementById('pedidoid').value = pedidoid;
     document.getElementById('newNome').value = nome;
     document.getElementById('newClienteId').value = clienteId;
@@ -212,7 +211,7 @@ function openEditModal(pedidoid) {
     document.getElementById('newDataFim').value = dataFim;
     document.getElementById('newPrecoEstimado').value = precoEstimado;
 
-    // Altera o título do modal para "Editar Pedido"
+    
     document.getElementById('modalTitle').textContent = 'Editar Pedido';
 
     // Mostra o popup
@@ -222,15 +221,14 @@ function openEditModal(pedidoid) {
 
 
 document.getElementById('requestTable').addEventListener('click', function (event) {
-    const targetCell = event.target.closest('td'); // Identifica a célula onde o clique ocorreu
-    const targetRow = event.target.closest('tr'); // Identifica a linha
+    const targetCell = event.target.closest('td'); 
+    const targetRow = event.target.closest('tr'); 
 
-    // Verifica se clicou na coluna "Ações"
+    
     if (targetCell && targetCell.classList.contains('actions-column')) {
-        return; // Ignora o clique se for na coluna "Ações"
-    }
+        return; 
 
-    // Processa o clique na linha (fora da coluna "Ações")
+    
     if (targetRow && !targetRow.closest('thead')) {
         const pedidoid = targetRow.dataset.pedidoid;
         if (pedidoid) {
