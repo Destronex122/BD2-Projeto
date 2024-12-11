@@ -114,8 +114,7 @@ def load_vineyards(request):
     # Convert the cursor to a list and then to JSON in one step
     json_data = dumps([vineyard for vineyard in vineyards], indent=2)
     
-    return json_data
-
+    return vineyards
 #Modelo Cargo
 
 class Cargo(models.Model):

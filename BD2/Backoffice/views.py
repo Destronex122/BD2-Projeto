@@ -297,7 +297,8 @@ def mapa_campos(request):
 @login_required
 def load_vineyards_view(request):
     vineyards = load_vineyards(request)
-    return JsonResponse(vineyards, safe=False)
+    print(vineyards)
+    return render(request, 'vineyards.html', {'Vinhas': vineyards})
 
 @login_required
 def requestdetail(request, pedidoid):

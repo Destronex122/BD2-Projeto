@@ -51,7 +51,7 @@
                             <td>{{ vinha.castaid.nome }}</td>  <!-- Assume-se que 'Castas' tem um campo 'nome' -->
                             <td>{{ vinha.dataplantacao|date:"d/m/Y" }}</td>
                             <td>{{ vinha.hectares }}</td>
-                            <td>
+                            {% comment %} <td>
                                 <div style="display:flex">
                                     <form method="GET" style="display:inline; margin-right:8px" action="{% url 'edit_vinha' vinha.vinhaid %}">
                                         <button type="submit">ç
@@ -65,7 +65,7 @@
                                         </button>
                                     </form>
                                 </div>
-                            </td>
+                            </td> {% endcomment %}
                         </tr>
                     {% endfor %}
                 </tbody>
