@@ -14,7 +14,7 @@ from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas
 from django.utils import timezone
 
 # Conectar ao MongoDB
@@ -159,25 +159,192 @@ def harvest(request):
 
     return render(request, 'harvest.html', {'colheitas': colheitas_context})
 
+
 @login_required
 def harvestdetail(request, colheitaid):
     colheita = get_object_or_404(Colheitas, colheitaid=colheitaid)
+    pesagens = Pesagens.objects.filter(colheitaid=colheitaid).order_by('-datadepesagem')
+
+    rows_per_page = 5
+    page_number = int(request.GET.get('page', 1))  # Obtém o número da página da URL, padrão é 1
+    start_index = (page_number - 1) * rows_per_page
+    end_index = start_index + rows_per_page
+
+    paginated_pesagens = pesagens[start_index:end_index]
+    total_pages = (pesagens.count() + rows_per_page - 1) // rows_per_page  # Calcula o total de páginas
+
+    # Cria a lista de páginas
+    pages = list(range(1, total_pages + 1))
+
+    # Consultar as notas
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT notaid, colheitaid, notas, data FROM public.notas_colheitas WHERE colheitaid = %s ORDER BY data DESC", [colheitaid])
+        notas = cursor.fetchall()
+
+    notas_list = [{"notaid": nota[0], "colheitaid": nota[1], "notas": nota[2], "data": nota[3]} for nota in notas]
 
     colheita_context = {
         'vinha_nome': colheita.vinhaid.hectares if colheita.vinhaid else None,
         'casta_nome': colheita.vinhaid.castaid.nome if colheita.vinhaid and colheita.vinhaid.castaid else None,
         'peso_total': colheita.pesototal,
         'preco_por_tonelada': colheita.precoportonelada,
-        'periodo': colheita.periodoid.ano,
+        'periodo': colheita.periodoid.ano if colheita.periodoid else None,
         'data_pesagem': colheita.datapesagem,
         'previsao_fim_colheita': colheita.previsaofimcolheita,
         'terminada': "Sim" if colheita.terminada else "Não",
         'data_termino': colheita.datapesagem if colheita.terminada else "Não terminada",
     }
 
-    return render(request, 'harvestdetail.html', {'colheita': colheita_context})
+    return render(
+        request,
+        'harvestdetail.html',
+        {
+            'colheita': colheita_context,
+            'pesagens': paginated_pesagens,
+            'current_page': page_number,
+            'pages': pages,  # Lista de páginas
+            'notas': notas_list,  # Passando as notas
+        },
+    )
 
+@login_required
+def edit_pesagem(request, pesagemid):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            pesobruto = data.get('pesobruto')
+            pesoliquido = data.get('pesoliquido')
+            datadepesagem = data.get('datadepesagem')
 
+            # Valida se todos os campos estão preenchidos
+            if not all([pesobruto, pesoliquido, datadepesagem]):
+                return JsonResponse({'success': False, 'message': 'Dados inválidos. Preencha todos os campos.'})
+
+            # Chama o procedimento armazenado com CALL
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL edit_pesagem(%s, %s, %s, %s)",
+                    [pesagemid, pesobruto, pesoliquido, datadepesagem]
+                )
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao salvar pesagem: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+@csrf_exempt
+def add_pesagem(request, colheitaid):  # Colheita ID vem do URL
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # Captura os dados enviados
+            peso_bruto = data.get('pesobruto')
+            peso_liquido = data.get('pesoliquido')
+            data_pesagem = data.get('datadepesagem')
+
+            # Validação dos dados recebidos
+            if not all([peso_bruto, peso_liquido, data_pesagem]):
+                return JsonResponse({'success': False, 'message': 'Todos os campos são obrigatórios.'})
+
+            # Chama o procedimento armazenado para adicionar a pesagem
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL add_pesagem(%s, %s, %s, %s)", 
+                    [colheitaid, peso_bruto, peso_liquido, data_pesagem]
+                )
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            # Retorna uma mensagem de erro se algo der errado
+            return JsonResponse({'success': False, 'message': f'Erro ao adicionar pesagem: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+@login_required
+def delete_pesagem(request, pesagemid):
+    if request.method == 'DELETE':
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("CALL delete_pesagem(%s)", [pesagemid])
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao excluir a pesagem: {str(e)}'})
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+@login_required
+def get_notas(request, colheitaid):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT notaid, colheitaid, notas, data FROM public.notas_colheitas WHERE colheitaid = %s ORDER BY data DESC", [colheitaid])
+            notas = cursor.fetchall()
+            # Criar um dicionário com as notas
+            notas_list = [{"notaid": nota[0], "colheitaid": nota[1], "notas": nota[2], "data": nota[3]} for nota in notas]
+
+        return JsonResponse({"notas": notas_list}, safe=False)
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)})
+
+@login_required
+def add_note_harvest(request, colheitaid):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            texto = data.get('texto')
+
+            if not texto:
+                return JsonResponse({'success': False, 'message': 'O texto da nota não pode estar vazio.'})
+
+            # Chama o procedimento para adicionar a nota
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL public.add_nota_colheita(%s, %s)",
+                    [colheitaid, texto]
+                )
+
+            return JsonResponse({'success': True, 'message': 'Nota adicionada com sucesso!'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao adicionar a nota: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+@login_required
+def edit_note_harvest(request, notaid):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            texto = data.get('texto')
+
+            if not texto:
+                return JsonResponse({'success': False, 'message': 'O texto da nota não pode estar vazio.'})
+
+            # Chama o procedimento para editar a nota
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL public.edit_nota_colheita(%s, %s)",  # Chama o procedimento de edição
+                    [notaid, texto]
+                )
+
+            return JsonResponse({'success': True, 'message': 'Nota atualizada com sucesso!'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao editar a nota: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+def delete_note_harvest(request, notaid):
+    if request.method == 'POST':
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL public.delete_nota_colheita(%s)",  # Procedimento de exclusão
+                    [notaid]
+                )
+            return JsonResponse({'success': True, 'message': 'Nota excluída com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao excluir a nota: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 @login_required
 def contracts(request):
 
@@ -565,4 +732,6 @@ def delete_campo(request, campoid):
 
     # Retorno para métodos não permitidos
     return JsonResponse({"status": "error", "message": "Método não permitido."}, status=405)
+
+
 
