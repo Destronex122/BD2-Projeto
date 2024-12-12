@@ -147,7 +147,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h2>Notas</h2>
                     <button onclick="openNoteModal()">
-                        <img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: 25px;">
+                        <img src="{% static 'add.png' %}" title="Adicionar nova nota" alt="edit" style="height: 25px; width: 25px;">
                     </button>
                 </div>
                 <!-- Secção de notas -->
@@ -165,10 +165,10 @@
                                     <!-- Botões de editar e excluir notas -->
                                     <div class="note-actions" style="display: flex; gap: 10px;">
                                         <button onclick="openNoteModal(true, '{{ nota.notaid }}', '{{ nota.notas }}')">
-                                            <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                                            <img src="{% static 'edit.png' %}" title="Editar nota" alt="edit" style="height: 25px; width: auto;">
                                         </button>
                                         <button onclick="deleteNote('{{ nota.notaid }}')">
-                                            <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                            <img src="{% static 'delete.png' %}" title="Eliminar nota"alt="delete" style="height: 25px; width: auto;">
                                         </button>
                                     </div>
                                 </div>
@@ -191,7 +191,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
         <h2 class="pesagens-title">Pesagens da colheita</h2>
         <button onclick="openPesagemModal(false)">
-            <img src="{% static 'add.png' %}" alt="Adicionar Pesagem" style="height: 25px; width: 25px;">
+            <img src="{% static 'add.png' %}" title="Adicionar nova pesagem" alt="Adicionar Pesagem" style="height: 25px; width: 25px;">
         </button>
     </div>
     <div class="pesagens-container" id="pesagensContainer">
@@ -200,10 +200,10 @@
                 <div style="text-align: right; margin-bottom: 24px;">
                     <button class="edit-button" 
                             onclick="openPesagemModal(true, '{{ pesagem.pesagemid }}', '{{ pesagem.pesobruto|escapejs }}', '{{ pesagem.pesoliquido|escapejs }}', '{{ pesagem.datadepesagem|date:'Y-m-d' }}')">
-                        <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                        <img src="{% static 'edit.png' %}" title="Editar pesagem" alt="edit" style="height: 25px; width: auto;">
                     </button>
                     <button class="delete-button" onclick="deletePesagem('{{ pesagem.pesagemid }}')">
-                        <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                        <img src="{% static 'delete.png' %}" title="Eliminar pesagem" alt="delete" style="height: 25px; width: auto;">
                     </button>
                 </div>
                 <p><strong>Data de pesagem:</strong> {{ pesagem.datadepesagem }}</p>
