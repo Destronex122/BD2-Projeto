@@ -69,8 +69,8 @@
             <tr  data-contratoid="{{ contrato.contratoid}}">
                 <td>{{ contrato.contratoid}}</td>
                 <td>{{ contrato.clienteid.nif}}</td>
-                <td>{{ contrato.datainicio }}</td>
-                <td>{{ contrato.datafim}}</td>
+                <td>{{ contrato.datainicio|date:'Y-m-d' }}</td>
+                <td>{{ contrato.datafim|date:'Y-m-d'}}</td>
                 <td>{{ contrato.qtdeestimada }}</td>
                 <td>{{ contrato.precoestimado }}</td>
             </tr>

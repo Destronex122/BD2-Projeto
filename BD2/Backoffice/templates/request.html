@@ -97,8 +97,8 @@
             {% for pedido in pedidos %}
             <tr data-pedidoid="{{ pedido.pedidoid }}" >
                 <td>{{ pedido.pedidoid }}</td>
-                <td>{{ pedido.datainicio }}</td>
-                <td>{{ pedido.datafim }}</td>
+                <td>{{ pedido.datainicio|date:'Y-m-d' }}</td>
+                <td>{{ pedido.datafim|date:'Y-m-d' }}</td>
                 <td>{{ pedido.precoestimado }}</td>
                 <td>{{ pedido.aprovadorid.nome }}</td>
                 <td class="actions-column">
@@ -227,7 +227,7 @@ document.getElementById('requestTable').addEventListener('click', function (even
     
     if (targetCell && targetCell.classList.contains('actions-column')) {
         return; 
-
+    }
     
     if (targetRow && !targetRow.closest('thead')) {
         const pedidoid = targetRow.dataset.pedidoid;

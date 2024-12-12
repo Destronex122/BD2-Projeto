@@ -129,11 +129,11 @@
                 </div>
                 <div class="info-item">
                     <span class="label">Última pesagem:</span>
-                    <span class="value">{{ colheita.data_pesagem }}</span>
+                    <span class="value">{{ colheita.data_pesagem|date:'Y-m-d' }}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Previsão do fim:</span>
-                   <span class="value">{{ colheita.previsao_fim_colheita }}</span> 
+                   <span class="value">{{ colheita.previsao_fim_colheita|date:'Y-m-d' }}</span> 
 
                 </div>
                 <div class="info-item">
@@ -199,14 +199,14 @@
             <div class="pesagem-card" id="pesagem-{{ pesagem.pesagemid }}">
                 <div style="text-align: right; margin-bottom: 24px;">
                     <button class="edit-button" 
-                            onclick="openPesagemModal(true, '{{ pesagem.pesagemid }}', '{{ pesagem.pesobruto|escapejs }}', '{{ pesagem.pesoliquido|escapejs }}', '{{ pesagem.datadepesagem|date:'Y-m-d' }}')">
+                            onclick="openPesagemModal(true, '{{ pesagem.pesagemid }}', '{{ pesagem.pesobruto|escapejs }}', '{{ pesagem.pesoliquido|escapejs }}', '{{ pesagem.datadepesagem}}')">
                         <img src="{% static 'edit.png' %}" title="Editar pesagem" alt="edit" style="height: 25px; width: auto;">
                     </button>
                     <button class="delete-button" onclick="deletePesagem('{{ pesagem.pesagemid }}')">
                         <img src="{% static 'delete.png' %}" title="Eliminar pesagem" alt="delete" style="height: 25px; width: auto;">
                     </button>
                 </div>
-                <p><strong>Data de pesagem:</strong> {{ pesagem.datadepesagem }}</p>
+                <p><strong>Data de pesagem:</strong> {{ pesagem.datadepesagem|date:'Y-m-d' }}</p>
                 <p><strong>Peso bruto:</strong> {{ pesagem.pesobruto }} kg</p>
                 <p><strong>Peso líquido:</strong> {{ pesagem.pesoliquido }} kg</p>
             </div>

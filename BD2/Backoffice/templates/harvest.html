@@ -112,9 +112,9 @@
                 <td>{{ colheita.casta_nome }}</td>
                 <td>{{ colheita.peso_total }}</td>
                 <td>{{ colheita.preco_por_tonelada }}</td>
-                <td>{{ colheita.data_ultima_pesagem }}</td>
+                <td>{{ colheita.data_ultima_pesagem|date:'Y-m-d' }}</td>
                 <td>{{ colheita.periodo }}</td>
-                <td>{{ colheita.previsao_fim_colheita }}</td>
+                <td>{{ colheita.previsao_fim_colheita|date:'Y-m-d' }}</td>
                 <td>{% if colheita.terminada %}Sim{% else %}Não{% endif %}</td>
                 <td>{{ colheita.data_termino }}</td>
                 
