@@ -8,50 +8,67 @@
 
 <div class="container mt-5">
     <div class="card shadow-lg p-4" style="max-width: 800px; margin: auto;">
-        <div class="row">
-            <!-- Coluna para a imagem do perfil -->
-            <div class="col-md-4 text-center">
-                <img src="{% static 'userIcon.png' %}" alt="Imagem do perfil" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px;">
-                <h3 id="nome" contenteditable="false" class="editable"><span>{{ user.nome }}</span></h3>
-                <p id="job-text" class="text-muted" style="display: block;"><span>{{ user.cargoid.nome }}</span></p>
-                <select id="job-select" class="form-select editable" style="display: none;">
-                    <option value="Cliente">Cliente</option>
-                    <option value="Colaborador">Colaborador</option>
-                    <option value="Administrador">Administrador</option>
-                </select>
-            </div>
-            
-            <!-- Coluna para as informações do perfil -->
-            <div class="col-md-8">
-                <div style="display:flex; justify-content: space-between;">
-                    <h4 style="color:#616646; margin-left:14px;" class="mb-4">Detalhe do utilizador</h4>
-                    {% if is_admin %}
-                    <div style="justify-self:right; text-align:center;">
-                        <button class="button" id="editar-btn">
-                            <img src="{% static 'edit.png' %}" title="Editar utilizador" alt="add" style="height: 25px; width: auto;">
-                        </button>
-                    </div>
-                    {% endif %}
+        <form method="POST" id="user-edit-form">
+            {% csrf_token %}
+            <div class="row">
+                <!-- Coluna para a imagem do perfil -->
+                <div class="col-md-4 text-center">
+                    <img src="{% static 'userIcon.png' %}" alt="Imagem do perfil" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px;">
+                    <h3 id="nome" class="editable"><span>{{ user.nome }}</span></h3>
+                    <p id="job-text" class="text-muted view-mode"><span>{{ user.cargoid.nome }}</span></p>
+                    <select id="job-select" class="form-select edit-mode" name="cargoid" style="display: none;">
+                        {% for cargo in cargos %}
+                        <option value="{{ cargo.cargoid }}" {% if cargo.cargoid == user.cargoid_id %}selected{% endif %}>
+                            {{ cargo.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
                 
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><strong>Nome:</strong> <span>{{ user.nome }}</span></li>
-                    <li class="list-group-item"><strong>Email:</strong> <span>{{ user.email }}</span></li>
-                    <li class="list-group-item"><strong>Telefone:</strong> <span>{{ user.telefone }}</span></li>
-                    <li class="list-group-item"><strong>Morada:</strong> <span>{{ user.endereco }}</span></li>
-                    <li class="list-group-item"><strong>Código postal:</strong> <span>{{ user.postalcode }}</span></li>
-                    <li class="list-group-item"><strong>Cidade:</strong> <span>{{ user.city }}</span></li>
-                </ul>
-                <div style="display:flex; justify-content: flex-end;">
-                    {% if is_admin %}
-                    <div style="justify-self:right; text-align:center; margin-top: 16px;">
-                        <button class="secondary-button" id="cancelar-btn" style="display: none;">Cancelar</button>
-                        <button class="button" id="salvar-btn" style="display: none;">Guardar</button>
+                <!-- Coluna para as informações do perfil -->
+                <div class="col-md-8">
+                    <div style="display:flex; justify-content: space-between;">
+                        <h4 style="color:#616646; margin-left:14px;" class="mb-4">Detalhe do utilizador</h4>
+                        {% if is_admin %}
+                        <div style="justify-self:right; text-align:center;">
+                            <button type="button" class="button" id="editar-btn">
+                                <img src="{% static 'edit.png' %}" title="Editar utilizador" alt="Editar" style="height: 25px; width: auto;">
+                            </button>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
+                    
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Nome:</strong> <span class="view-mode">{{ user.nome }}</span>
+                            <input type="text" class="form-control edit-mode" name="nome" value="{{ user.nome }}" style="display: none;">
+                        </li>
+                        <li class="list-group-item"><strong>Email:</strong> <span class="view-mode">{{ user.email }}</span>
+                            <input type="email" class="form-control edit-mode" name="email" value="{{ user.email }}" style="display: none;">
+                        </li>
+                        <li class="list-group-item"><strong>Telefone:</strong> <span class="view-mode">{{ user.telefone }}</span>
+                            <input type="text" class="form-control edit-mode" name="telefone" value="{{ user.telefone }}" style="display: none;">
+                        </li>
+                        <li class="list-group-item"><strong>Morada:</strong> <span class="view-mode">{{ user.endereco }}</span>
+                            <input type="text" class="form-control edit-mode" name="endereco" value="{{ user.endereco }}" style="display: none;">
+                        </li>
+                        <!-- <li class="list-group-item"><strong>Código postal:</strong> <span class="view-mode">{{ user.postalcode }}</span>
+                            <input type="text" class="form-control edit-mode" name="postalcode" value="{{ user.postalcode }}" style="display: none;">
+                        </li>
+                        <li class="list-group-item"><strong>Cidade:</strong> <span class="view-mode">{{ user.city }}</span>
+                            <input type="text" class="form-control edit-mode" name="city" value="{{ user.city }}" style="display: none;">
+                        </li> -->
+                    </ul>
+                    <div style="display:flex; justify-content: flex-end;">
+                        {% if is_admin %}
+                        <div style="justify-self:right; text-align:center; margin-top: 16px;">
+                            <button type="button" class="secondary-button" id="cancelar-btn" style="display: none;">Cancelar</button>
+                            <button type="submit" class="button" id="salvar-btn" style="display: none;">Guardar</button>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -60,13 +77,16 @@
     const salvarBtn = document.getElementById('salvar-btn');
     const cancelarBtn = document.getElementById('cancelar-btn');
 
-    const editables = document.querySelectorAll('.editable');
+    const viewModes = document.querySelectorAll('.view-mode');
+    const editModes = document.querySelectorAll('.edit-mode');
+
     const jobText = document.getElementById('job-text');
     const jobSelect = document.getElementById('job-select');
 
     // Função para ativar a edição
     editarBtn.addEventListener('click', () => {
-        editables.forEach(el => el.contentEditable = "true");
+        viewModes.forEach(el => el.style.display = 'none');
+        editModes.forEach(el => el.style.display = 'block');
 
         // Mostrar o dropdown para o cargo e ocultar o texto
         jobText.style.display = 'none';
@@ -77,30 +97,15 @@
         cancelarBtn.style.display = 'inline-block';
     });
 
-    // Função para salvar alterações
-    salvarBtn.addEventListener('click', () => {
-        editables.forEach(el => el.contentEditable = "false");
-
-        // Atualizar o texto com o valor selecionado no dropdown
-        jobText.textContent = jobSelect.value;
-
-        // Ocultar o dropdown e mostrar o texto
-        jobText.style.display = 'block';
-        jobSelect.style.display = 'none';
-
-        editarBtn.style.display = 'inline-block';
-        salvarBtn.style.display = 'none';
-        cancelarBtn.style.display = 'none';
-    });
-
     // Função para cancelar edição
     cancelarBtn.addEventListener('click', () => {
-        editables.forEach(el => el.contentEditable = "false");
+        viewModes.forEach(el => el.style.display = 'block');
+        editModes.forEach(el => el.style.display = 'none');
 
-        // Reverter o valor do dropdown ao texto original
+        // Reverter o dropdown para o valor original
         jobSelect.value = jobText.textContent;
 
-        // Ocultar o dropdown e mostrar o texto
+        // Mostrar o texto do cargo e ocultar o dropdown
         jobText.style.display = 'block';
         jobSelect.style.display = 'none';
 
@@ -116,12 +121,9 @@
         padding: 10px 15px;
     }
     
-    .editable[contenteditable="true"] {
-        border: 1px solid #ccc;
-        padding: 0px 5px;
-        border-radius: 5px;
+    .edit-mode {
+        display: none;
     }
 </style>
-
 
 {% endblock %}

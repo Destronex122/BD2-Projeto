@@ -56,8 +56,26 @@ def backofficeIndex(request):
 @login_required
 def userdetail(request, userid):
     user = get_object_or_404(Users, userid=userid)
-    
-    return render(request, 'userdetail.html', {'user': user})
+    cargos = Cargo.objects.all()  # Buscar todos os cargos do banco de dados
+    if request.method == 'POST':
+        # Atualizar os dados do usuário
+        user.nome = request.POST.get('nome')
+        user.email = request.POST.get('email')
+        user.telefone = request.POST.get('telefone')
+        user.endereco = request.POST.get('endereco')
+        user.postalcode = request.POST.get('postalcode')
+        user.city = request.POST.get('city')
+        user.cargoid_id = request.POST.get('cargoid')  # Atualiza a ForeignKey com o ID do cargo
+        user.save()
+        return redirect('user-detail', userid=user.userid)
+
+    return render(request, 'userdetail.html', {'user': user, 'cargos': cargos})
+
+@login_required
+def update_user_detail(userid, nome, email, telefone, endereco, postalcode, city, cargoid, campoid=None):
+    with connection.cursor() as cursor:
+        cursor.callproc("EditUserDetail", [userid, nome, email, telefone, endereco, postalcode, city, cargoid, campoid])
+
 @login_required
 def users(request):
     #Filtros

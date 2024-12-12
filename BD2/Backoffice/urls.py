@@ -8,6 +8,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('userdetail/<int:userid>/', views.userdetail, name='userdetail'),
     path('users/',  views.users, name='users'),
+    path('user/<int:userid>/', views.userdetail, name='user-detail'),
     path('fields/', views.fields, name='fields'),
     path('save_marker/', views.save_marker_view, name='save_marker'),
     path('save_polygon/', views.save_polygon_view, name="save_polygon"),
