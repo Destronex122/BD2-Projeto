@@ -81,10 +81,10 @@
                             <td>{{ campo.cidade }}</td>
                             <td>
                                 <button title="Editar campo" type="button" class="edit-btn" data-id="{{ campo.campoid }}">
-                                    <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                                    <img src="{% static 'edit.png' %}" title="Editar campo" alt="edit" style="height: 25px; width: auto;">
                                 </button>
                                 <button title="Eliminar campo" type="button" class="delete-btn" data-id="{{ campo.campoid }}">
-                                    <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                    <img src="{% static 'delete.png' %}" title="Eliminar campo" alt="delete" style="height: 25px; width: auto;">
                                 </button>
                             </td>
                         </tr>
@@ -346,10 +346,10 @@
                                 <td>${item.cidade}</td>
                                 <td>
                                     <button title="Editar casta" type="button" class="edit-btn" data-id="${item.campoid}">
-                                        <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                                        <img src="{% static 'edit.png' %}" title="Editar campo" alt="edit" style="height: 25px; width: auto;">
                                     </button>
                                     <button title="Eliminar casta" type="button" class="delete-btn" data-id="${item.campoid}">
-                                        <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                        <img src="{% static 'delete.png' %}" title="Eliminar campo" alt="delete" style="height: 25px; width: auto;">
                                     </button>
                                 </td>
                             `;
@@ -432,12 +432,12 @@
                                     <td>${data.campo.cidade}</td>
                                     <td>
                                         <button type="button" class="edit-btn" data-id="${data.campo.campoid}">
-                                            <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                                            <img src="{% static 'edit.png' %}" title="Editar campo" alt="edit" style="height: 25px; width: auto;">
                                         </button>
                                         <form method="POST" style="display:inline;">
                                             {% csrf_token %}
                                             <button type="submit">
-                                                <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                                <img src="{% static 'delete.png' %}" title="Eliminar campo" alt="delete" style="height: 25px; width: auto;">
                                             </button>
                                         </form>
                                     </td>

@@ -27,7 +27,9 @@
     <div style="display:flex; justify-content: space-between;">
         <h1>Vinhas</h1>
         <div style="justify-self:right; text-align:center; display:none;">
-            <button id="addFieldButton" type="button"><img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: auto; "></button>
+            <button id="addFieldButton" type="button">
+                <img src="{% static 'add.png' %}" title="Adicionar nova vinha" alt="edit" style="height: 25px; width: auto; ">
+            </button>
         </div>
     </div>
     <br>
@@ -55,13 +57,13 @@
                                 <div style="display:flex">
                                     <form method="GET" style="display:inline; margin-right:8px" action="{% url 'edit_vinha' vinha.vinhaid %}">
                                         <button type="submit">ç
-                                            <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                                            <img src="{% static 'edit.png' %}" title="Editar vinha" alt="edit" style="height: 25px; width: auto;">
                                         </button>
                                     </form>
                                     <form method="POST" style="display:inline;" action="{% url 'delete_vinha' vinha.vinhaid %}">
                                         {% csrf_token %}
                                         <button type="submit">
-                                            <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                            <img src="{% static 'delete.png' %}" title="Eliminar vinha" alt="delete" style="height: 25px; width: auto;">
                                         </button>
                                     </form>
                                 </div>

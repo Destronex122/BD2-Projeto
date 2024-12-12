@@ -15,6 +15,30 @@
     #pesagensTitle {
         display: none; /* Oculta o título das pesagens*/
     }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination button {
+        margin: 0 5px;
+        padding: 5px 10px;
+        border: 1px solid #e9e8e2;
+        background-color: #e9e8e2;
+        cursor: pointer;
+    }
+
+    .pagination button.active {
+        font-weight: bold;
+        background-color: #616646;
+    }
+
+    .pagination button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
 </style>
 
 <div class="editable-area newPadding">    
@@ -22,7 +46,7 @@
         <h1>Colheitas</h1>
         <div style="justify-self:right; text-align:center;">
             <button type="button" onclick="openAddHarvestModal()">
-                <img src="{% static 'add.png' %}" alt="add" style="height: 25px; width: auto;">
+                <img src="{% static 'add.png' %}" title="Adicionar nova colheita" alt="add" style="height: 25px; width: auto;">
             </button>
         </div>
     </div>
@@ -102,6 +126,13 @@
             {% endfor %}
         </tbody>
     </table>
+    <div class="pagination">
+        {% for page in pages %}
+            <button class="button {% if page == current_page %}active{% endif %}" onclick="window.location.href='?page={{ page }}'">
+                {{ page }}
+            </button>
+        {% endfor %}
+    </div>
     <br>
     <div id="pesagensTitle">
         <div style="display:flex; justify-content:space-between; margin-bottom:16px; align-items:center;">
