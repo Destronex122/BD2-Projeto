@@ -480,29 +480,36 @@
     // Função para mostrar a nota no carrossel com base no índice
     function showNote() {
         const notes = document.querySelectorAll('.carousel-item');
-        
-        // Exibe a nota atual
-        notes.forEach((note, index) => {
-            note.style.display = (index === currentNoteIndex) ? 'block' : 'none';
-        });
-
-        // Habilita ou desabilita as setas conforme necessário
-        if (currentNoteIndex === 0) {
-            prevNoteButton.disabled = true; // Desabilita a seta para a esquerda
-            prevNoteButton.classList.add('disabled'); // Aplica a classe de desabilitado
-        } else {
-            prevNoteButton.disabled = false; // Habilita a seta para a esquerda
-            prevNoteButton.classList.remove('disabled'); // Remove a classe de desabilitado
-        }
-
         const notesLength = notes.length;
 
-        if (currentNoteIndex === notesLength - 1) {
-            nextNoteButton.disabled = true; // Desabilita a seta para a direita no último registro
-            nextNoteButton.classList.add('disabled'); // Aplica a classe de desabilitado
+        // Exibe a nota atual se houver notas
+        if (notesLength > 0) {
+            notes.forEach((note, index) => {
+                note.style.display = (index === currentNoteIndex) ? 'block' : 'none';
+            });
+
+            // Habilita ou desabilita os botões de navegação
+            if (currentNoteIndex === 0) {
+                prevNoteButton.disabled = true;
+                prevNoteButton.classList.add('disabled');
+            } else {
+                prevNoteButton.disabled = false;
+                prevNoteButton.classList.remove('disabled');
+            }
+
+            if (currentNoteIndex === notesLength - 1) {
+                nextNoteButton.disabled = true;
+                nextNoteButton.classList.add('disabled');
+            } else {
+                nextNoteButton.disabled = false;
+                nextNoteButton.classList.remove('disabled');
+            }
         } else {
-            nextNoteButton.disabled = false; // Habilita a seta para a direita
-            nextNoteButton.classList.remove('disabled'); // Remove a classe de desabilitado
+            // Se não houver notas, desabilita ambos os botões
+            prevNoteButton.disabled = true;
+            prevNoteButton.classList.add('disabled');
+            nextNoteButton.disabled = true;
+            nextNoteButton.classList.add('disabled');
         }
     }
 
@@ -526,8 +533,15 @@
 
     // Inicializa a exibição da nota
     function initCarousel() {
-        if (document.querySelectorAll('.carousel-item').length > 0) {
+        const notes = document.querySelectorAll('.carousel-item');
+        if (notes.length > 0) {
             showNote(); // Exibe a primeira nota do carrossel
+        } else {
+            // Se não houver notas, desabilita os botões de navegação
+            prevNoteButton.disabled = true;
+            prevNoteButton.classList.add('disabled');
+            nextNoteButton.disabled = true;
+            nextNoteButton.classList.add('disabled');
         }
     }
 

@@ -14,7 +14,7 @@ from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos
 from django.utils import timezone
 
 # Conectar ao MongoDB
@@ -137,45 +137,6 @@ def deliverydetail(request,transposteid):
     transporte = get_object_or_404 (Transportes, idtransposte = transposteid ) 
     return render(request, 'deliverydetail.html', {'Transportes' : transporte })
 
-# @login_required
-# def harvest(request):
-#     #Filtros
-#     filter_hectares = request.GET.get('filterHectares', '').strip()
-#     filter_casta = request.GET.get('filterCasta', '').strip()
-#     filter_data_inicio = request.GET.get('filterDataInicio', None)
-
-#     colheitas = Colheitas.objects.select_related('vinhaid', 'vinhaid__castaid', 'periodoid').all()
-    
-#     if filter_hectares:
-#         colheitas = colheitas.filter(vinhaid__hectares__exact=filter_hectares)
-#     if filter_casta:
-#         colheitas = colheitas.filter(vinhaid__castaid__nome__icontains=filter_casta)
-#     if filter_data_inicio:
-#         colheitas = colheitas.filter(datapesagem__gte=filter_data_inicio)
-
-#     colheitas_context = []
-
-#     for colheita in colheitas:
-#         if colheita.terminada:
-#             ultima_pesagem = Pesagens.objects.filter(colheitaid=colheita).aggregate(ultima_data=Max('datadepesagem'))['ultima_data']
-#             data_termino = ultima_pesagem
-#         else:
-#             data_termino = "Não terminada"
-
-#         colheitas_context.append({
-#             'colheitaid': colheita.colheitaid, 
-#             'vinha_hectares': colheita.vinhaid.hectares if colheita.vinhaid else None,
-#             'casta_nome': colheita.vinhaid.castaid.nome if colheita.vinhaid and colheita.vinhaid.castaid else None,
-#             'peso_total': colheita.pesototal,
-#             'preco_por_tonelada': colheita.precoportonelada,
-#             'data_ultima_pesagem': colheita.datapesagem,
-#             'periodo': f"{colheita.periodoid.datainicio} a {colheita.periodoid.datafim}" if colheita.periodoid else None,
-#             'previsao_fim_colheita': colheita.previsaofimcolheita,
-#             'terminada': "Sim" if colheita.terminada else "Não",
-#             'data_termino': data_termino if data_termino else "Não terminada",
-#         })
-
-#     return render(request, 'harvest.html', {'colheitas': colheitas_context})
 @login_required
 def harvest(request):
     # Filtros
@@ -419,6 +380,8 @@ def delete_note_harvest(request, notaid):
             return JsonResponse({'success': False, 'message': f'Erro ao excluir a nota: {str(e)}'})
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+
 @login_required
 def contracts(request):
 
@@ -544,7 +507,95 @@ def load_vineyards_view(request):
 @login_required
 def requestdetail(request, pedidoid):
     pedido = get_object_or_404(Pedidos, pedidoid=pedidoid)
-    return render(request, 'requestdetail.html', {'pedido': pedido})
+    # Recupera notas associadas ao pedido
+    # Consulta as notas relacionadas ao pedido
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT notaid, pedidoid, notas, data FROM public.notas_pedidos WHERE pedidoid = %s ORDER BY data DESC",
+            [pedidoid],
+        )
+        notas = cursor.fetchall()
+
+    # Cria uma lista de dicionários com os dados das notas
+    notas_list = [
+        {"notaid": nota[0], "pedidoid": nota[1], "notas": nota[2], "data": nota[3]} for nota in notas
+    ]
+
+    # Passa os dados principais do pedido
+    pedido_context = {
+        'pedidoid': pedido.pedidoid,
+        'clienteid': pedido.clienteid.clienteid if pedido.clienteid else None,
+        'cliente_nome': pedido.clienteid if pedido.clienteid else "Cliente não especificado",
+        'aprovadorid': pedido.aprovadorid.userid if pedido.aprovadorid else None,
+        'aprovador_nome': pedido.aprovadorid if pedido.aprovadorid else "Aprovador não especificado",
+        'datainicio': pedido.datainicio,
+        'datafim': pedido.datafim,
+        'precoestimado': pedido.precoestimado,
+    }
+    return render(request, 'requestdetail.html', {'pedido': pedido_context,'notas': notas_list})
+
+# @login_required
+@login_required
+def add_note_request(request, pedidoid):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            texto = data.get('texto')
+
+            if not texto:
+                return JsonResponse({'success': False, 'message': 'O texto da nota não pode estar vazio.'})
+
+            # Chama o procedimento para adicionar a nota
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL public.add_nota_pedido(%s, %s::text)",
+                    [pedidoid, texto]
+                )
+
+            return JsonResponse({'success': True, 'message': 'Nota adicionada com sucesso!'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao adicionar a nota: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+@login_required
+def edit_note_request(request, notaid):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            texto = data.get('texto')
+
+            if not texto:
+                return JsonResponse({'success': False, 'message': 'O texto da nota não pode estar vazio.'})
+
+            # Chama o procedimento para editar a nota
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL public.edit_nota_pedido(%s, %s)",  # Chama o procedimento de edição
+                    [int(notaid), str(texto)]  # Certifique-se de passar os tipos corretos
+                )
+
+            return JsonResponse({'success': True, 'message': 'Nota atualizada com sucesso!'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao editar a nota: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+def delete_note_request(request, notaid):
+    if request.method == 'POST':
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL public.delete_nota_pedido(%s)",  # Procedimento de exclusão
+                    [notaid]
+                )
+            return JsonResponse({'success': True, 'message': 'Nota excluída com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao excluir a nota: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 @login_required
 def contractdetail(request, contratoid):
@@ -553,18 +604,19 @@ def contractdetail(request, contratoid):
     return render(request, 'contractdetail.html', {'contrato': contrato, 'cliente': cliente})
 
 
-
 @login_required
 def request(request):
-    #Filtros
+    # Filters
     filter_pedido = request.GET.get('filterPedido', '').strip()
     filter_data_inicio = request.GET.get('filterDataInicio', None)
     filter_data_fim = request.GET.get('filterDataFim', None)
 
+    # Queryset
     pedidos = Pedidos.objects.all()
     users = Users.objects.all()
     clientes = Clientes.objects.all()
 
+    # Apply filters
     if filter_pedido:
         pedidos = pedidos.filter(pedidoid__icontains=filter_pedido)
     if filter_data_inicio:
@@ -572,38 +624,63 @@ def request(request):
     if filter_data_fim:
         pedidos = pedidos.filter(datafim__lte=filter_data_fim)
 
+    # Pagination
+    rows_per_page = 5
+    page_number = int(request.GET.get('page', 1))  # Default page is 1 if not provided
+    total_items = pedidos.count()
+    total_pages = (total_items + rows_per_page - 1) // rows_per_page
+
+    # Paginated results
+    start_index = (page_number - 1) * rows_per_page
+    end_index = start_index + rows_per_page
+    paginated_pedidos = pedidos[start_index:end_index]
+
     return render(request, 'request.html', {
-        'clientes': clientes, 
+        'clientes': clientes,
         'users': users,
-        'pedidos': pedidos, 
+        'pedidos': paginated_pedidos,  # Pass only paginated results
         'filters': {
             'filterPedido': filter_pedido,
             'filterDataInicio': filter_data_inicio,
             'filterDataFim': filter_data_fim,
-        }, 
+        },
+        'total_pages': total_pages,  # Pass the total number of pages
+        'current_page': page_number,  # Pass the current page
+        'pages': range(1, total_pages + 1),  # Pass the range of pages
     })
 
-def add_request(request):
-    if request.method == "POST":
-        # Captura os dados enviados pelo formulário
-        clienteid = request.POST.get("clienteid")
-        aprovadorid = request.POST.get("aprovadorid")
-        nome = request.POST.get("newNome")  # Novo campo
-        datainicio = request.POST.get("newDataInicio")
-        datafim = request.POST.get("newDataFim")
-        precoestimado = request.POST.get("newPrecoEstimado")
 
+@csrf_exempt
+def add_request(request):
+    if request.method == 'POST':
         try:
+            # Parse JSON data from the request
+            data = json.loads(request.body)
+            clienteid = data.get('clienteid')
+            aprovadorid = data.get('aprovadorid')
+            nome = data.get('nome')
+            datainicio = data.get('datainicio')
+            datafim = data.get('datafim')
+            precoestimado = data.get('precoestimado')
+
+            # Ensure IDs are passed as integers
+            clienteid = int(clienteid) if clienteid else None
+            aprovadorid = int(aprovadorid) if aprovadorid else None
+
+            # Call the stored procedure
             with connection.cursor() as cursor:
                 cursor.execute(
                     "CALL add_pedido(%s, %s, %s, %s, %s, %s)", 
                     [clienteid, aprovadorid, nome, datainicio, datafim, precoestimado]
                 )
-            return redirect('/request')
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
 
-    return JsonResponse({'success': False, 'message': 'Método inválido.'})
+            return JsonResponse({'success': True, 'message': 'Pedido adicionado com sucesso!'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao adicionar pedido: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
 
 def update_request(request, pedidoid):
     if request.method == "POST":

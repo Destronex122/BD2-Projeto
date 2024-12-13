@@ -31,6 +31,30 @@
         width: 400px;
         max-width: 90%;
     }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination button {
+        margin: 0 5px;
+        padding: 5px 10px;
+        border: 1px solid #e9e8e2;
+        background-color: #e9e8e2;
+        cursor: pointer;
+    }
+
+    .pagination button.active {
+        font-weight: bold;
+        background-color: #616646;
+    }
+
+    .pagination button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
 </style>
 
 <div class="editable-area newPadding">    
@@ -96,17 +120,17 @@
         <tbody>
             {% for pedido in pedidos %}
             <tr data-pedidoid="{{ pedido.pedidoid }}" >
-                <td>{{ pedido.pedidoid }}</td>
+                <td>{{ pedido.nome }}</td>
                 <td>{{ pedido.datainicio|date:'Y-m-d' }}</td>
                 <td>{{ pedido.datafim|date:'Y-m-d' }}</td>
                 <td>{{ pedido.precoestimado }}</td>
                 <td>{{ pedido.aprovadorid.nome }}</td>
                 <td class="actions-column">
-                    <button type="button" class="btn btn-primary" onclick="openEditModal('{{ pedido.pedidoid }}')">
-                        Editar
+                    <button title="Editar pedido" type="button" class="edit-btn" onclick="openEditModal('{{ pedido.pedidoid }}')" data-id="{{ casta.castaid }}">
+                        <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
                     </button>
-                    <button type="button" class="btn btn-danger" onclick="deleteRequest('{{ pedido.pedidoid }}')">
-                        Eliminar
+                    <button title="Eliminar pedido" type="button"  class="delete-btn" onclick="deleteRequest('{{ pedido.pedidoid }}')" data-id="{{ casta.castaid }}">
+                        <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
                     </button>
                 </td>
             </tr>
@@ -117,14 +141,22 @@
             {% endfor %}
         </tbody>
     </table>
+    <div class="pagination">
+        {% for page in pages %}
+            <button class="button {% if page == current_page %}active{% endif %}" onclick="window.location.href='?page={{ page }}'">
+                {{ page }}
+            </button>
+        {% endfor %}
+    </div>
 
     <!-- Modal para Adicionar Pedido -->
     <div class="popup-overlay" id="addRequestModal" style="display: none;">
         <div class="popup-content">
             <div class="popup-header">
-                <h5 id="modalTitle">Adicionar Novo Pedido</h5> 
+                <h5 id="modalTitle">Adicionar novo pedido</h5> 
                 <span class="modal-close" onclick="closeAddRequestModal()">&times;</span>
             </div>
+            <br>
             <form id="addRequestForm" action="{% url 'add_request' %}" method="post">
                 {% csrf_token %}
                 <!-- Campo para o Cliente -->
@@ -133,11 +165,11 @@
                     <select id="clienteid" name="clienteid" class="form-control" required>
                         <option value="">Selecione um cliente</option>
                         {% for cliente in clientes %}
-                            <option value="{{ cliente.clienteid }}">{{ cliente.clienteid}}</option>
+                            <option value="{{ cliente.clienteid }}">{{ cliente.clienteid }}</option>
                         {% endfor %}
                     </select>
                 </div>
-            
+
                 <!-- Campo para o Aprovador -->
                 <div class="form-group">
                     <label for="aprovadorid">Aprovador:</label>
@@ -150,7 +182,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="newNome">Nome do Pedido:</label>
+                    <label for="newNome">Nome do pedido:</label>
                     <input type="text" id="newNome" name="newNome" class="form-control" required>
                 </div>
             
@@ -202,7 +234,6 @@ function openEditModal(pedidoid) {
         }
 
 
-
     document.getElementById('pedidoid').value = pedidoid;
     document.getElementById('newNome').value = nome;
     document.getElementById('newClienteId').value = clienteId;
@@ -230,11 +261,60 @@ document.getElementById('requestTable').addEventListener('click', function (even
     }
     
     if (targetRow && !targetRow.closest('thead')) {
-        const pedidoid = targetRow.dataset.pedidoid;
-        if (pedidoid) {
-            window.location.href = `/backoffice/requestdetail/${pedidoid}/`;
-        }
+        // Redirecionar para o detalhe do pedido
+        window.location.href = `/backoffice/requestdetail/${targetRow.dataset.pedidoid}/`;
     }
+});
+
+document.getElementById('addRequestForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    // Get form values
+    const clienteid = document.getElementById('clienteid').value;
+    const aprovadorid = document.getElementById('aprovadorid').value;
+    const nome = document.getElementById('newNome').value;
+    const datainicio = document.getElementById('newDataInicio').value;
+    const datafim = document.getElementById('newDataFim').value;
+    const precoestimado = document.getElementById('newPrecoEstimado').value;
+
+    // Validate input if necessary
+    if (!clienteid || !aprovadorid || !nome || !datainicio || !datafim || !precoestimado) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+    }
+
+    // Prepare the payload
+    const payload = {
+        clienteid: clienteid,
+        aprovadorid: aprovadorid,
+        nome: nome,
+        datainicio: datainicio,
+        datafim: datafim,
+        precoestimado: precoestimado,
+    };
+
+    // Send the POST request
+    fetch('/add_request/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: JSON.stringify(payload),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // Reload the page or update the table dynamically
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao enviar o pedido.');
+    });
 });
     </script>
 </div>

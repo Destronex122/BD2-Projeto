@@ -367,6 +367,7 @@ class NotasPedidos(models.Model):
         db_table = 'notas_pedidos'
 
 
+
 class Pedidos(models.Model):
     pedidoid = models.AutoField(primary_key=True)
     nome = models.TextField()

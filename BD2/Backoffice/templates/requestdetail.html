@@ -14,6 +14,51 @@
         color: #616646;
         text-decoration: underline;
     }
+
+    .carousel {
+        display: flex;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+    }
+
+    .carousel-item {
+        flex: 0 0 100%;
+        display: none;
+        text-align: left;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #e9e8e2;
+    }
+
+    .carousel-item.active {
+        display: block;
+    }
+
+    .carousel-controls {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .carousel-controls button {
+        background-color: #616646;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+
+    .carousel-controls button:hover {
+        background-color: #4b4b4b;
+    }
+
+    /* Estilo para o botão de seta desabilitado */
+    button.disabled {
+        background-color: #e9e8e2;  /* Cor de fundo desabilitada */
+        color: #a0a0a0; /* Cor da seta desabilitada */
+        cursor: not-allowed; /* Mostra um cursor de bloqueio */
+    }
 </style>
 <nav aria-label="breadcrumb" class="breadcrumb-container">
     <ol class="separadores">
@@ -33,18 +78,14 @@
                 <div class="info-item">
                     <span class="label">Pedido:</span>
                     <span class="label">{{pedido.pedidoid}} </span>
-                    <!-- <span class="value">A</span> -->
-
                 </div>
                 <div class="info-item">
                     <span class="label">Cliente:</span>
-                    <span class="label">{{pedido.clienteid.clienteid}} </span>
-                    <!-- <span class="value">Tó Zé</span> -->
+                    <span class="label">{{pedido.clienteid}} </span>
                 </div>
                 <div class="info-item">
                     <span class="label">Aprovador:</span>
-                    <span class="label">{{pedido.aprovadorid.nome}} </span>
-                <!-- <span class="value">Quim</span> -->
+                    <span class="label">{{pedido.aprovadorid}} </span>
                 </div>
             </div>
 
@@ -52,101 +93,263 @@
                 <h2>Detalhes</h2>
                 <div class="info-item">
                     <span class="label">Data de início:</span>
-                    <span class="label">{{pedido.datainicio}} </span>
-                    <!-- <span class="value">2024-09-01</span> -->
+                    <span class="label">{{pedido.datainicio|date:"Y-m-d"}} </span>
                 </div>
                 <div class="info-item">
                     <span class="label">Data de fim:</span>
-                    <span class="label">{{pedido.datafim}} </span>
-                    <!-- <span class="value">2024-10-15</span> -->
+                    <span class="label">{{pedido.datafim|date:"Y-m-d"}} </span>
                 </div>
                 <div class="info-item">
                     <span class="label">Preço estimado:</span>
                     <span class="label">{{pedido.precoestimado}} </span>
-                    <!-- <span class="value">€5000.00</span> -->
                 </div>
             </div>
 
-            <div class="info-card">
-                <h2>Notas</h2>
-                <div class="info-item">
-                    <span class="label">Notas:</span>
-                   <!-- <span class="value"> Pedido urgente. Entregar antes do final do mês.</span> -->
+             <!-- Secção de notas -->
+             <div class="info-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>Notas</h2>
+                    <button onclick="openNoteModal()">
+                        <img src="{% static 'add.png' %}" title="Adicionar nova nota" alt="edit" style="height: 25px; width: 25px;">
+                    </button>
                 </div>
+
+                <!-- Carrossel de notas -->
+                <div id="notesCarousel" class="carousel">
+                    {% if notas %}
+                        {% for nota in notas %}
+                            <div class="carousel-item">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <!-- Conteúdo da nota -->
+                                    <div class="note-content">
+                                        <span class="label" style="width:60%">{{ nota.data|date:"Y-m-d" }}</span>
+                                        <span class="value">{{ nota.notas }}</span>
+                                    </div>
+                
+                                    <!-- Botões de editar e excluir notas -->
+                                    <div class="note-actions" style="display: flex; gap: 10px;">
+                                        <button onclick="openNoteModal(true, '{{ nota.notaid }}', '{{ nota.notas }}')">
+                                            <img src="{% static 'edit.png' %}" title="Editar nota" alt="edit" style="height: 25px; width: auto;">
+                                        </button>
+                                        <button onclick="deleteNote('{{ nota.notaid }}')">
+                                            <img src="{% static 'delete.png' %}" title="Eliminar nota"alt="delete" style="height: 25px; width: auto;">
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>Não há notas para este pedido.</p>
+                    {% endif %}
+                </div>
+                <!-- Carrossel Controles -->
+                <div class="carousel-controls">
+                    <button id="prevNote" onclick="prevNote()" class="disabled" disabled>&#10094;</button>
+                    <button id="nextNote" onclick="nextNote()">&#10095;</button>
+                </div>            
             </div>
         </div>
-    </div>
-
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
-        <h2 class="notas-title">Notas adicionais</h2>
-        <button onclick="openNoteModal()">
-            <img src="{% static 'add.png' %}" title="Adicionar nova nota" alt="edit" style="height: 25px; width: 25px;">
-        </button>
-    </div>
-    <div id="notesContainer">
-        <div class="info-item">
-            <span class="label" style="width:60%">2024-09-10</span>
-            <span class="value">A colheita está a ir bem, sem pragas até o momento.</span>
         </div>
-        <div class="info-item">
-            <span class="label" style="width:60%">2024-09-15</span>
-            <span class="value">Foram necessárias inspeções extras devido à previsão de chuvas.</span>
-        </div>
-        <!-- Mais notas adicionais podem ser adicionadas aqui -->
     </div>
 </div>
 
-<div class="popup-overlay" id="noteModalOverlay">
+
+<!-- Modal para adicionar/editar uma nota -->
+<div class="popup-overlay" id="noteModalOverlay" style="display: none;">
     <div class="popup-content">
         <div class="popup-header">
-            <h5 class="modal-title">Adicionar nota</h5>
+            <h5 id="modalTitleNote" class="modal-title">Adicionar nota</h5>
             <div style="display:flex; justify-content: flex-end;">
                 <span class="close" onclick="closeNoteModal()">&times;</span>
             </div>
         </div>
         <br>
-        <div>
-            <form id="noteForm" onsubmit="addNote(event)">
-                <div class="form-group">
-                    <label for="noteText">Nota</label>
-                    <textarea class="form-control" id="noteText" required></textarea>
-                </div>
-                <div style="display:flex; justify-content: flex-end;">
-                    <button type="button" class="secondary-button" onclick="closeNoteModal()">Cancelar</button>
-                    <button type="submit" style="margin-left:8px;" class="button">Adicionar</button>
-                </div>
-            </form>
-        </div>
+        <form id="noteForm" onsubmit="event.preventDefault(); saveNote();">
+            {% csrf_token %}
+            <input type="hidden" id="noteId" name="noteId"> <!-- Campo oculto para o ID da nota -->
+            
+            <div class="form-group">
+                <label for="noteText">Nota</label>
+                <textarea class="form-control" id="noteText" name="noteText" required></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+                <button type="button" class="secondary-button" onclick="closeNoteModal()">Cancelar</button>
+                <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-    function openNoteModal() {
-        document.getElementById('noteModalOverlay').style.display = 'flex';
+
+    function openNoteModal(isEdit = false, noteId = null, noteText = '') {
+        const modalOverlay = document.getElementById('noteModalOverlay');
+        const modalTitle = document.getElementById('modalTitleNote');
+        const noteIdField = document.getElementById('noteId');
+        const noteTextField = document.getElementById('noteText');
+
+        // Configura o título da modal e os campos
+        if (isEdit) {
+            modalTitle.textContent = 'Editar nota';
+            noteIdField.value = noteId;  // Preenche o ID da nota para edição
+            noteTextField.value = noteText;  // Preenche o texto da nota
+        } else {
+            modalTitle.textContent = 'Adicionar nota';
+            noteIdField.value = '';  // Limpa o campo do ID
+            noteTextField.value = '';  // Limpa o campo de texto
+        }
+
+        // Exibe a modal
+        modalOverlay.style.display = 'flex';
     }
 
+    // Função para fechar a modal
     function closeNoteModal() {
         document.getElementById('noteModalOverlay').style.display = 'none';
     }
 
-    function addNote(event) {
-        event.preventDefault();
 
-        const noteText = document.getElementById('noteText').value;
+    // Função para salvar ou editar a nota
+    function saveNote() {
+        const noteId = document.getElementById('noteId').value;  // ID da nota (para edição)
+        const noteText = document.getElementById('noteText').value;  // Novo texto da nota
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const pedidoId = window.location.pathname.split('/').filter(Boolean).pop();  // ID da colheita da URL
 
-        const newNote = `
-            <div class="info-item">
-                <span class="label" style="width:60%">Nova Nota</span>
-                <span class="value">${noteText}</span>
-            </div>
-        `;
+        let url, method;
+        if (noteId) {
+            url = `/edit_note_request/${noteId}/`;
+            method = 'POST';
+        } else {
+            url = `/add_note_request/${pedidoId}/`;
+            method = 'POST';
+        }
 
-        const notesContainer = document.getElementById('notesContainer');
-        notesContainer.insertAdjacentHTML('afterbegin', newNote); // Adiciona a nota no início
-
-        closeNoteModal();
-        document.getElementById('noteForm').reset();
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ texto: noteText })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || 'Erro ao salvar nota.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao salvar nota.');
+        });
     }
+
+    function deleteNote(noteId) {
+        if (confirm('Tem certeza de que deseja eliminar esta nota?')) {
+            fetch(`/delete_note_request/${noteId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message || 'Erro ao eliminar nota.');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao eliminar nota.');
+            });
+        }
+    }
+
+
+    // CARROSEL DAS NOTAS
+    let currentNoteIndex = 0;  // Índice da nota atual
+    const notesCarousel = document.getElementById('notesCarousel');
+    const prevNoteButton = document.getElementById('prevNote');
+    const nextNoteButton = document.getElementById('nextNote');
+
+    // Função para mostrar a nota no carrossel com base no índice
+    function showNote() {
+        const notes = document.querySelectorAll('.carousel-item');
+        const notesLength = notes.length;
+
+        // Exibe a nota atual se houver notas
+        if (notesLength > 0) {
+            notes.forEach((note, index) => {
+                note.style.display = (index === currentNoteIndex) ? 'block' : 'none';
+            });
+
+            // Habilita ou desabilita os botões de navegação
+            if (currentNoteIndex === 0) {
+                prevNoteButton.disabled = true;
+                prevNoteButton.classList.add('disabled');
+            } else {
+                prevNoteButton.disabled = false;
+                prevNoteButton.classList.remove('disabled');
+            }
+
+            if (currentNoteIndex === notesLength - 1) {
+                nextNoteButton.disabled = true;
+                nextNoteButton.classList.add('disabled');
+            } else {
+                nextNoteButton.disabled = false;
+                nextNoteButton.classList.remove('disabled');
+            }
+        } else {
+            // Se não houver notas, desabilita ambos os botões
+            prevNoteButton.disabled = true;
+            prevNoteButton.classList.add('disabled');
+            nextNoteButton.disabled = true;
+            nextNoteButton.classList.add('disabled');
+        }
+    }
+
+    // Função para ir para a nota anterior
+    function prevNote() {
+        const notes = document.querySelectorAll('.carousel-item');
+        if (currentNoteIndex > 0) {
+            currentNoteIndex--;
+            showNote();
+        }
+    }
+
+    // Função para ir para a próxima nota
+    function nextNote() {
+        const notes = document.querySelectorAll('.carousel-item');
+        if (currentNoteIndex < notes.length - 1) {
+            currentNoteIndex++;
+            showNote();
+        }
+    }
+
+    // Inicializa a exibição da nota
+    function initCarousel() {
+        const notes = document.querySelectorAll('.carousel-item');
+        if (notes.length > 0) {
+            showNote(); // Exibe a primeira nota do carrossel
+        } else {
+            // Se não houver notas, desabilita os botões de navegação
+            prevNoteButton.disabled = true;
+            prevNoteButton.classList.add('disabled');
+            nextNoteButton.disabled = true;
+            nextNoteButton.classList.add('disabled');
+        }
+    }
+
+    // Chama a função de inicialização do carrossel
+    initCarousel();
 </script>
 
 {% endblock %}
