@@ -124,7 +124,7 @@ class AuthGroup(models.Model):
         db_table = 'auth_group'
 
 
-class AuthGroupPermissions(models.Model):     
+class AuthGroupPermissions(models.Model):
     id = models.BigAutoField(primary_key=True)
     group = models.ForeignKey(AuthGroup, models.DO_NOTHING)
     permission = models.ForeignKey('AuthPermission', models.DO_NOTHING)
@@ -135,7 +135,7 @@ class AuthGroupPermissions(models.Model):
         unique_together = (('group', 'permission'),)
 
 
-class AuthPermission(models.Model):        
+class AuthPermission(models.Model):
     name = models.CharField(max_length=255)
     content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING)
     codename = models.CharField(max_length=100)
@@ -185,21 +185,19 @@ class AuthUserUserPermissions(models.Model):
         unique_together = (('user', 'permission'),)
 
 
-
 class Campos(models.Model):
-    campoid = models.AutoField(primary_key=True)  # Use AutoField para auto-incremento
-    coordenadas = models.JSONField()
+    campoid = models.AutoField(primary_key=True)
+    coordenadas = models.TextField()
     nome = models.TextField()
     morada = models.TextField()
     cidade = models.TextField()
-    pais = models.TextField(default="Portugal")
-    datacriacao = models.DateTimeField()
+    pais = models.TextField()
+    datacriacao = models.DateField()
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
-        db_table = 'campos'  # Definindo explicitamente o nome da tabela
-
-    def __str__(self):
-        return self.nome
+        managed = False
+        db_table = 'campos'
 
 
 class Cargo(models.Model):
@@ -214,6 +212,7 @@ class Cargo(models.Model):
 class Castas(models.Model):
     castaid = models.AutoField(primary_key=True)
     nome = models.TextField(unique=True)
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -226,6 +225,7 @@ class Clientes(models.Model):
     nif = models.IntegerField()
     contacto = models.TextField()
     morada = models.TextField()
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -241,6 +241,7 @@ class Colheitas(models.Model):
     periodoid = models.ForeignKey('Periodos', models.DO_NOTHING, db_column='periodoid', blank=True, null=True)
     previsaofimcolheita = models.DateField(blank=True, null=True)
     terminada = models.BooleanField()
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -258,6 +259,7 @@ class Contratos(models.Model):
     precoestimado = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
     qtdefinal = models.DecimalField(max_digits=65535, decimal_places=65535)
     precofinal = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -300,9 +302,6 @@ class DjangoMigrations(models.Model):
 
 
 class DjangoSession(models.Model):
-    session_key = models.CharField(primary_key=True, max_length=40)
-    session_data = models.TextField()
-    expire_date = models.DateTimeField()
 
     class Meta:
         managed = False
@@ -367,7 +366,6 @@ class NotasPedidos(models.Model):
         db_table = 'notas_pedidos'
 
 
-
 class Pedidos(models.Model):
     pedidoid = models.AutoField(primary_key=True)
     nome = models.TextField()
@@ -376,6 +374,7 @@ class Pedidos(models.Model):
     datafim = models.DateField(blank=True, null=True)
     aprovadorid = models.ForeignKey('Users', models.DO_NOTHING, db_column='aprovadorid', blank=True, null=True)
     precoestimado = models.TextField(blank=True, null=True)
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -388,6 +387,7 @@ class PedidosItem(models.Model):
     castaid = models.ForeignKey(Castas, models.DO_NOTHING, db_column='castaid', blank=True, null=True)
     quantidade = models.DecimalField(max_digits=65535, decimal_places=65535)
     estadoaprovacaoid = models.ForeignKey(Estadosaprovacoes, models.DO_NOTHING, db_column='estadoaprovacaoid', blank=True, null=True)
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -407,10 +407,10 @@ class Periodos(models.Model):
 
 class Pesagens(models.Model):
     pesagemid = models.AutoField(primary_key=True)
-    colheitaid = models.ForeignKey(Colheitas, models.DO_NOTHING, db_column='colheitaid')
     pesobruto = models.DecimalField(max_digits=10, decimal_places=2)
     pesoliquido = models.DecimalField(max_digits=10, decimal_places=2)
     datadepesagem = models.DateField()
+    colheitaid = models.ForeignKey(Colheitas, models.DO_NOTHING, db_column='colheitaid', blank=True, null=True)
 
     class Meta:
         managed = False
@@ -425,6 +425,7 @@ class Recibos(models.Model):
     colheitaid = models.ForeignKey(Colheitas, models.DO_NOTHING, db_column='colheitaid', blank=True, null=True)
     metodopagamento = models.ForeignKey(Metodospagamento, models.DO_NOTHING, db_column='metodopagamento', blank=True, null=True)
     estadoid = models.ForeignKey(Estadosrecibo, models.DO_NOTHING, db_column='estadoid', blank=True, null=True)
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -456,6 +457,7 @@ class Users(models.Model):
     endereco = models.TextField()
     campoid = models.ForeignKey(Campos, models.DO_NOTHING, db_column='campoid', blank=True, null=True)
     cargoid = models.ForeignKey(Cargo, models.DO_NOTHING, db_column='cargoid', blank=True, null=True)
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -467,9 +469,10 @@ class Vinhas(models.Model):
     nome = models.TextField()
     castaid = models.ForeignKey(Castas, models.DO_NOTHING, db_column='castaid', blank=True, null=True)
     campoid = models.ForeignKey(Campos, models.DO_NOTHING, db_column='campoid', blank=True, null=True)
-    coordenadas = models.JSONField()
+    coordenadas = models.TextField()
     dataplantacao = models.DateField(blank=True, null=True)
     hectares = models.DecimalField(max_digits=65535, decimal_places=65535)
+    isactive = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
