@@ -714,13 +714,24 @@ def delete_request(request, pedidoid):
 
 def grapevariety(request):
     filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
+    status_filter = request.GET.get('status', 'active')  # Default: active
+
+    # Filtra as castas conforme o status
     grapevarieties = Castas.objects.all().order_by('nome')
+    if status_filter == 'active':
+        grapevarieties = grapevarieties.filter(isactive=True)
+    elif status_filter == 'inactive':
+        grapevarieties = grapevarieties.filter(isactive=False)
+
+    # Filtra pelo nome, se especificado
     if filter_grapevariety:
         grapevarieties = grapevarieties.filter(nome__icontains=filter_grapevariety)
+
     return render(request, 'grapevariety.html', {
         'castas': grapevarieties,  
         'filters': {
-            'filter_grapevariety': filter_grapevariety
+            'filter_grapevariety': filter_grapevariety,
+            'status': status_filter
         },
     })
 
@@ -730,10 +741,15 @@ def addvariety(request):
         nome = request.POST.get('varietyName', '').strip()
         if nome:
             try:
+                # Verifica se a casta já existe
+                if Castas.objects.filter(nome__iexact=nome).exists():  # Case insensitive
+                    return JsonResponse({'success': False, 'message': 'Essa casta já existe.'})
+                
+                # Insere a nova casta
                 with connection.cursor() as cursor:
-                    # Chama o procedimento armazenado e obtém o ID gerado
-                    cursor.execute("CALL insert_casta(%s, %s)", [nome, None])
-                    new_castaid = cursor.fetchone()[0]  # Obtemos o ID retornado
+                    cursor.execute("SELECT sp_insert_casta(%s)", [nome])
+                    new_castaid = cursor.fetchone()[0]  # Recupera o ID retornado
+
                 return JsonResponse({'success': True, 'id': new_castaid, 'nome': nome})
             except Exception as e:
                 return JsonResponse({'success': False, 'message': f'Erro ao criar a casta: {str(e)}'})
@@ -745,11 +761,10 @@ def delete_variety(request, castaid):
     if request.method == 'POST':
         try:
             with connection.cursor() as cursor:
-                # Use o comando CALL para invocar o procedimento armazenado
-                cursor.execute("CALL delete_casta(%s)", [castaid])
+                cursor.execute("CALL sp_delete_casta(%s)", [castaid])
             return JsonResponse({'success': True})
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erro ao excluir a casta: {str(e)}'})
+            return JsonResponse({'success': False, 'message': f'Erro ao inativar a casta: {str(e)}'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 @login_required
@@ -759,8 +774,7 @@ def editvariety(request, castaid):
         if nome:
             try:
                 with connection.cursor() as cursor:
-                    # Chama o procedimento armazenado para atualizar o registro
-                    cursor.execute("CALL update_casta(%s, %s)", [castaid, nome])
+                    cursor.execute("CALL sp_update_casta(%s, %s)", [castaid, nome])
                 return JsonResponse({'success': True, 'id': castaid, 'nome': nome})
             except Exception as e:
                 return JsonResponse({'success': False, 'message': f'Erro ao editar a casta: {str(e)}'})
