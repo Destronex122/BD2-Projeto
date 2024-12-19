@@ -320,6 +320,7 @@
             fetch('/load_croplands/', { method: 'GET' })
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Dados carregados:', data); // Verifique os dados recebidos
                     if (data.status === 'success') {
                         // Atualiza a tabela com o novo campo
         
@@ -330,6 +331,7 @@
                         tbody.innerHTML = ''; // Limpar a tabela antes de preenchê-la
 
                         camposOrdenados.forEach(item => {
+                            console.log('Campo:', item); // Verifique o objeto item no console
                             // Adicionar marcador ao mapa
                             if (item.coordenadas && item.coordenadas.lat && item.coordenadas.lng) {
                                 const latLng = [item.coordenadas.lat, item.coordenadas.lng];
@@ -337,6 +339,8 @@
                                     .bindPopup(`<b>${item.nome}</b>`)
                                     .on('click', () => openModalWithData(item)); // Modal com dados
                                 croplandMarkers.addLayer(markerLayer);
+                            } else {
+                                console.warn(`Campo sem coordenadas válidas: ${item.nome}`);
                             }
 
                             // Adicionar linha na tabela

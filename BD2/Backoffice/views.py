@@ -425,6 +425,7 @@ def save_marker_view(request):
         morada = data.get('morada')
         cidade = data.get('cidade')
         pais = data.get('pais')
+        isactive = data.get('isactive') 
 
         if not coordenadas or not nome or not morada or not cidade:
             return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
@@ -435,7 +436,8 @@ def save_marker_view(request):
             morada=morada,
             cidade=cidade,
             pais=pais,
-            datacriacao=timezone.now()
+            datacriacao=timezone.now(),
+            isactive=isactive
         )
 
         return JsonResponse({
@@ -447,7 +449,8 @@ def save_marker_view(request):
                 'cidade': campo.cidade,
                 'pais': campo.pais,
                 'coordenadas': campo.coordenadas,
-                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
+                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S'),
+                'isactive': campo.isactive
             }
         })
 
@@ -475,15 +478,21 @@ def load_markers_view(request):
         markers = []
 
         for campo in campos:
-            markers.append({
-                'campoid': campo.campoid,
-                'coordenadas': campo.coordenadas,
-                'nome': campo.nome,
-                'morada': campo.morada,
-                'cidade': campo.cidade,
-                'pais': campo.pais,
-                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
-            })
+            try:
+                coordenadas = json.loads(campo.coordenadas)  # Decodificar coordenadas JSON
+            except (ValueError, TypeError):
+                coordenadas = None  # Coordenadas inválidas ou ausentes
+
+            if coordenadas and 'lat' in coordenadas and 'lng' in coordenadas:
+                markers.append({
+                    'campoid': campo.campoid,
+                    'coordenadas': coordenadas,  # Agora como objeto JSON
+                    'nome': campo.nome,
+                    'morada': campo.morada,
+                    'cidade': campo.cidade,
+                    'pais': campo.pais,
+                    'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
+                })
 
         # Retorna os dados no formato JSON
         return JsonResponse(markers, safe=False)
@@ -493,8 +502,18 @@ def load_markers_view(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
 def load_croplands(request):
-    campos = Campos.objects.all().values('campoid', 'nome', 'cidade', 'morada', 'pais', 'coordenadas').order_by('nome')  # Obtém id, nome, cidade, pais e coordenadas
-    campos_list = list(campos)  # Converte a QuerySet para lista de dicionários
+    campos = Campos.objects.filter(isactive=True).values(
+        'campoid', 'nome', 'cidade', 'morada', 'pais', 'coordenadas'
+    ).order_by('nome')
+
+    campos_list = []
+    for campo in campos:
+        try:
+            campo['coordenadas'] = json.loads(campo['coordenadas'])  # Decodificar se for string JSON
+        except (ValueError, TypeError):
+            campo['coordenadas'] = None  # Define como None se inválido
+        campos_list.append(campo)
+
     return JsonResponse({'status': 'success', 'campos': campos_list})
 
 def mapa_campos(request):
@@ -823,6 +842,7 @@ def editvariety(request, castaid):
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
+
 @csrf_exempt
 @require_http_methods(['POST'])
 def save_marker(request):
@@ -886,6 +906,7 @@ def update_campo(request, campoid):
             cidade = data.get('cidade')
             pais = data.get('pais')
             coordenadas = data.get('coordenadas')
+            isactive = data.get('isactive')
 
             # Validar os dados obrigatórios
             if not nome or not morada or not cidade or not pais or not coordenadas:
@@ -902,8 +923,8 @@ def update_campo(request, campoid):
             # Chamar o procedimento armazenado
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL update_campo(%s, %s, %s, %s, %s, %s)",
-                    [campoid, coordenadas_json, nome, morada, cidade, pais]
+                   "CALL update_campo(%s, %s, %s, %s, %s, %s, %s)",
+                    [campoid, coordenadas_json, nome, morada, cidade, pais, isactive]
                 )
 
             # Retornar sucesso
