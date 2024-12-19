@@ -35,6 +35,13 @@
         cursor: not-allowed;
         opacity: 0.5;
     }
+
+    .delete-btn:disabled {
+        background-color: #e9e8e2; /* Cor de fundo desabilitada */
+        color: #a0a0a0; /* Cor do ícone desabilitado */
+        cursor: not-allowed; /* Mostra um cursor de bloqueio */
+        opacity: 0.6; /* Torna o botão visualmente mais claro */
+    }
 </style>
 
 <div class="editable-area newPadding">
@@ -55,6 +62,7 @@
         <div class="form-group">
             <label for="statusFilter" style="display: block;">Estados:</label>
             <select id="statusFilter" class="form-control">
+                <option value="all" {% if filters.status == 'all' %}selected{% endif %}>Todos</option>
                 <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Ativos</option>
                 <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inativos</option>
             </select>
@@ -72,21 +80,27 @@
         </thead>
         <tbody id="grapeVarietyBody">
             {% for casta in castas %}
-            <tr data-id="{{ casta.castaid }}" data-name="{{ casta.nome }}" data-isactive="{{ casta.isactive|yesno:'true,false' }}">
+            <tr 
+                data-id="{{ casta.castaid }}" 
+                data-name="{{ casta.nome }}" 
+                data-isactive="{{ casta.isactive_cleaned|yesno:'true,false' }}">
                 <td>{{ casta.nome }}</td>
                 <td>
-                    <button title="Editar casta" onclick="openAddVarietyModal(true, '{{ casta.castaid }}', '{{ casta.nome }}')" type="button">
+                    <button title="Editar casta" 
+                            onclick="openAddVarietyModal(true, '{{ casta.castaid }}', '{{ casta.nome }}')" 
+                            type="button">
                         <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
                     </button>
-                    <button title="Inativar casta" type="button" class="delete-btn" data-id="{{ casta.castaid }}">
+                    <button 
+                        title="Inativar casta" type="button" class="delete-btn" data-id="{{ casta.castaid }}" {% if not casta.isactive_cleaned %}disabled{% endif %}>
                         <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
                     </button>
                 </td>
             </tr>
             {% empty %}
-                <tr>
-                    <td colspan="2" class="no-data-message">Ainda não há castas adicionadas.</td>
-                </tr>
+            <tr>
+                <td colspan="2" class="no-data-message">Ainda não há castas adicionadas.</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -122,38 +136,41 @@
 <script>
     function openAddVarietyModal(isEdit = false, castaId = null, castaName = '') {
         const modal = document.getElementById('addVarietyModal');
+        const modalTitle = document.getElementById('addVarietyModalTitle');
+        const varietyNameInput = document.getElementById('varietyName');
+        const addVarietyForm = document.getElementById('addVarietyForm');
+
         modal.style.display = 'flex';
         modal.removeAttribute('inert'); // Remove inert para permitir interação
 
-        // Configura o título e valores do modal
+        // Configura o título do modal
         modalTitle.textContent = isEdit ? 'Editar casta' : 'Adicionar casta';
 
         if (isEdit) {
-            // Busca o valor atualizado diretamente da linha da tabela
-            const row = document.querySelector(`button[data-id="${castaId}"]`).closest('tr');
-            const updatedName = row.querySelector('td').textContent.trim();
-
-            varietyNameInput.value = updatedName; // Preenche com o valor atualizado
+            // Preenche os campos com os dados da linha selecionada
+            varietyNameInput.value = castaName;
+            addVarietyForm.dataset.isEdit = 'true';
+            addVarietyForm.dataset.castaId = castaId;
         } else {
-            varietyNameInput.value = ''; // Limpa o campo para adição
+            varietyNameInput.value = '';
+            addVarietyForm.dataset.isEdit = 'false';
+            addVarietyForm.dataset.castaId = '';
         }
-
-        // Configura os atributos do formulário
-        addVarietyForm.dataset.isEdit = isEdit;
-        addVarietyForm.dataset.castaId = castaId;
-
-        modal.style.display = 'flex';
     }
-
-    document.getElementById('closeAddVarietyModal').addEventListener('click', closeAddVarietyModal);
-    document.getElementById('cancelAddVariety').addEventListener('click', closeAddVarietyModal);
 
     function closeAddVarietyModal() {
         const modal = document.getElementById('addVarietyModal');
         modal.style.display = 'none';
-        modal.setAttribute('inert', ''); // Adiciona inert para bloquear o foco
-        document.getElementById('addVarietyForm').reset();
+        modal.setAttribute('inert', ''); // Bloqueia o foco
+
+        const form = document.getElementById('addVarietyForm');
+        form.reset(); // Limpa o formulário
+        delete form.dataset.isEdit; // Remove atributos temporários
+        delete form.dataset.castaId;
     }
+
+    document.getElementById('closeAddVarietyModal').addEventListener('click', closeAddVarietyModal);
+    document.getElementById('cancelAddVariety').addEventListener('click', closeAddVarietyModal);
 
     document.getElementById('addVarietyForm').addEventListener('submit', function (e) {
         e.preventDefault(); // Evita o envio padrão do formulário
@@ -162,15 +179,20 @@
         const castaId = this.dataset.castaId || null;
         const varietyName = document.getElementById('varietyName').value;
 
+        if (!varietyName) {
+            alert('O nome da casta não pode ser vazio.');
+            return;
+        }
+
         const url = isEdit ? `/editvariety/${castaId}/` : "{% url 'addvariety' %}";
 
         fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}',
             },
-            body: `varietyName=${encodeURIComponent(varietyName)}`
+            body: JSON.stringify({ varietyName })
         })
             .then(response => {
                 if (!response.ok) throw new Error('Erro na resposta do servidor.');
@@ -178,20 +200,20 @@
             })
             .then(data => {
                 if (data.success) {
-                    
                     const tableBody = document.getElementById('grapeVarietyBody');
 
                     if (isEdit) {
-                        // Atualiza o texto da linha correspondente
                         const row = document.querySelector(`button[data-id="${data.id}"]`).closest('tr');
-                        row.querySelector('td').textContent = data.nome;
+                        if (row) {
+                            row.dataset.name = data.nome;
+                            row.querySelector('td').textContent = data.nome;
+                        }
+                        updateRowInTable(data.id, data.nome);
                     } else {
-                        // Verifica e remove a mensagem "Ainda não há castas adicionadas"
                         const noDataMessage = tableBody.querySelector('.no-data-message');
                         if (noDataMessage) {
                             noDataMessage.remove();
-}
-                        // Cria uma nova linha
+                        }
                         const newRow = document.createElement('tr');
                         newRow.setAttribute('data-name', data.nome);
                         newRow.setAttribute('data-id', data.id);
@@ -208,39 +230,20 @@
                         `;
                         tableBody.appendChild(newRow);
 
-                        
-                        // Atualiza e ordena as linhas filtradas
-                        filteredRows = Array.from(tableBody.querySelectorAll('tr'));
-                        let inserted = false;
-
-                        // Ordena `filteredRows` alfabeticamente
-                        for (let i = 0; i < filteredRows.length; i++) {
-                            const currentName = filteredRows[i].querySelector('td').textContent.toLowerCase();
-                            if (data.nome.toLowerCase() < currentName) {
-                                tableBody.insertBefore(newRow, filteredRows[i]);
-                                inserted = true;
-                                break;
-                            }
+                        if (typeof updateTable === 'function') {
+                            updateTable();
                         }
+                        insertRowInOrder(data.id, data.nome);
+                    }
 
-                        // Se a nova linha não foi inserida (é a última), adiciona ao final
-                        if (!inserted) {
-                            tableBody.appendChild(newRow);
-                        }
-
-                        // Atualiza `filteredRows` e renderiza a paginação novamente
-                        filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+                    if (typeof updateTable === 'function') {
                         updateTable();
                     }
 
-                    // Atualiza a tabela e a paginação
-                    updateTable();
-
-                    // Fecha o modal e reseta o formulário
                     closeAddVarietyModal();
                     document.getElementById('addVarietyForm').reset();
                 } else {
-                    alert(data.message); // Exibe o erro retornado do backend
+                    alert(data.message);
                 }
             })
             .catch(error => {
@@ -249,8 +252,66 @@
             });
     });
 
-    
+    // Função para atualizar a linha existente após edição
+    function updateRowInTable(id, nome) {
+        const row = document.querySelector(`button[data-id="${id}"]`).closest('tr');
+        if (row) {
+            row.dataset.name = nome;
+            row.querySelector('td').textContent = nome;
+            row.remove(); // Remove a linha antiga
+            insertRowInOrder(id, nome); // Insere na posição correta
+        }
+    }
 
+    // Função para inserir uma nova linha na ordem correta
+    function insertRowInOrder(id, nome) {
+        const tableBody = document.getElementById('grapeVarietyBody');
+        const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+        const newRow = document.createElement('tr');
+        newRow.setAttribute('data-id', id);
+        newRow.setAttribute('data-name', nome);
+        newRow.innerHTML = `
+            <td>${nome}</td>
+            <td>
+                <button onclick="openAddVarietyModal(true, '${id}', '${nome}')" type="button">
+                    <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                </button>
+                <button type="button" class="delete-btn" data-id="${id}">
+                    <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                </button>
+            </td>
+        `;
+
+        // Insere a nova linha em ordem alfabética
+        let inserted = false;
+        for (let row of rows) {
+            if (nome.toLowerCase() < row.dataset.name.toLowerCase()) {
+                tableBody.insertBefore(newRow, row);
+                inserted = true;
+                break;
+            }
+        }
+        if (!inserted) tableBody.appendChild(newRow); // Adiciona ao final se não foi inserido
+
+        updateDeleteButtonsState();
+    }
+
+    // Atualiza o estado dos botões de exclusão
+    function updateDeleteButtonsState() {
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+        deleteButtons.forEach(button => {
+            const row = button.closest('tr');
+            const isActive = row.dataset.isactive === 'true';
+            if (!isActive) {
+                button.classList.add('disabled');
+                button.disabled = true;
+            } else {
+                button.classList.remove('disabled');
+                button.disabled = false;
+            }
+        });
+    }
 
     document.addEventListener('click', function (e) {
         if (e.target.closest('.delete-btn')) {
@@ -268,20 +329,23 @@
                     .then(data => {
                         if (data.success) {
                             const row = deleteButton.closest('tr');
-                            row.remove(); // Remove a linha correspondente da tabela
-
-                            // Atualiza as linhas filtradas e a paginação
+                            row.remove();
+                            // checkEmptyTable();
+                            const tableBody = document.getElementById('grapeVarietyBody');
                             filteredRows = Array.from(tableBody.querySelectorAll('tr'));
                             if (filteredRows.length === 0) {
-                                // Adiciona a mensagem de "sem dados" se não houver mais linhas
                                 const emptyRow = document.createElement('tr');
                                 emptyRow.innerHTML = `
                                     <td colspan="2" class="no-data-message">Ainda não há castas adicionadas.</td>
                                 `;
                                 tableBody.appendChild(emptyRow);
                             } else {
-                                updateTable(); // Atualiza a tabela com a nova paginação
+                                if (typeof updateTable === 'function') {
+                                    updateTable();
+                                }
                             }
+
+                            
                         } else {
                             alert(data.message || 'Erro ao inativar a casta.');
                         }
@@ -294,117 +358,178 @@
         }
     });
 
-    const searchBar = document.getElementById('searchBar');
-    const applyFilterButton = document.getElementById('apply-filter');
-    const clearFilterButton = document.getElementById('clear-filter');
-    const tableBody = document.getElementById('grapeVarietyBody');
-    const paginationContainer = document.getElementById('pagination');
-    const rowsPerPage = 5;
-    let currentPage = 1;
-    let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
-
-    // Função para limpar o filtro
-    function clearFilter() {
-        searchBar.value = '';
-        statusFilter.value = 'active'; // Reinicia o filtro para "Ativas"
-        filteredRows = Array.from(tableBody.querySelectorAll('tr'));
-        currentPage = 1;
-        updateTable();
-    }
-
-    // Event listener para o botão de limpar filtro
-    clearFilterButton.addEventListener('click', clearFilter);
-
-    // Função para inicializar a paginação
-    function initPagination() {
-        const rows = Array.from(tableBody.querySelectorAll('tr'));
-        filteredRows = rows; // Inicia com todas as linhas disponíveis
-        renderPaginationButtons(); // Renderizar os botões de paginação
-        updateTable(); // Exibir a primeira página
-    }
-
-    // Função para aplicar o filtro e atualizar a paginação
-    function applyFilter() {
-        const query = searchBar.value.toLowerCase().trim(); // Texto do filtro
-        const allRows = Array.from(tableBody.querySelectorAll('tr'));
-
-        // Filtrar as linhas com base no texto de busca
-        filteredRows = allRows.filter(row => {
-        const casta = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
-        return casta.includes(query);
-        });
-
-        // Reiniciar para a primeira página após aplicar o filtro
-        currentPage = 1;
-
-        // Atualizar a tabela e a paginação
-        updateTable();
-    }
-
-    // Função para atualizar a tabela com base na página atual
-    function updateTable() {
-        const startIndex = (currentPage - 1) * rowsPerPage;
-        const endIndex = startIndex + rowsPerPage;
-
-        // Esconder todas as linhas e mostrar apenas as filtradas na página atual
-        Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
-        filteredRows.slice(startIndex, endIndex).forEach(row => (row.style.display = ''));
-
-        renderPaginationButtons();
-    }
-
-    // Função para renderizar os botões de paginação
-    function renderPaginationButtons() {
-        paginationContainer.innerHTML = '';
-        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-
-        for (let i = 1; i <= totalPages; i++) {
-            const button = document.createElement('button');
-            button.textContent = i;
-            button.classList.add('pagination-button');
-            if (i === currentPage) {
-                button.classList.add('active');
-            }
-            button.addEventListener('click', () => {
-                currentPage = i;
-                updateTable();
-            });
-            paginationContainer.appendChild(button);
+    // Função para verificar se a tabela está vazia e mostrar a mensagem
+    function checkEmptyTable() {
+        const tableBody = document.getElementById('grapeVarietyBody');
+        if (tableBody.querySelectorAll('tr').length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="2" class="no-data-message">Ainda não há castas adicionadas.</td>
+                </tr>
+            `;
         }
     }
 
-    // Inicializar tabela e paginação ao carregar
-    function init() {
-        const allRows = Array.from(tableBody.querySelectorAll('tr'));
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchBar = document.getElementById('searchBar');
+        const statusFilter = document.getElementById('statusFilter');
+        const applyFilterButton = document.getElementById('apply-filter');
+        const clearFilterButton = document.getElementById('clear-filter');
+        const tableBody = document.getElementById('grapeVarietyBody');
+        const paginationContainer = document.getElementById('pagination');
 
-        // Remove as linhas inativas, se o filtro for "active"
-        const status = document.getElementById('statusFilter').value;
-        filteredRows = allRows.filter(row => {
-            const isActive = row.dataset.isactive?.toLowerCase() === 'true'; // Garante a comparação
-            return status === 'active' ? isActive : !isActive;
-        });
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = [];
 
-        updateTable();
-    }
+        // Aplica os filtros e atualiza a tabela
+        function applyFilter() {
+            const query = searchBar.value.toLowerCase().trim();
+            const status = statusFilter.value;
 
-    // Event listener para o botão de filtro
-    applyFilterButton.addEventListener('click', function () {
-        const query = searchBar.value.toLowerCase().trim();
-        const status = statusFilter.value;
+            filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
+                const name = row.dataset.name.toLowerCase();
+                const isActive = row.dataset.isactive === 'true';
 
-        filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
-            const name = row.dataset.name.toLowerCase();
-            const isActive = row.dataset.isactive?.toLowerCase() === 'true';
-            const statusMatch = (status === 'active' && isActive) || (status === 'inactive' && !isActive);
-            return name.includes(query) && statusMatch;
-        });
+                const statusMatch =
+                    (status === 'active' && isActive) ||
+                    (status === 'inactive' && !isActive) ||
+                    (status === 'all');
 
-        currentPage = 1; // Reseta para a primeira página
-        updateTable(); // Atualiza a tabela sem recarregar a página
+                return name.includes(query) && statusMatch;
+            });
+
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Atualiza a tabela para mostrar apenas os registros da página atual
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            // Oculta todas as linhas
+            Array.from(tableBody.querySelectorAll('tr')).forEach(row => row.style.display = 'none');
+
+            // Exibe as linhas da página atual
+            filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+
+            renderPaginationButtons();
+        }
+
+        // Renderiza os botões de paginação
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.add('pagination-button');
+                if (i === currentPage) button.classList.add('active');
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    updateTable();
+                });
+                paginationContainer.appendChild(button);
+            }
+        }
+
+        // Limpa os filtros
+        function clearFilter() {
+            searchBar.value = '';
+            statusFilter.value = 'active';
+            applyFilter();
+        }
+
+        // Insere uma nova linha ordenada alfabeticamente
+        function insertRowInOrder(id, nome) {
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-id', id);
+            newRow.setAttribute('data-name', nome);
+            newRow.setAttribute('data-isactive', 'true');
+
+            newRow.innerHTML = `
+                <td>${nome}</td>
+                <td>
+                    <button onclick="openAddVarietyModal(true, '${id}', '${nome}')" type="button">
+                        <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                    </button>
+                    <button type="button" class="delete-btn" data-id="${id}">
+                        <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                    </button>
+                </td>
+            `;
+
+            let inserted = false;
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            for (let row of rows) {
+                if (nome.toLowerCase() < row.dataset.name.toLowerCase()) {
+                    tableBody.insertBefore(newRow, row);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted) tableBody.appendChild(newRow);
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            updateTable();
+        }
+
+        // Remove uma linha e atualiza a tabela
+        function removeRow(id) {
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            if (row) row.remove();
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            checkEmptyTable();
+            updateTable();
+        }
+
+        // Checa se a tabela está vazia e adiciona mensagem
+        function checkEmptyTable() {
+            if (tableBody.querySelectorAll('tr').length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="2" class="no-data-message">Ainda não há castas adicionadas.</td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Atualiza o estado dos botões de exclusão
+        function updateDeleteButtonsState() {
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(button => {
+                const row = button.closest('tr');
+                const isActive = row.dataset.isactive === 'true';
+                if (!isActive) {
+                    button.classList.add('disabled');
+                    button.disabled = true;
+                } else {
+                    button.classList.remove('disabled');
+                    button.disabled = false;
+                }
+            });
+        }
+
+        // Adiciona os event listeners
+        applyFilterButton.addEventListener('click', applyFilter);
+        clearFilterButton.addEventListener('click', clearFilter);
+
+        function init() {
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            updateTable();
+        }
+
+        init();
+
+        // Exemplo de como chamar as funções após adicionar ou remover:
+        window.insertRowInOrder = insertRowInOrder;
+        window.removeRow = removeRow;
     });
 
-    // Inicializar tabela e paginação ao carregar a página
-    init();
 </script>
+
 
 {% endblock %}

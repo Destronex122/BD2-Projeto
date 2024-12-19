@@ -16,6 +16,8 @@ import datetime
 from django.db.models import Max
 from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos
 from django.utils import timezone
+from django.db.models.functions import Coalesce
+from django.db.models import Value, BooleanField, Case, When, F
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
@@ -712,48 +714,66 @@ def delete_request(request, pedidoid):
 
     return JsonResponse({'success': False, 'message': 'Método inválido.'})
 
+
 def grapevariety(request):
+    # Obtém os filtros
     filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
-    status_filter = request.GET.get('status', 'active')  # Default: active
+    status_filter = request.GET.get('status', '')  # Padrão: mostrar ativos
 
-    # Filtra as castas conforme o status
-    grapevarieties = Castas.objects.all().order_by('nome')
+    # Anotação para tratar NULL como False
+    grapevarieties = Castas.objects.annotate(
+        isactive_cleaned=Coalesce('isactive', Value(False), output_field=BooleanField())
+    ).order_by('nome')
+
+    # Lógica de filtro por status
     if status_filter == 'active':
-        grapevarieties = grapevarieties.filter(isactive=True)
+        grapevarieties = grapevarieties.filter(isactive_cleaned=True)
     elif status_filter == 'inactive':
-        grapevarieties = grapevarieties.filter(isactive=False)
+        grapevarieties = grapevarieties.filter(isactive_cleaned=False)
+    # Status 'all' não aplica filtro
 
-    # Filtra pelo nome, se especificado
+    # Filtro pelo nome da casta
     if filter_grapevariety:
         grapevarieties = grapevarieties.filter(nome__icontains=filter_grapevariety)
 
+    # Renderização
     return render(request, 'grapevariety.html', {
-        'castas': grapevarieties,  
+        'castas': grapevarieties,
         'filters': {
             'filter_grapevariety': filter_grapevariety,
-            'status': status_filter
+            'status': status_filter,
         },
     })
 
 @csrf_exempt
 def addvariety(request):
     if request.method == 'POST':
-        nome = request.POST.get('varietyName', '').strip()
-        if nome:
-            try:
-                # Verifica se a casta já existe
-                if Castas.objects.filter(nome__iexact=nome).exists():  # Case insensitive
-                    return JsonResponse({'success': False, 'message': 'Essa casta já existe.'})
-                
-                # Insere a nova casta
-                with connection.cursor() as cursor:
-                    cursor.execute("SELECT sp_insert_casta(%s)", [nome])
-                    new_castaid = cursor.fetchone()[0]  # Recupera o ID retornado
+        try:
+            # Lê o corpo da requisição e decodifica o JSON
+            data = json.loads(request.body)
+            nome = data.get('varietyName', '').strip()
 
-                return JsonResponse({'success': True, 'id': new_castaid, 'nome': nome})
-            except Exception as e:
-                return JsonResponse({'success': False, 'message': f'Erro ao criar a casta: {str(e)}'})
-        return JsonResponse({'success': False, 'message': 'Nome inválido.'})
+            # Validação do nome
+            if not nome:
+                return JsonResponse({'success': False, 'message': 'Nome inválido.'})
+
+            # Verifica se a casta já existe (case insensitive)
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM castas WHERE LOWER(nome) = LOWER(%s)", [nome])
+                if cursor.fetchone()[0] > 0:
+                    return JsonResponse({'success': False, 'message': 'Essa casta já existe.'})
+
+            # Chama o procedimento armazenado para inserir a casta
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_insert_casta(%s, %s)", [nome, None])  # None para o OUT parameter
+                cursor.execute("SELECT currval('castas_castaid_seq')")  # Recupera o último ID gerado
+                new_castaid = cursor.fetchone()[0]
+
+            return JsonResponse({'success': True, 'id': new_castaid, 'nome': nome})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Formato de dados inválido.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao criar a casta: {str(e)}'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 @login_required
@@ -767,20 +787,35 @@ def delete_variety(request, castaid):
             return JsonResponse({'success': False, 'message': f'Erro ao inativar a casta: {str(e)}'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
+import logging
+import json
+
+logger = logging.getLogger(__name__)
+
 @login_required
 def editvariety(request, castaid):
     if request.method == 'POST':
-        nome = request.POST.get('varietyName', '').strip()
-        if nome:
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute("CALL sp_update_casta(%s, %s)", [castaid, nome])
-                return JsonResponse({'success': True, 'id': castaid, 'nome': nome})
-            except Exception as e:
-                return JsonResponse({'success': False, 'message': f'Erro ao editar a casta: {str(e)}'})
-        return JsonResponse({'success': False, 'message': 'Nome inválido.'})
-    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+        try:
+            body = json.loads(request.body)
+            nome = body.get('varietyName', '').strip()
 
+            if not nome:
+                return JsonResponse({'success': False, 'message': 'Nome inválido.'})
+
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_update_casta(%s, %s)", [castaid, nome])
+
+            response = {'success': True, 'id': castaid, 'nome': nome}
+            logger.info(f"Resposta editvariety: {response}")  # Adicione o log
+            return JsonResponse(response)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Formato de dados inválido.'})
+        except Exception as e:
+            logger.error(f"Erro ao editar a casta: {str(e)}")  # Log do erro
+            return JsonResponse({'success': False, 'message': f'Erro ao editar a casta: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 @csrf_exempt
 @require_http_methods(['POST'])
