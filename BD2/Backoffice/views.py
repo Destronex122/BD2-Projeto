@@ -875,7 +875,7 @@ def save_marker(request):
             try:
                 lat = float(coordenadas.get("lat"))
                 lng = float(coordenadas.get("lng"))
-                coordenadas_json = '{"lat": ' + str(lat) + ', "lng": ' + str(lng) + '}'
+                coordenadas_json = json.dumps({"lat": lat, "lng": lng})
             except (ValueError, TypeError):
                 return JsonResponse({'success': False, 'message': 'Coordenadas inválidas.'})
 
@@ -970,24 +970,23 @@ def update_campo(request, campoid):
 
 @csrf_exempt
 def delete_campo(request, campoid):
-    if request.method == 'DELETE':
+    if request.method == 'POST':  # Alterado para POST
         try:
-            # Chamar o procedimento armazenado usando CALL
+            # Chamar o procedimento armazenado para inativar o campo
             with connection.cursor() as cursor:
-                cursor.execute("CALL delete_campo(%s)", [campoid])
+                cursor.execute("CALL sp_delete_campo(%s)", [campoid])
 
             # Retorno de sucesso
-            return JsonResponse({"status": "success", "message": "Campo eliminado com sucesso."})
+            return JsonResponse({"status": "success", "message": "Campo inativado com sucesso."})
 
         except Exception as e:
             # Captura exceções e retorna erro
-            print(f"Erro ao eliminar campo: {str(e)}")  # Log para depuração
-            if "não encontrado" in str(e):
+            print(f"Erro ao inativar campo: {str(e)}")  # Log para depuração
+            if "não encontrado" in str(e).lower():
                 return JsonResponse({"status": "error", "message": "Campo não encontrado."}, status=404)
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
     # Retorno para métodos não permitidos
     return JsonResponse({"status": "error", "message": "Método não permitido."}, status=405)
-
 
 

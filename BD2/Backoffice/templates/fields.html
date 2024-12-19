@@ -4,6 +4,9 @@
 
 {% block content %}
 
+{% load static %}
+
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -46,10 +49,15 @@
         opacity: 0.5;
     }
 
+    .delete-btn:disabled {
+        background-color: #e9e8e2; /* Cor de fundo desabilitada */
+        color: #a0a0a0; /* Cor do ícone desabilitado */
+        cursor: not-allowed; /* Mostra um cursor de bloqueio */
+        opacity: 0.6; /* Torna o botão visualmente mais claro */
+    }
 </style>
 
-{% csrf_token %}
-{% load static %}
+
 <div class="newPadding">
     <div style="display:flex; justify-content: space-between;">
         <h1>Campos</h1>
@@ -59,7 +67,7 @@
         <div id="map" style="width: 650px; height: 500px; margin-right:24px"></div>
         <div style="width:50%;">
             <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
-                <div class="form-group" style="flex: 1;">
+                <div class="form-group" style="flex: 1; min-width: 200px; margin-top:16px">
                     <label for="search-bar" style="display: block;">Nome do campo ou cidade:</label>
                     <input type="text" id="search-bar" placeholder="Pesquisar por nome ou cidade" style="width: 100%; padding: 8px; border: 1px solid #ccc;">
                 </div>
@@ -72,8 +80,8 @@
                     </select>
                 </div>
                 
-                <button id="apply-filter" style="margin-bottom: 15px;gap: 10px;align-items: center;">Aplicar</button>
-                <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2;">Limpar</button>
+                <button id="apply-filter" style="margin-bottom: 15px;gap: 10px;align-items: center; margin-top:24px"">Aplicar</button>
+                <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2; margin-top:24px"">Limpar</button>
             </div>
             <table id="fields-table">
                 <thead>
@@ -85,14 +93,15 @@
                 </thead>
                 <tbody id="table-body">
                     {% for campo in campos %}
-                        <tr data-campoid="{{ campo.campoid }}">
+                        <tr data-campoid="{{ campo.campoid }}"
+                            data-isactive="{{ campo.isactive_cleaned|yesno:'true,false' }}">
                             <td>{{ campo.nome }}</td>
                             <td>{{ campo.cidade }}</td>
                             <td>
                                 <button title="Editar campo" type="button" class="edit-btn" data-id="{{ campo.campoid }}">
                                     <img src="{% static 'edit.png' %}" title="Editar campo" alt="edit" style="height: 25px; width: auto;">
                                 </button>
-                                <button title="Eliminar campo" type="button" class="delete-btn" data-id="{{ campo.campoid }}">
+                                <button title="Eliminar campo" type="button" class="delete-btn" data-id="{{ campo.campoid }}" {% if not campo.isactive_cleaned %}disabled{% endif %}>
                                     <img src="{% static 'delete.png' %}" title="Eliminar campo" alt="delete" style="height: 25px; width: auto;">
                                 </button>
                             </td>
@@ -104,10 +113,11 @@
         </div>
         
     </div>
+    
 
 
     <!-- Modal para visualizar ou editar informações -->
-    <div id="myModal" class="sidebar">
+    <!-- <div id="myModal" class="sidebar">
         <div class="p-3">
             <div style="text-align:right; padding:0px 24px;">
                 <span class="close">&times;</span>
@@ -134,20 +144,50 @@
                 </form>
             </div>
         </div>
+    </div> -->
+
+    <div id="campoSidebar" class="sidebar" style="display: none;" inert>
+        <div>
+            <div style="display:flex">
+                <div style="text-align:right; padding:0px 24px;"></div>
+                    <button id="closeSidebarButton" class="close">&times;</button>
+                </div>
+                <h2 id="campoSidebarTitle">Adicionar campo</h2>
+            </div>
+            <form id="campoForm" style="margin-top: 15px;">
+                {% csrf_token %}
+                <label for="campoName">Nome do Campo:</label>
+                <input type="text" id="campoName" required />
+                <label for="campoMorada">Morada:</label>
+                <input type="text" id="campoMorada" required />
+                <label for="campoCidade">Cidade:</label>
+                <input type="text" id="campoCidade" required />
+                <label for="campoPais">País:</label>
+                <input type="text" id="campoPais" required />
+                <label for="campoCoordinates">Coordenadas:</label>
+                <input type="text" id="campoCoordinates" readonly />
+                <div style="margin-top: 10px;">
+                    <button type="button" onclick="closeSidebar()">Cancelar</button>
+                    <button type="submit">Salvar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const searchBar = document.getElementById('search-bar');
-            const statusFilter = document.getElementById('statusFilter');
-            const applyFilterButton = document.getElementById('apply-filter');
-            const clearFilterButton = document.getElementById('clear-filter');
-            const tableBody = document.getElementById('table-body');
-            const paginationContainer = document.getElementById('pagination');
+            const searchBar = document.getElementById("search-bar");
+            const statusFilter = document.getElementById("statusFilter");
+            const applyFilterButton = document.getElementById("apply-filter");
+            const clearFilterButton = document.getElementById("clear-filter");
+            const tableBody = document.getElementById("table-body");
+            const paginationContainer = document.getElementById("pagination");
+            const addFieldModal = document.getElementById("addFieldModal");
+            const addFieldForm = document.getElementById("addFieldForm");
             const rowsPerPage = 5;
             let currentPage = 1;
             let filteredRows = [];
-            let allMarkers = {};
+            let fieldsData = [];
     
             // Função para limpar os filtros
             function clearFilter() {
@@ -170,28 +210,13 @@
                 subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
             });
     
-           //Meter em português tudo que se encontra no mapa
-            //CANCELAR
-            L.drawLocal.draw.toolbar.actions = {
-                text: 'Cancelar'
-            };
-            //ADICIONAR NO MAPA
-            L.drawLocal.draw.handlers.marker = {
-                tooltip: {
-                    start: 'Clique no mapa para adicionar o marcador.' // Texto traduzido
-                }
-            };
-            //ZOOM IN E OUT
-            const zoomInButton = document.querySelector('.leaflet-control-zoom-in');
-            const zoomOutButton = document.querySelector('.leaflet-control-zoom-out');
-            if (zoomInButton) zoomInButton.setAttribute('title', 'Aproximar');
-            if (zoomOutButton) zoomOutButton.setAttribute('title', 'Afastar');
-            //ADICIONAR MARKER            
+            // Adicionar traduções ao mapa
+            L.drawLocal.draw.toolbar.actions.text = 'Cancelar';
+            L.drawLocal.draw.handlers.marker.tooltip.start = 'Clique no mapa para adicionar o marcador.';
             L.drawLocal.draw.toolbar.buttons.marker = 'Adicionar um marcador';
-            //VISUALIZAÇÃO DO MAPA
+    
             layerControl.addBaseLayer(osmLayer, 'Mapa');
             layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
-
     
             const featureGroup = new L.FeatureGroup().addTo(map);
     
@@ -213,66 +238,53 @@
                 const layer = e.layer;
                 const coordinates = layer.getLatLng();
                 featureGroup.addLayer(layer);
-                openModalWithCoordinates(coordinates.lat, coordinates.lng);
+                openSidebar(false, { coordenadas: coordinates });
             });
     
-            function openModalWithCoordinates(lat, lng) {
-                const modal = document.getElementById('myModal');
-                document.getElementById('coordinates').textContent = `Lat: ${lat}, Lng: ${lng}`;
-                modal.classList.add('open');
-    
-                // Configurar o salvamento de marcador
-                document.querySelector('#formContainer form').onsubmit = function (event) {
-                    event.preventDefault();
-                    saveMarker(lat, lng);
-                };
+            function openSidebar(isEdit = false, campo = null) {
+                const sidebar = document.getElementById('campoSidebar');
+                const title = document.getElementById('campoSidebarTitle');
+                const campoName = document.getElementById('campoName');
+                const campoMorada = document.getElementById('campoMorada');
+                const campoCidade = document.getElementById('campoCidade');
+                const campoPais = document.getElementById('campoPais');
+                const campoCoordinates = document.getElementById('campoCoordinates');
+                const campoForm = document.getElementById('campoForm');
+                sidebar.style.display = 'flex';
+                sidebar.removeAttribute('inert'); // Remove inert para permitir interação
+
+                if (isEdit && campo) {
+                    title.textContent = 'Editar campo';
+                    campoName.value = campo.nome || '';
+                    campoMorada.value = campo.morada || '';
+                    campoCidade.value = campo.cidade || '';
+                    campoPais.value = campo.pais || '';
+                    campoCoordinates.value = campo.coordenadas ? JSON.stringify(campo.coordenadas) : '';
+                    campoForm.dataset.isEdit = 'true';
+                    campoForm.dataset.campoid = campo.campoid;
+                } else {
+                    title.textContent = 'Adicionar campo';
+                    campoName.value = '';
+                    campoMorada.value = '';
+                    campoCidade.value = '';
+                    campoPais.value = '';
+                    campoCoordinates.value = campo ? JSON.stringify(campo.coordenadas) : '';
+                    campoForm.dataset.isEdit = 'false';
+                    delete campoForm.dataset.campoid;
+                }
+
+                setTimeout(() => sidebar.classList.add('open'), 10);
+            }
+
+            // Close the sidebar
+            function closeSidebar() {
+                const sidebar = document.getElementById('campoSidebar');
+                sidebar.classList.remove('open');
+                setTimeout(() => {
+                    sidebar.style.display = 'none';
+                }, 300);
             }
     
-            function closeModal() {
-                const modal = document.getElementById('myModal');
-                modal.classList.remove('open');
-            }
-    
-            document.querySelector('.close').onclick = closeModal;
-    
-            // Função para salvar o marcador
-            function saveMarker(lat, lng) {
-                const nomeCampo = document.getElementById('name').value;
-                const morada = document.getElementById('morada').value;
-                const cidade = document.getElementById('cidade').value;
-                const pais = document.getElementById('pais').value;
-    
-                fetch('/save_marker/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: JSON.stringify({
-                        nome: nomeCampo,
-                        morada: morada,
-                        cidade: cidade,
-                        pais: pais,
-                        coordenadas: { lat: lat, lng: lng }
-                    })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            const marker = L.marker([lat, lng]).bindPopup(`<b>${data.campo.nome}</b>`);
-                            featureGroup.addLayer(marker);
-                            allMarkers[data.campo.campoid] = marker;
-    
-                            addRowToTable(data.campo);
-                            closeModal();
-                        } else {
-                            console.error('Erro ao salvar campo:', data.message);
-                        }
-                    })
-                    .catch(error => console.error('Erro ao salvar campo:', error));
-            }
-    
-            // Função para adicionar uma nova linha na tabela
             function addRowToTable(campo) {
                 const row = document.createElement('tr');
                 row.dataset.id = campo.campoid;
@@ -287,7 +299,7 @@
                         <button class="edit-btn" data-id="${campo.campoid}">
                             <img src="{% static 'edit.png' %}" alt="Edit" style="height: 25px; width: auto;">
                         </button>
-                        <button class="delete-btn" data-id="${campo.campoid}">
+                        <button class="delete-btn" data-id="${campo.campoid}" ${campo.isactive ? '' : 'disabled'}>
                             <img src="{% static 'delete.png' %}" alt="Delete" style="height: 25px; width: auto;">
                         </button>
                     </td>
@@ -297,15 +309,69 @@
                 updateTable();
             }
     
-            // Função para carregar campos da API
+            function updateTable() {
+                const startIndex = (currentPage - 1) * rowsPerPage;
+                const endIndex = startIndex + rowsPerPage;
+    
+                Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+                filteredRows.slice(startIndex, endIndex).forEach(row => (row.style.display = ''));
+    
+                renderPaginationButtons();
+            }
+    
+            function renderPaginationButtons() {
+                paginationContainer.innerHTML = '';
+                const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+    
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) button.classList.add('active');
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+    
+            // Função para inativar (deletar logicamente) um campo
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('.delete-btn')) {
+                    const button = e.target.closest('.delete-btn');
+                    const campoid = button.dataset.id;
+    
+                    if (confirm('Tem certeza de que deseja inativar este campo?')) {
+                        fetch(`/delete_campo/${campoid}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    button.disabled = true;
+                                    button.closest('tr').dataset.isactive = 'false';
+                                    alert('Campo inativado com sucesso.');
+                                    updateTable();
+                                } else {
+                                    alert(`Erro: ${data.message}`);
+                                }
+                            })
+                            .catch(error => console.error('Erro ao inativar campo:', error));
+                    }
+                }
+            });
+    
             fetch('/load_croplands/', { method: 'GET' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        const tbody = document.querySelector('#fields-table tbody');
-                        tbody.innerHTML = ''; // Limpar a tabela
-                        featureGroup.clearLayers(); // Limpar todos os marcadores do mapa
-                        allMarkers = {}; // Limpar o armazenamento dos marcadores
+                        tableBody.innerHTML = '';
+                        featureGroup.clearLayers();
+                        allMarkers = {};
     
                         data.campos.forEach(item => {
                             if (item.coordenadas && item.coordenadas.lat && item.coordenadas.lng) {
@@ -314,7 +380,6 @@
                                 featureGroup.addLayer(marker);
                                 allMarkers[item.campoid] = marker;
                             }
-    
                             addRowToTable(item);
                         });
     
@@ -347,49 +412,10 @@
     
                 currentPage = 1;
                 updateTable();
-                updateMapMarkers();
-            }
-    
-            function updateTable() {
-                const startIndex = (currentPage - 1) * rowsPerPage;
-                const endIndex = startIndex + rowsPerPage;
-    
-                Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
-                filteredRows.slice(startIndex, endIndex).forEach(row => (row.style.display = ''));
-    
-                renderPaginationButtons();
-            }
-    
-            function updateMapMarkers() {
-                featureGroup.clearLayers();
-    
-                filteredRows.forEach(row => {
-                    const campoid = row.dataset.id;
-                    const marker = allMarkers[campoid];
-                    if (marker) featureGroup.addLayer(marker);
-                });
-            }
-    
-            function renderPaginationButtons() {
-                paginationContainer.innerHTML = '';
-                const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-    
-                for (let i = 1; i <= totalPages; i++) {
-                    const button = document.createElement('button');
-                    button.textContent = i;
-                    button.classList.add('pagination-button');
-                    if (i === currentPage) button.classList.add('active');
-                    button.addEventListener('click', () => {
-                        currentPage = i;
-                        updateTable();
-                    });
-                    paginationContainer.appendChild(button);
-                }
             }
     
             applyFilterButton.addEventListener('click', applyFilter);
             clearFilterButton.addEventListener('click', clearFilter);
-            initPagination();
     
             function initPagination() {
                 filteredRows = Array.from(tableBody.querySelectorAll('tr'));
@@ -398,6 +424,6 @@
         });
     </script>
     
-</div>
+
 
 {% endblock %}
