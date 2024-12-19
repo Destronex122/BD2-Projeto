@@ -55,11 +55,11 @@
     </div>
     
     <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
-        <div class="form-group" style="flex: 1; min-width: 200px;">
+        <div class="form-group" style="flex: 1; min-width: 200px; margin-top:16px">
             <label for="searchBar" style="display: block;">Casta:</label>
             <input type="text" id="searchBar" class="form-control" placeholder="Pesquisar por casta" value="{{ filters.filter_grapevariety }}">
         </div>
-        <div class="form-group">
+        <div class="form-group" style="flex: 1; min-width: 200px;">
             <label for="statusFilter" style="display: block;">Estados:</label>
             <select id="statusFilter" class="form-control">
                 <option value="all" {% if filters.status == 'all' %}selected{% endif %}>Todos</option>
@@ -67,8 +67,10 @@
                 <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inativos</option>
             </select>
         </div>
-        <button id="apply-filter" style="margin-bottom: 15px; gap: 10px; align-items: center;">Aplicar</button>
-        <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2;">Limpar</button>
+    
+        <button id="apply-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; margin-top:24px">Aplicar</button>
+        <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2; margin-top:24px">Limpar</button>
+        
     </div>
 
     <table id="grapevarietyTable" class="table table-bordered">
@@ -235,11 +237,6 @@
                         }
                         insertRowInOrder(data.id, data.nome);
                     }
-
-                    if (typeof updateTable === 'function') {
-                        updateTable();
-                    }
-
                     closeAddVarietyModal();
                     document.getElementById('addVarietyForm').reset();
                 } else {
@@ -329,8 +326,11 @@
                     .then(data => {
                         if (data.success) {
                             const row = deleteButton.closest('tr');
-                            row.remove();
-                            // checkEmptyTable();
+                            row.dataset.isactive = 'false'; // Atualiza o atributo de estado
+                            // Atualiza o botão para refletir o estado inativo
+                            deleteButton.disabled = true;
+                            deleteButton.classList.add('disabled');
+
                             const tableBody = document.getElementById('grapeVarietyBody');
                             filteredRows = Array.from(tableBody.querySelectorAll('tr'));
                             if (filteredRows.length === 0) {
@@ -344,8 +344,7 @@
                                     updateTable();
                                 }
                             }
-
-                            
+                            //alert('Casta inativada com sucesso!');
                         } else {
                             alert(data.message || 'Erro ao inativar a casta.');
                         }

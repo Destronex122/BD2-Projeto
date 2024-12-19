@@ -18,6 +18,7 @@ from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, 
 from django.utils import timezone
 from django.db.models.functions import Coalesce
 from django.db.models import Value, BooleanField, Case, When, F
+import logging
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
@@ -782,16 +783,13 @@ def delete_variety(request, castaid):
         try:
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_delete_casta(%s)", [castaid])
-            return JsonResponse({'success': True})
+            # Retorne o estado atualizado da casta
+            return JsonResponse({'success': True, 'castaid': castaid, 'is_active': False})
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erro ao inativar a casta: {str(e)}'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
-import logging
-import json
-
 logger = logging.getLogger(__name__)
-
 @login_required
 def editvariety(request, castaid):
     if request.method == 'POST':
@@ -800,20 +798,28 @@ def editvariety(request, castaid):
             nome = body.get('varietyName', '').strip()
 
             if not nome:
-                return JsonResponse({'success': False, 'message': 'Nome inválido.'})
+                return JsonResponse({'success': False, 'message': 'O nome da casta é inválido.'})
 
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_update_casta(%s, %s)", [castaid, nome])
 
+            # Resposta de sucesso
             response = {'success': True, 'id': castaid, 'nome': nome}
-            logger.info(f"Resposta editvariety: {response}")  # Adicione o log
+            logger.info(f"Resposta editvariety: {response}")  # Log de sucesso
             return JsonResponse(response)
 
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'message': 'Formato de dados inválido.'})
+
         except Exception as e:
-            logger.error(f"Erro ao editar a casta: {str(e)}")  # Log do erro
-            return JsonResponse({'success': False, 'message': f'Erro ao editar a casta: {str(e)}'})
+            error_message = str(e)
+
+            # Verifica se o erro é relacionado a duplicação de chave única
+            if "duplicate key value violates unique constraint" in error_message:
+                return JsonResponse({'success': False, 'message': 'Essa casta já existe.'})
+
+            logger.error(f"Erro ao editar a casta: {error_message}")  # Log do erro
+            return JsonResponse({'success': False, 'message': f'Erro ao editar a casta: {error_message}'})
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
