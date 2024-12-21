@@ -114,63 +114,35 @@
         
     </div>
     
+</div>
 
-
-    <!-- Modal para visualizar ou editar informações -->
-    <!-- <div id="myModal" class="sidebar">
+    <!-- Modal para visualizar ou editar campos -->
+    <div id="campoSidebar" class="sidebar" style="display: block;">
         <div class="p-3">
             <div style="text-align:right; padding:0px 24px;">
-                <span class="close">&times;</span>
+                <button id="closeSidebarButton" class="close">&times;</button>
             </div>
-            <h2>Detalhes do campo</h2>
-            <div id="formContainer" style="margin-top: 15px;">
-                <form method="POST">
+            <h2 id="campoSidebarTitle">Adicionar campo</h2>
+            
+            <div id="formContainer" style="display: block; margin-top: 15px;">
+                <form id="campoForm" style="margin-top: 15px;">
                     {% csrf_token %}
-                    <label for="name">Nome do campo:</label>
-                    <input style="width: 50%;" type="text" id="name" name="nome" required>
-
-                    <label for="morada">Morada:</label>
-                    <input style="width: 50%;" type="text" id="morada" name="morada" required>
-
-                    <label for="cidade">Cidade:</label>
-                    <input style="width: 50%;" type="text" id="cidade" name="cidade" required>
-
-                    <label for="pais">País:</label>
-                    <input style="width: 50%;" type="text" id="pais" name="pais" required>
-
-                    <label for="coordinates">Coordenadas:</label>
-                    <span id="coordinates" style="display: inline-block; width: 50%; padding: 5px; border: 1px solid #ccc; background-color: #f9f9f9;">Selecionar no mapa</span><br><br/>
-                    <button type="submit">Guardar</button> 
+                    <label for="campoName">Nome do campo:</label>
+                    <input type="text" id="campoName" name="nome" required />
+                    <label for="campoMorada">Morada:</label>
+                    <input type="text" id="campoMorada" name="morada" required />
+                    <label for="campoCidade">Cidade:</label>
+                    <input type="text" id="campoCidade" name="cidade" required />
+                    <label for="campoPais">País:</label>
+                    <input type="text" id="campoPais" name="pais" required />
+                    <label for="campoCoordinates">Coordenadas:</label>
+                    <input type="text" id="campoCoordinates" name="coordenadas" readonly />
+                    <div style="margin-top: 10px;">
+                        <button id="closeSidebarButton" class="secondary-button" class="close">Cancelar</button>
+                        <button type="submit">Salvar</button>
+                    </div>
                 </form>
             </div>
-        </div>
-    </div> -->
-
-    <div id="campoSidebar" class="sidebar" style="display: none;" inert>
-        <div>
-            <div style="display:flex">
-                <div style="text-align:right; padding:0px 24px;"></div>
-                    <button id="closeSidebarButton" class="close">&times;</button>
-                </div>
-                <h2 id="campoSidebarTitle">Adicionar campo</h2>
-            </div>
-            <form id="campoForm" style="margin-top: 15px;">
-                {% csrf_token %}
-                <label for="campoName">Nome do Campo:</label>
-                <input type="text" id="campoName" required />
-                <label for="campoMorada">Morada:</label>
-                <input type="text" id="campoMorada" required />
-                <label for="campoCidade">Cidade:</label>
-                <input type="text" id="campoCidade" required />
-                <label for="campoPais">País:</label>
-                <input type="text" id="campoPais" required />
-                <label for="campoCoordinates">Coordenadas:</label>
-                <input type="text" id="campoCoordinates" readonly />
-                <div style="margin-top: 10px;">
-                    <button type="button" onclick="closeSidebar()">Cancelar</button>
-                    <button type="submit">Salvar</button>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -276,15 +248,17 @@
                 setTimeout(() => sidebar.classList.add('open'), 10);
             }
 
-            // Close the sidebar
+           // Close the sidebar
             function closeSidebar() {
                 const sidebar = document.getElementById('campoSidebar');
+                sidebar.style.display = 'none'; // Fecha a sidebar alterando o estilo
                 sidebar.classList.remove('open');
-                setTimeout(() => {
-                    sidebar.style.display = 'none';
-                }, 300);
             }
-    
+
+            // Event listeners para fechar a sidebar
+            document.getElementById('closeSidebarButton').addEventListener('click', closeSidebar); // Botão "X"
+            document.querySelector('.secondary-button').addEventListener('click', closeSidebar); // Botão "Cancelar"
+            
             function addRowToTable(campo) {
                 const row = document.createElement('tr');
                 row.dataset.id = campo.campoid;
