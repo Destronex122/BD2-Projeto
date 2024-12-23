@@ -98,7 +98,7 @@ def users(request):
     cargos = Cargo.objects.all()
 
     #Campos para a dropdown
-   # campos = Campos.objects.all()
+    campos = Campos.objects.all()
 
     if request.method == "POST":
         try:
@@ -109,7 +109,7 @@ def users(request):
             password = request.POST['password']  # A senha será tratada pelo trigger
             telefone = request.POST['telefone']
             endereco = request.POST['endereco']
-            #campoid = request.POST.get('campoid')
+            campoid = request.POST.get('campoid')
             cargoid = request.POST.get('cargoid')
 
             # Encripta a senha
