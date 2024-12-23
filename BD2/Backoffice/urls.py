@@ -47,5 +47,8 @@ urlpatterns = [
     path('payment_methods/', views.payment_methods, name='payment_methods'),
     path('addpaymentmethod/', views.add_payment_method, name='addpaymentmethod'),
     path('deletepaymentmethod/<int:method_id>/', views.delete_payment_method, name='deletepaymentmethod'),
-    path('editpaymentmethod/<int:method_id>/', views.edit_payment_method, name='editpaymentmethod'),
+    path('transport_states/', views.transport_states, name='transport_states'), 
+    path('add_transport_state/', views.add_transport_state, name='add_transport_state'), 
+    path('edit_transport_state/<int:state_id>/', views.edit_transport_state, name='edit_transport_state'),
+    path('delete_transport_state/<int:state_id>/', views.delete_transport_state, name='delete_transport_state'), 
 ]
