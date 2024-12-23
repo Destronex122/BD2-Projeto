@@ -246,8 +246,8 @@
                     <input type="number" id="pesoLiquido" name="pesoliquido" class="form-control" step="0.01" min="0.01" required>
                 </div>
                 <div class="form-group">
-                    <label for="dataPesagem">Data da Pesagem:</label>
-                    <input type="date" id="dataPesagem" name="datadepesagem" class="form-control" required>
+                    <label for="dataPesagem">Data da pesagem:</label>
+                    <input type="date" id="dataPesagem" name="dataPesagem" placeholder="dd-mm-yyyy" class="form-control" required>
                 </div>
                 <div style="display:flex; justify-content: flex-end;">
                     <button type="button" class="secondary-button" onclick="closePesagemModal()">Cancelar</button>
@@ -286,7 +286,7 @@
 
 
 <script>
-    function openPesagemModal(isEdit, pesagemId = null, pesoBruto = '', pesoLiquido = '', dataPesagem = '') {
+    function openPesagemModal(isEdit, pesagemId = '', pesoBruto = '', pesoLiquido = '', dataPesagem = '') {
         const modalOverlay = document.getElementById('modalOverlay');
         const modalTitle = document.getElementById('modalTitle');
         const pesagemIdField = document.getElementById('pesagemId');
@@ -299,7 +299,11 @@
         pesagemIdField.value = pesagemId || ''; // Define o ID da pesagem (ou vazio para criar)
         pesoBrutoField.value = pesoBruto || ''; // Preenche o peso bruto
         pesoLiquidoField.value = pesoLiquido || ''; // Preenche o peso líquido
-        dataPesagemField.value = dataPesagem || ''; // Preenche a data de pesagem
+        if (dataPesagem) {
+            dataPesagemField.value = new Date(dataPesagem).toISOString().split('T')[0];
+        } else {
+            dataPesagemField.value = ''; // Deixa vazio para criação
+        }
 
         // Exibe o modal
         modalOverlay.style.display = 'flex';
@@ -314,43 +318,74 @@
         const pesoBruto = document.getElementById('pesoBruto').value;
         const pesoLiquido = document.getElementById('pesoLiquido').value;
         const dataPesagem = document.getElementById('dataPesagem').value;
+        const pesagemId = document.getElementById('pesagemId')?.value; // Campo oculto com o ID da pesagem (se existir)
 
         if (!pesoBruto || !pesoLiquido || !dataPesagem) {
             alert('Todos os campos devem ser preenchidos.');
             return;
         }
 
-        // Obtém o ID da colheita a partir da URL
-        const colheitaId = window.location.pathname.split('/').filter(Boolean).pop();
-
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        fetch(`/add_pesagem/${colheitaId}/`, {  // Envia o ID da colheita como parte da URL
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({
-                pesobruto: pesoBruto,
-                pesoliquido: pesoLiquido,
-                datadepesagem: dataPesagem
+        if (pesagemId) {
+            // EDITAR PESAGEM
+            fetch(`/edit_pesagem/${pesagemId}/`, {  // Envia o ID da pesagem como parte da URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    pesobruto: pesoBruto,
+                    pesoliquido: pesoLiquido,
+                    datadepesagem: dataPesagem
+                })
             })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Pesagem adicionada com sucesso!');
-                    location.reload();
-                } else {
-                    alert(data.message || 'Erro ao salvar pesagem.');
-                }
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Pesagem editada com sucesso!');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Erro ao salvar edição da pesagem.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao salvar edição da pesagem.');
+                });
+        } else {
+            // CRIAR NOVA PESAGEM
+            const colheitaId = window.location.pathname.split('/').filter(Boolean).pop();
+
+            fetch(`/add_pesagem/${colheitaId}/`, {  // Envia o ID da colheita como parte da URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    pesobruto: pesoBruto,
+                    pesoliquido: pesoLiquido,
+                    datadepesagem: dataPesagem
+                })
             })
-            .catch(error => {
-                console.error('Erro:', error);
-                alert('Erro ao salvar pesagem.');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Pesagem adicionada com sucesso!');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Erro ao salvar pesagem.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao salvar pesagem.');
+                });
+        }
     }
+
 
     function deletePesagem(id) {
         if (confirm('Tem certeza de que deseja eliminar esta pesagem?')) {

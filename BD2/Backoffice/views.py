@@ -242,32 +242,8 @@ def harvestdetail(request, colheitaid):
         },
     )
 
-@login_required
-def edit_pesagem(request, pesagemid):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            pesobruto = data.get('pesobruto')
-            pesoliquido = data.get('pesoliquido')
-            datadepesagem = data.get('datadepesagem')
 
-            # Valida se todos os campos estão preenchidos
-            if not all([pesobruto, pesoliquido, datadepesagem]):
-                return JsonResponse({'success': False, 'message': 'Dados inválidos. Preencha todos os campos.'})
-
-            # Chama o procedimento armazenado com CALL
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "CALL edit_pesagem(%s, %s, %s, %s)",
-                    [pesagemid, pesobruto, pesoliquido, datadepesagem]
-                )
-
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erro ao salvar pesagem: {str(e)}'})
-
-    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
-
+#PESAGEM
 @csrf_exempt
 def add_pesagem(request, colheitaid):  # Colheita ID vem do URL
     if request.method == 'POST':
@@ -284,7 +260,7 @@ def add_pesagem(request, colheitaid):  # Colheita ID vem do URL
             # Chama o procedimento armazenado para adicionar a pesagem
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL add_pesagem(%s, %s, %s, %s)", 
+                    "CALL sp_add_pesagem(%s, %s, %s, %s)", 
                     [colheitaid, peso_bruto, peso_liquido, data_pesagem]
                 )
 
@@ -295,17 +271,51 @@ def add_pesagem(request, colheitaid):  # Colheita ID vem do URL
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
+
+@login_required
+def edit_pesagem(request, pesagemid):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            pesobruto = data.get('pesobruto')
+            pesoliquido = data.get('pesoliquido')
+            datadepesagem = data.get('datadepesagem')
+
+            # Valida se todos os campos estão preenchidos
+            if not all([pesobruto, pesoliquido, datadepesagem]):
+                return JsonResponse({'success': False, 'message': 'Dados inválidos. Preencha todos os campos.'})
+
+            # Chama o procedimento armazenado com CALL
+            if pesagemid:  # Se um ID foi fornecido, edite
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "CALL sp_edit_pesagem(%s, %s, %s, %s)",
+                        [pesagemid, pesobruto, pesoliquido, datadepesagem]
+                    )
+            else:  # Caso contrário, retorne um erro (não criar novo)
+                return JsonResponse({'success': False, 'message': 'ID da pesagem inválido para edição.'})
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao salvar pesagem: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+
 @login_required
 def delete_pesagem(request, pesagemid):
     if request.method == 'DELETE':
         try:
             with connection.cursor() as cursor:
-                cursor.execute("CALL delete_pesagem(%s)", [pesagemid])
+                cursor.execute("CALL sp_delete_pesagem(%s)", [pesagemid])
             return JsonResponse({'success': True})
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erro ao excluir a pesagem: {str(e)}'})
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
+
+
+#NOTAS DA COLHEITA
 @login_required
 def get_notas(request, colheitaid):
     try:
@@ -332,7 +342,7 @@ def add_note_harvest(request, colheitaid):
             # Chama o procedimento para adicionar a nota
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.add_nota_colheita(%s, %s)",
+                    "CALL public.sp_add_nota_colheita(%s, %s)",
                     [colheitaid, texto]
                 )
 
@@ -356,7 +366,7 @@ def edit_note_harvest(request, notaid):
             # Chama o procedimento para editar a nota
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.edit_nota_colheita(%s, %s)",  # Chama o procedimento de edição
+                    "CALL public.sp_edit_nota_colheita(%s, %s)",  # Chama o procedimento de edição
                     [notaid, texto]
                 )
 
@@ -372,7 +382,7 @@ def delete_note_harvest(request, notaid):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.delete_nota_colheita(%s)",  # Procedimento de exclusão
+                    "CALL public.sp_delete_nota_colheita(%s)",  # Procedimento de exclusão
                     [notaid]
                 )
             return JsonResponse({'success': True, 'message': 'Nota excluída com sucesso!'})
@@ -470,7 +480,7 @@ def add_note_request(request, pedidoid):
             # Chama o procedimento para adicionar a nota
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.add_nota_pedido(%s, %s::text)",
+                    "CALL public.sp_add_nota_pedido(%s, %s::text)",
                     [pedidoid, texto]
                 )
 
@@ -494,7 +504,7 @@ def edit_note_request(request, notaid):
             # Chama o procedimento para editar a nota
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.edit_nota_pedido(%s, %s)",  # Chama o procedimento de edição
+                    "CALL public.sp_edit_nota_pedido(%s, %s)",  # Chama o procedimento de edição
                     [int(notaid), str(texto)]  # Certifique-se de passar os tipos corretos
                 )
 
@@ -510,7 +520,7 @@ def delete_note_request(request, notaid):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.delete_nota_pedido(%s)",  # Procedimento de exclusão
+                    "CALL public.sp_delete_nota_pedido(%s)",  # Procedimento de exclusão
                     [notaid]
                 )
             return JsonResponse({'success': True, 'message': 'Nota excluída com sucesso!'})
