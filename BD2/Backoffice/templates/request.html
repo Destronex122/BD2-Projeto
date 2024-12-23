@@ -165,7 +165,7 @@
                     <select id="clienteid" name="clienteid" class="form-control" required>
                         <option value="">Selecione um cliente</option>
                         {% for cliente in clientes %}
-                            <option value="{{ cliente.clienteid }}">{{ cliente.clienteid }}</option>
+                        <option value="{{ cliente.clienteid.userid }}">{{ cliente.nif }} - {{ cliente.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -269,52 +269,50 @@ document.getElementById('requestTable').addEventListener('click', function (even
 document.getElementById('addRequestForm').addEventListener('submit', function (event) {
     event.preventDefault();
 
-    // Get form values
-    const clienteid = document.getElementById('clienteid').value;
-    const aprovadorid = document.getElementById('aprovadorid').value;
-    const nome = document.getElementById('newNome').value;
-    const datainicio = document.getElementById('newDataInicio').value;
-    const datafim = document.getElementById('newDataFim').value;
-    const precoestimado = document.getElementById('newPrecoEstimado').value;
+// Capturar os valores do formulário
+const clienteid = document.getElementById('clienteid').value;
+const aprovadorid = document.getElementById('aprovadorid').value;
+const nome = document.getElementById('newNome').value;
+const datainicio = document.getElementById('newDataInicio').value;
+const datafim = document.getElementById('newDataFim').value;
+const precoestimado = document.getElementById('newPrecoEstimado').value;
 
-    // Validate input if necessary
-    if (!clienteid || !aprovadorid || !nome || !datainicio || !datafim || !precoestimado) {
-        alert('Por favor, preencha todos os campos.');
-        return;
+// Validação dos campos
+if (!clienteid || !aprovadorid || !nome || !datainicio || !datafim || !precoestimado) {
+    alert('Por favor, preencha todos os campos.');
+    return;
+}
+
+// Preparar os dados para envio
+const formData = new FormData();
+formData.append('clienteid', clienteid);
+formData.append('aprovadorid', aprovadorid);
+formData.append('newNome', nome);
+formData.append('newDataInicio', datainicio);
+formData.append('newDataFim', datafim);
+formData.append('newPrecoEstimado', precoestimado);
+
+// Enviar a requisição POST
+fetch('.', {
+    method: 'POST',
+    headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+    },
+    body: formData,
+})
+.then(response => response.json())
+.then(data => {
+    if (data.success) {
+        alert(data.message);
+        location.reload(); // Atualizar a tabela
+    } else {
+        alert(data.message);
     }
-
-    // Prepare the payload
-    const payload = {
-        clienteid: clienteid,
-        aprovadorid: aprovadorid,
-        nome: nome,
-        datainicio: datainicio,
-        datafim: datafim,
-        precoestimado: precoestimado,
-    };
-
-    // Send the POST request
-    fetch('/add_request/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-        },
-        body: JSON.stringify(payload),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            location.reload(); // Reload the page or update the table dynamically
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert('Erro ao enviar o pedido.');
-    });
+})
+.catch(error => {
+    console.error('Erro:', error);
+    alert('Erro ao enviar o pedido.');
+});
 });
     </script>
 </div>

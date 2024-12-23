@@ -33,7 +33,16 @@
         </div>
     </div>
     <br>
-    
+    <div style="margin-bottom:30px">
+        {% if is_admin %}
+        <select class="custom-select mr-3" name="vineyard" id="dropdown_vineyard" required>
+            {% for quinta in quintas %}
+                <option value={{ quinta.campoid }}>{{ quinta.nome }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+    </div>
+
     <div style="display:flex; justify-content: space-between;">
         <div id="map" style="width: 650px; height: 450px; margin-right:24px"></div>
         <div style="width:50%;">
@@ -78,7 +87,7 @@
 
     <script>
         var terrainCoordinates = [41.230704, -7.646158];
-        var map = L.map('map').setView(terrainCoordinates, 17);
+        var map = L.map('map').setView(terrainCoordinates, 5);
 
         map.removeControl(map.attributionControl);
 
@@ -97,21 +106,69 @@
 
         var vineyardMarkers = L.layerGroup().addTo(map);
 
-        fetch('/backoffice/load_vineyards/', { method: 'GET' })
-            .then(response => response.json())
-            .then(data => addVineyards(data))
-            .catch(error => console.error('Error loading vineyards:', error));
+        document.getElementById('dropdown_vineyard').addEventListener('change', function() {
+            const vineyardId = this.value; // Obtém o valor selecionado do dropdown
+            loadVineyards(vineyardId);
+        });
 
-        function addVineyards(vineyards) {
-            let jsonArray = JSON.parse(vineyards);
-            jsonArray.forEach(item => {
-                const coordinates = item.coordinates;
-                const vineyard = L.polygon(coordinates).bindPopup(item.description);
+        function updateVineyardList(data) {
+            const tableBody = document.querySelector('table tbody');
+            tableBody.innerHTML = ''; // Limpa a tabela antes de adicionar novos dados
+        
+            if (data.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="4">Nenhuma vinha encontrada.</td>`;
+                tableBody.appendChild(row);
+                return;
+            }
+        
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.Nome}</td>
+                    <td>${item.DataPlantacao || 'N/A'}</td>
+                    <td>${item.Hectares || 'N/A'}</td>
+                    <td>
+                        <button>Editar</button>
+                        <button>Excluir</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        
+        
+        // Função para carregar as vinhas com base no ID da quinta selecionada
+        function loadVineyards(vineyardId) {
+            const url = `/backoffice/load_vineyards/?vineyard=${vineyardId}`;
+        
+            fetch(url, { method: 'GET' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    vineyardMarkers.clearLayers(); // Limpa os marcadores existentes
+                    addVineyards(data); // Adiciona os novos marcadores no mapa
+                    updateVineyardList(data); // Atualiza a lista de vinhas na tabela
+                })
+                .catch(error => console.error('Error loading vineyards:', error));
+        }
+        
+        // Chamada inicial para carregar as vinhas ao abrir a página
+        const initialVineyardId = document.getElementById('dropdown_vineyard').value;
+        loadVineyards(initialVineyardId);
+
+        function addVineyards(data) {
+            data.forEach(item => {
+                const coordinates = item.Coordenadas.coordinates[0].map(coord => [coord.lat, coord.lng]);
+                const vineyard = L.polygon(coordinates).bindPopup(
+                    `<b>${item.Nome}</b><br>Hectares: ${item.Hectares}<br>Data de Plantação: ${item.DataPlantacao}`
+                );
                 vineyardMarkers.addLayer(vineyard);
-                vineyard.on('click', function() {
-                    document.getElementById('vineyardInfo').innerHTML = item.description; 
-                    openModal(); 
-                });
             });
         }
 

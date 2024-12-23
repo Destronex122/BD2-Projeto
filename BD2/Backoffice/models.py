@@ -103,19 +103,29 @@ def load_markers(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 def load_vineyards(request):
-    """
-    Load vineyards from the database and return them as a list of JSON objects.
+    field_id = request.GET.get('vineyard')
+    if not field_id:
+        return JsonResponse({'error': 'Field ID is required'}, status=400)
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT f_getvineyards(%s)", [field_id])
+            result = cursor.fetchone()  # Obtém o JSON como string
+
+            if not result or not result[0]:
+                return JsonResponse([], safe=False)  # Retorna uma lista vazia se não houver dados
+
+            vineyards = json.loads(result[0])  # Decodifica o JSON retornado
+
+            # Decodifica o campo "Coordenadas" de cada vinha
+            for vineyard in vineyards:
+                vineyard['Coordenadas'] = json.loads(vineyard['Coordenadas'])
+
+            return JsonResponse(vineyards, safe=False)
+    except Exception as e:
+        print(f"Error in load_vineyards: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
     
-    Returns:
-        str: A JSON string representing the list of vineyards.
-    """
-    vineyards_collection = db[dbcollection]
-    vineyards = vineyards_collection.find({"coordinates": {"$exists": True}})
-    # Convert the cursor to a list and then to JSON in one step
-    json_data = dumps([vineyard for vineyard in vineyards], indent=2)
-    
-    
-    return vineyards
 class AuthGroup(models.Model):
     name = models.CharField(unique=True, max_length=150)
 
