@@ -1,0 +1,399 @@
+{% extends 'base.html' %}
+
+{% block title %}Métodos de Pagamento{% endblock %}
+
+{% block content %}
+
+{% load static %}
+
+<style>
+    #paymentMethodTable tbody tr:hover {
+        background-color: #f1f1f1;
+        cursor: pointer;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination button {
+        margin: 0 5px;
+        padding: 5px 10px;
+        border: 1px solid #e9e8e2;
+        background-color: #e9e8e2;
+        cursor: pointer;
+    }
+
+    .pagination button.active {
+        font-weight: bold;
+        background-color: #616646;
+    }
+
+    .pagination button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    .delete-btn:disabled {
+        background-color: #e9e8e2;
+        color: #a0a0a0;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+</style>
+
+<div class="editable-area newPadding">
+    <div style="display:flex; justify-content: space-between; margin-bottom: 20px;">
+        <h1>Métodos de pagamento</h1>
+        <div>
+            <button type="button" onclick="openAddPaymentMethodModal(false)">
+                <img src="{% static 'add.png' %}" title="Adicionar novo método" alt="add" style="height: 25px; width: auto;">
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtro de Método de Pagamento -->
+    <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+        <div class="form-group" style="flex: 1; min-width: 200px; margin-top:16px">
+            <label for="searchBar" style="display: block;">Métodos:</label>
+            <input type="text" id="searchBar" class="form-control" placeholder="Pesquisar por método" value="{{ filters.filter_grapevariety }}">
+        </div>
+        <button id="apply-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; margin-top:24px">Aplicar</button>
+        <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2; margin-top:24px">Limpar</button>
+    </div>
+    
+    <table id="paymentMethodTable" class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Método</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="paymentMethodBody">
+            {% for metodo in metodos %}
+            <tr 
+                data-id="{{ metodo.idmetodopagamento }}" 
+                data-name="{{ metodo.nome }}">
+                <td>{{ metodo.nome }}</td>
+                <td>
+                    <button 
+                        title="Editar método" 
+                        onclick="openAddPaymentMethodModal(true, '{{ metodo.idmetodopagamento }}', '{{ metodo.nome }}')" 
+                        type="button">
+                        <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                    </button>
+                    <button 
+                        title="Excluir método" 
+                        type="button" 
+                        class="delete-btn" 
+                        data-id="{{ metodo.idmetodopagamento }}">
+                        <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2" class="no-data-message">Ainda não há métodos de pagamento adicionados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="pagination" id="pagination"></div>
+
+    <!-- Modal para adicionar/editar um método -->
+    <div class="popup-overlay" id="addPaymentMethodModal" style="display: none;" inert>
+        <div class="popup-content">
+            <div class="popup-header">
+                <h5 id="addPaymentMethodModalTitle">Adicionar método</h5>
+                <div style="display:flex; justify-content: flex-end;">
+                    <span class="close" id="closeAddPaymentMethodModal">&times;</span>
+                </div>
+            </div>
+            <br>
+            <div>
+                <form id="addPaymentMethodForm" method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="paymentMethodName">Nome do método</label>
+                        <input type="text" id="paymentMethodName" name="paymentMethodName" class="form-control" required>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                        <button type="button" class="secondary-button" id="cancelAddPaymentMethod">Cancelar</button>
+                        <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Função para aplicar o filtro de busca
+    document.getElementById('apply-filter').addEventListener('click', function () {
+        const searchValue = document.getElementById('searchBar').value.toLowerCase().trim();
+        const rows = Array.from(document.querySelectorAll('#paymentMethodTable tbody tr'));
+
+        rows.forEach(row => {
+            const methodName = row.querySelector('td').textContent.toLowerCase();
+            if (methodName.includes(searchValue)) {
+                row.style.display = ''; // Mostra a linha se corresponder à busca
+            } else {
+                row.style.display = 'none'; // Oculta a linha se não corresponder
+            }
+        });
+
+        checkEmptySearchResult();
+    });
+
+    // Função para limpar o filtro de busca
+    document.getElementById('clear-filter').addEventListener('click', function () {
+        document.getElementById('searchBar').value = ''; // Limpa o input de busca
+        const rows = Array.from(document.querySelectorAll('#paymentMethodTable tbody tr'));
+
+        rows.forEach(row => {
+            row.style.display = ''; // Mostra todas as linhas
+        });
+
+        clearEmptySearchMessage();
+    });
+
+    // Função para exibir mensagem caso nenhuma linha corresponda ao filtro
+    function checkEmptySearchResult() {
+        const rows = Array.from(document.querySelectorAll('#paymentMethodTable tbody tr'));
+        const visibleRows = rows.filter(row => row.style.display !== 'none');
+
+        if (visibleRows.length === 0) {
+            const tbody = document.querySelector('#paymentMethodTable tbody');
+            const emptyRow = document.createElement('tr');
+            emptyRow.setAttribute('id', 'no-results-row');
+            emptyRow.innerHTML = `
+                <td colspan="2" class="no-data-message">Nenhum método corresponde ao filtro aplicado.</td>
+            `;
+            tbody.appendChild(emptyRow);
+        }
+    }
+
+    // Função para remover a mensagem de "nenhum resultado" após limpar o filtro
+    function clearEmptySearchMessage() {
+        const noResultsRow = document.getElementById('no-results-row');
+        if (noResultsRow) {
+            noResultsRow.remove();
+        }
+    }
+    
+    function openAddPaymentMethodModal(isEdit = false, methodId = null, methodName = '') {
+        const modal = document.getElementById('addPaymentMethodModal');
+        const modalTitle = document.getElementById('addPaymentMethodModalTitle');
+        const paymentMethodNameInput = document.getElementById('paymentMethodName');
+        const addPaymentMethodForm = document.getElementById('addPaymentMethodForm');
+
+        modal.style.display = 'flex';
+        modal.removeAttribute('inert'); // Remove inert para permitir interação
+
+        modalTitle.textContent = isEdit ? 'Editar Método' : 'Adicionar Método';
+
+        if (isEdit) {
+            paymentMethodNameInput.value = methodName;
+            addPaymentMethodForm.dataset.isEdit = 'true';
+            addPaymentMethodForm.dataset.methodId = methodId;
+        } else {
+            paymentMethodNameInput.value = '';
+            addPaymentMethodForm.dataset.isEdit = 'false';
+            addPaymentMethodForm.dataset.methodId = '';
+        }
+    }
+
+    function closeAddPaymentMethodModal() {
+        const modal = document.getElementById('addPaymentMethodModal');
+        modal.style.display = 'none';
+        modal.setAttribute('inert', ''); // Bloqueia o foco
+
+        const form = document.getElementById('addPaymentMethodForm');
+        form.reset(); // Limpa o formulário
+        delete form.dataset.isEdit;
+        delete form.dataset.methodId;
+    }
+
+    document.getElementById('closeAddPaymentMethodModal').addEventListener('click', closeAddPaymentMethodModal);
+    document.getElementById('cancelAddPaymentMethod').addEventListener('click', closeAddPaymentMethodModal);
+
+    document.getElementById('addPaymentMethodForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const isEdit = this.dataset.isEdit === 'true';
+        const methodId = this.dataset.methodId || null;
+        const methodName = document.getElementById('paymentMethodName').value;
+
+        if (!methodName) {
+            alert('O nome do método não pode ser vazio.');
+            return;
+        }
+
+        const url = isEdit ? `/editpaymentmethod/${methodId}/` : "{% url 'addpaymentmethod' %}";
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ nome: methodName })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Erro ao salvar método.');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao salvar método.');
+            });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableBody = document.getElementById('paymentMethodBody');
+        const paginationContainer = document.getElementById('pagination');
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+
+        /**
+         * Atualiza a tabela para exibir apenas as linhas da página atual
+         */
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            // Oculta todas as linhas
+            filteredRows.forEach(row => row.style.display = 'none');
+
+            // Exibe as linhas da página atual
+            filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+
+            renderPaginationButtons();
+        }
+
+        /**
+         * Renderiza os botões de paginação com base no número total de páginas
+         */
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.add('pagination-button');
+                if (i === currentPage) button.classList.add('active');
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    updateTable();
+                });
+                paginationContainer.appendChild(button);
+            }
+        }
+
+        /**
+         * Insere uma nova linha ordenada alfabeticamente na tabela
+         * @param {number} id - ID do método de pagamento
+         * @param {string} nome - Nome do método de pagamento
+         */
+        function insertRowInOrder(id, nome) {
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-id', id);
+            newRow.setAttribute('data-name', nome);
+            newRow.innerHTML = `
+                <td>${nome}</td>
+                <td>
+                    <button onclick="openAddPaymentMethodModal(true, '${id}', '${nome}')" type="button">
+                        <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                    </button>
+                    <button type="button" class="delete-btn" data-id="${id}">
+                        <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                    </button>
+                </td>
+            `;
+
+            let inserted = false;
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            for (let row of rows) {
+                if (nome.toLowerCase() < row.dataset.name.toLowerCase()) {
+                    tableBody.insertBefore(newRow, row);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted) tableBody.appendChild(newRow);
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            updateTable();
+        }
+
+        /**
+         * Remove uma linha da tabela e atualiza a exibição
+         * @param {number} id - ID da linha a ser removida
+         */
+        function removeRow(id) {
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            if (row) row.remove();
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            checkEmptyTable();
+            updateTable();
+        }
+
+        /**
+         * Verifica se a tabela está vazia e exibe uma mensagem caso esteja
+         */
+        function checkEmptyTable() {
+            if (tableBody.querySelectorAll('tr').length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="2" class="no-data-message">Ainda não há métodos de pagamento adicionados.</td>
+                    </tr>
+                `;
+            }
+        }
+
+    /**
+     * Lida com a exclusão de um método de pagamento
+     */
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.delete-btn')) {
+            const deleteButton = e.target.closest('.delete-btn');
+            const methodId = deleteButton.getAttribute('data-id');
+
+            if (confirm('Tem certeza de que deseja excluir este método de pagamento?')) {
+                fetch(`/deletepaymentmethod/${methodId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            removeRow(methodId);
+                        } else {
+                            alert(data.message || 'Erro ao excluir o método.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao excluir o método.');
+                    });
+            }
+        }
+    });
+
+    // Inicializa a tabela
+    updateTable();
+});
+</script>
+
+{% endblock %}

@@ -15,7 +15,7 @@ from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte
 from django.utils import timezone
 from django.db.models.functions import Coalesce
 from django.db.models import Value, BooleanField, Case, When, F
@@ -427,6 +427,8 @@ def delete_note_harvest(request, notaid):
 @login_required
 def contracts(request):
 
+
+
     #Filtros
     filter_number = request.GET.get('filterNumber', '').strip()
     filter_date = request.GET.get('filterDate', None)
@@ -441,8 +443,64 @@ def contracts(request):
     if filter_client_nif:
         contratos = contratos.filter(clienteid__nif__icontains=filter_client_nif)
 
+    if request.method == 'POST':
+        try:
+            # Captura os valores enviados pelo formulário
+            cliente_id = int(request.POST.get('clienteId'))
+            pedido_id = int(request.POST.get('pedidoId')) if request.POST.get('pedidoId') else None
+            data_inicio = request.POST.get('dataInicio')
+            data_fim = request.POST.get('dataFim')
+            quantidade_estimada = float(request.POST.get('quantidadeEstimada'))
+            preco_estimado = float(request.POST.get('precoEstimado'))
+            quantidade_final = float(request.POST.get('quantidadeFinal'))  # Novo campo
+            nome = request.POST.get('nomeContrato')
+
+            # Verificar se `quantidade_final` atende à restrição
+            if quantidade_final < 0 or quantidade_final < quantidade_estimada:
+                raise ValueError("A quantidade final deve ser maior ou igual à quantidade estimada.")
+
+            # Valores padrão para campos opcionais
+            preco_final = 0
+            is_active = True
+
+            # Chamar o procedimento armazenado
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    CALL sp_criarcontrato(
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                """, [
+                    cliente_id, pedido_id, data_inicio, data_fim,
+                    quantidade_estimada, preco_estimado,
+                    quantidade_final, preco_final, nome, is_active
+                ])
+            return JsonResponse({'status': 'success', 'message': 'Contrato criado com sucesso!'})
+
+        except ValueError as ve:
+            return JsonResponse({'status': 'error', 'message': f'Erro nos valores fornecidos: {ve}'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Ocorreu um erro: {e}'})
+        
+    # Requisição GET para listar contratos
+    filter_number = request.GET.get('filterNumber', '').strip()
+    filter_date = request.GET.get('filterDate', None)
+    filter_client_nif = request.GET.get('filterClientNif', '').strip()
+
+    contratos = Contratos.objects.all()
+    clientes = Clientes.objects.filter(isactive=True)
+    pedidos = PedidosItem.objects.filter(isactive=True)
+
+    if filter_number:
+        contratos = contratos.filter(contratoid__icontains=filter_number)
+    if filter_date:
+        contratos = contratos.filter(datainicio=filter_date)
+    if filter_client_nif:
+        contratos = contratos.filter(clienteid__nif__icontains=filter_client_nif)
+
     return render(request, 'contracts.html', {
         'contrato': contratos,
+        'clientes': clientes,
+        'pedidos': pedidos,
         'filters': {
             'filterNumber': filter_number,
             'filterDate': filter_date,
@@ -598,6 +656,36 @@ def request(request):
     start_index = (page_number - 1) * rows_per_page
     end_index = start_index + rows_per_page
     paginated_pedidos = pedidos[start_index:end_index]
+
+    if request.method == 'POST':
+        try:
+            # Capturar os dados enviados pelo formulário
+            aprovador_id = int(request.POST.get('aprovadorid'))
+            nome = request.POST.get('newNome')
+            data_inicio = request.POST.get('newDataInicio')
+            data_fim = request.POST.get('newDataFim')
+            preco_estimado = float(request.POST.get('newPrecoEstimado'))
+            is_active = True  # Por padrão, o pedido começa ativo
+
+            # Chamar o procedimento armazenado
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    CALL sp_inserirpedido(
+                        %s, %s, %s, %s, %s, %s
+                    )
+                """, [
+                    nome,
+                    data_inicio,
+                    data_fim,
+                    aprovador_id,
+                    preco_estimado,
+                    is_active
+                ])
+            
+            return JsonResponse({'success': True, 'message': 'Pedido criado com sucesso!'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Ocorreu um erro: {e}'})
 
     return render(request, 'request.html', {
         'clientes': clientes,
@@ -904,60 +992,6 @@ def load_croplands(request):
     return JsonResponse({'status': 'success', 'campos': campos_list})
 
 
-
-
-# @csrf_exempt
-# @require_http_methods(['POST'])
-# def save_marker(request):
-#     if request.method == 'POST':
-#         try:
-#             # Lê o corpo da requisição
-#             data = json.loads(request.body)
-#             nome = data.get('nome', '').strip()
-#             morada = data.get('morada', '').strip()
-#             cidade = data.get('cidade', '').strip()
-#             pais = data.get('pais', '').strip()
-#             coordenadas = data.get('coordenadas')
-
-#             # Validação dos campos obrigatórios
-#             if not nome or not morada or not cidade or not pais or not coordenadas:
-#                 return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Faltando dados obrigatórios.'})))
-
-#             # Validação das coordenadas
-#             try:
-#                 lat = float(coordenadas.get("lat"))
-#                 lng = float(coordenadas.get("lng"))
-#                 coordenadas_json = json.dumps({"lat": lat, "lng": lng})
-#             except (ValueError, TypeError):
-#                 return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Coordenadas inválidas.'})))
-
-#             # Verifica se o campo já existe
-#             with connection.cursor() as cursor:
-#                 cursor.execute(
-#                     """
-#                     SELECT COUNT(*) 
-#                     FROM campos 
-#                     WHERE LOWER(nome) = LOWER(%s) AND LOWER(morada) = LOWER(%s) AND LOWER(cidade) = LOWER(%s)
-#                     """,
-#                     [nome, morada, cidade]
-#                 )
-#                 if cursor.fetchone()[0] > 0:
-#                     return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Esse campo já existe.'})))
-
-#             # Insere o novo campo
-#             with connection.cursor() as cursor:
-#                 cursor.callproc('sp_insert_campo', [coordenadas_json, nome, morada, cidade, pais])  # Passa diretamente o JSON
-#                 cursor.execute("SELECT currval('campos_campoid_seq')")  # Recupera o último ID gerado
-#                 new_campoid = cursor.fetchone()[0]
-
-#             return JsonResponse(json.loads(json.dumps({'success': True, 'id': new_campoid, 'nome': nome})))
-#         except json.JSONDecodeError:
-#             return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Formato de dados inválido.'})))
-#         except Exception as e:
-#             return JsonResponse(json.loads(json.dumps({'success': False, 'message': f'Erro ao criar o campo: {str(e)}'})))
-#     return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Método não permitido.'})))
-
-
 def get_campo_data(request, campoid):
     try:
         campo = Campos.objects.get(pk=campoid)
@@ -1025,7 +1059,6 @@ def update_campo(request, campoid):
 def delete_campo(request, campoid):
     if request.method == 'POST':  # Alterado para POST
         try:
-            print(f"Tentando inativar o campo com ID: {campoid}")
             # Chamar o procedimento armazenado para inativar o campo
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_delete_campo(%s)", [campoid])
@@ -1044,3 +1077,186 @@ def delete_campo(request, campoid):
     return JsonResponse({"status": "error", "message": "Método não permitido."}, status=405)
 
 
+#MÉTODOS DE PAGAMENTO
+def payment_methods(request):
+    # Obtém os filtros
+    filter_method = request.GET.get('filter_method', '').strip()
+
+    # Ordena os métodos de pagamento por nome
+    methods = Metodospagamento.objects.all().order_by('nome')
+
+    # Filtrar pelo nome do método, se fornecido
+    if filter_method:
+        methods = methods.filter(nome__icontains=filter_method)
+
+    # Renderiza a página com os métodos de pagamento
+    return render(request, 'payment_methods.html', {
+        'metodos': methods,
+        'filters': {
+            'filter_method': filter_method,
+        },
+    })
+
+@csrf_exempt
+def add_payment_method(request):
+    if request.method == 'POST':
+        try:
+            # Lê os dados enviados pelo cliente
+            data = json.loads(request.body)
+            nome = data.get('nome', '').strip()
+
+            # Verifica se o nome é válido
+            if not nome:
+                return JsonResponse({'success': False, 'message': 'Nome inválido.'})
+
+            # Verifica se já existe um método com o mesmo nome (case insensitive)
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM metodospagamento WHERE LOWER(nome) = LOWER(%s)", [nome])
+                if cursor.fetchone()[0] > 0:
+                    return JsonResponse({'success': False, 'message': 'Esse método já existe.'})
+
+            # Chama o procedimento armazenado para inserir o método
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_insert_metodo(%s, %s)", [nome, None])
+                cursor.execute("SELECT currval('metodospagamento_idmetodopagamento_seq')")
+                new_method_id = cursor.fetchone()[0]
+
+            return JsonResponse({'success': True, 'id': new_method_id, 'nome': nome})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Formato de dados inválido.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao criar o método: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+@login_required
+def delete_payment_method(request, method_id):
+    if request.method == 'POST':
+        try:
+            # Chama o procedimento armazenado para excluir o método
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_delete_metodo(%s)", [method_id])
+            return JsonResponse({'success': True, 'method_id': method_id})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao excluir o método: {str(e)}'})
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+@login_required
+def edit_payment_method(request, method_id):
+    if request.method == 'POST':
+        try:
+            # Lê os dados enviados pelo cliente
+            body = json.loads(request.body)
+            nome = body.get('nome', '').strip()
+
+            # Verifica se o nome é válido
+            if not nome:
+                return JsonResponse({'success': False, 'message': 'O nome do método é inválido.'})
+
+            # Chama o procedimento armazenado para atualizar o método
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_update_metodo(%s, %s)", [method_id, nome])
+
+            response = {'success': True, 'id': method_id, 'nome': nome}
+            logger.info(f"Resposta edit_payment_method: {response}")
+            return JsonResponse(response)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Formato de dados inválido.'})
+        except Exception as e:
+            error_message = str(e)
+            if "duplicate key value violates unique constraint" in error_message:
+                return JsonResponse({'success': False, 'message': 'Esse método já existe.'})
+            logger.error(f"Erro ao editar o método: {error_message}")
+            return JsonResponse({'success': False, 'message': f'Erro ao editar o método: {error_message}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+
+#ESTADO DO TRANSPORTE
+@login_required
+def transport_states(request):
+    # Obtém os dados do banco
+    states = Estadostransporte.objects.all().order_by('nome')
+
+    # Filtro (opcional)
+    filter_state = request.GET.get('filter_method', '').strip()
+    if filter_state:
+        states = states.filter(nome__icontains=filter_state)
+
+    # Renderiza o template com os dados
+    return render(request, 'transport_states.html', {
+        'estados': states,  # Certifique-se de que 'estados' é a variável usada no template
+    })
+
+@csrf_exempt
+def add_transport_state(request):
+    if request.method == 'POST':
+        try:
+            # Lê os dados enviados pelo cliente
+            data = json.loads(request.body)
+            nome = data.get('nome', '').strip()
+
+            # Verifica se o nome é válido
+            if not nome:
+                return JsonResponse({'success': False, 'message': 'Nome inválido.'})
+
+            # Verifica se já existe um estado com o mesmo nome (case insensitive)
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM estadostransporte WHERE LOWER(nome) = LOWER(%s)", [nome])
+                if cursor.fetchone()[0] > 0:
+                    return JsonResponse({'success': False, 'message': 'Esse estado já existe.'})
+
+            # Chama a procedure para inserir o estado e retorna o ID
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_insert_estadotransporte(%s, %s)", [nome, None])
+                cursor.execute("SELECT currval('estadostransporte_idestado_seq')")
+                new_id = cursor.fetchone()[0]  # Obtém o ID retornado pelo OUT parameter
+
+            return JsonResponse({'success': True, 'id': new_id, 'nome': nome})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao criar o estado: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+
+@login_required
+def edit_transport_state(request, state_id):
+    if request.method == 'POST':
+        try:
+            # Obtém os dados enviados pelo cliente
+            data = json.loads(request.body)
+            nome = data.get('nome', '').strip()
+
+            # Valida o nome do estado
+            if not nome:
+                return JsonResponse({'success': False, 'message': 'O nome do estado é obrigatório.'})
+
+            # Atualiza o estado usando a stored procedure
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_update_estadotransporte(%s, %s)", [state_id, nome])
+
+            return JsonResponse({'success': True, 'id': state_id, 'nome': nome})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao editar o estado: {str(e)}'})
+
+        except Exception as e:
+            error_message = str(e)
+            if "duplicate key value violates unique constraint" in error_message:
+                return JsonResponse({'success': False, 'message': 'Esse método já existe.'})
+            logger.error(f"Erro ao editar o método: {error_message}")
+            return JsonResponse({'success': False, 'message': f'Erro ao editar o método: {error_message}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+@login_required
+def delete_transport_state(request, state_id):
+    if request.method == 'POST':
+        try:
+            # Exclui o estado usando a stored procedure
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_delete_estadotransporte(%s)", [state_id])
+            return JsonResponse({'success': True, 'state_id': state_id})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao excluir o estado: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
