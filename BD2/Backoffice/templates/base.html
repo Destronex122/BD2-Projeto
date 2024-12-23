@@ -52,16 +52,6 @@
                     </li>
                 </ul>
                 <div class="ml-auto d-flex align-items-center"> <!-- Alinhamento à direita com ícone de logout -->
-                    {% if is_admin %}
-                    <select class="custom-select mr-3" name="vineyard" id="vineyard" required>
-                        {% for quinta in quintas %}
-                            <option value={{ quinta.campoid }}>{{ quinta.nome }}</option>
-                        {% endfor %}
-                    </select>
-                {% endif %}
-                
-
-
                     <!-- Dropdown do utilizador -->
                     <div class="dropdown">
                         <div class="dropdown-toggle" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
