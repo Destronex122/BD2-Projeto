@@ -657,6 +657,36 @@ def request(request):
     end_index = start_index + rows_per_page
     paginated_pedidos = pedidos[start_index:end_index]
 
+    if request.method == 'POST':
+        try:
+            # Capturar os dados enviados pelo formulário
+            aprovador_id = int(request.POST.get('aprovadorid'))
+            nome = request.POST.get('newNome')
+            data_inicio = request.POST.get('newDataInicio')
+            data_fim = request.POST.get('newDataFim')
+            preco_estimado = float(request.POST.get('newPrecoEstimado'))
+            is_active = True  # Por padrão, o pedido começa ativo
+
+            # Chamar o procedimento armazenado
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    CALL sp_inserirpedido(
+                        %s, %s, %s, %s, %s, %s
+                    )
+                """, [
+                    nome,
+                    data_inicio,
+                    data_fim,
+                    aprovador_id,
+                    preco_estimado,
+                    is_active
+                ])
+            
+            return JsonResponse({'success': True, 'message': 'Pedido criado com sucesso!'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Ocorreu um erro: {e}'})
+
     return render(request, 'request.html', {
         'clientes': clientes,
         'users': users,
