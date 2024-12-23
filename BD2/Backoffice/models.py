@@ -187,7 +187,7 @@ class AuthUserUserPermissions(models.Model):
 
 class Campos(models.Model):
     campoid = models.AutoField(primary_key=True)
-    coordenadas = models.TextField()
+    coordenadas = models.JSONField()
     nome = models.TextField()
     morada = models.TextField()
     cidade = models.TextField()
