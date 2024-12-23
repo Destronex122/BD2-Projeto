@@ -51,4 +51,8 @@ urlpatterns = [
     path('add_transport_state/', views.add_transport_state, name='add_transport_state'), 
     path('edit_transport_state/<int:state_id>/', views.edit_transport_state, name='edit_transport_state'),
     path('delete_transport_state/<int:state_id>/', views.delete_transport_state, name='delete_transport_state'), 
+    path('receipt_status/', views.receipt_status, name='receipt_status'), 
+    path('add_receipt_status/', views.add_receipt_status, name='add_receipt_status'), 
+    path('edit_receipt_status/<int:status_id>/', views.edit_receipt_status, name='edit_receipt_status'),
+    path('delete_receipt_status/<int:status_id>/', views.delete_receipt_status, name='delete_receipt_status'), 
 ]
