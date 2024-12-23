@@ -29,10 +29,6 @@ collection = db['coordinates']  # Substituir pelo nome da coleção do MongoDB
 
 # Create your views here.
 
-@login_required
-def fields(request):
-    return render(request, 'fields.html')
-
 def home(request):
     return redirect('backoffice/login')
 
@@ -411,52 +407,6 @@ def contracts(request):
             'filterClientNif': filter_client_nif,
         },
     })
-
-
-    
-
-@login_required
-@csrf_exempt
-@require_http_methods(['POST'])
-def save_marker_view(request):
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-        coordenadas = data.get('coordenadas')
-        nome = data.get('nome')
-        morada = data.get('morada')
-        cidade = data.get('cidade')
-        pais = data.get('pais')
-        isactive = data.get('isactive') 
-
-        if not coordenadas or not nome or not morada or not cidade:
-            return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
-
-        campo = Campos.objects.create(
-            coordenadas=coordenadas,  # Coordenadas como JSON ou string
-            nome=nome,
-            morada=morada,
-            cidade=cidade,
-            pais=pais,
-            datacriacao=timezone.now(),
-            isactive=True
-        )
-
-        return JsonResponse({
-            'status': 'success',
-            'campo': {
-                'campoid': campo.campoid,
-                'nome': campo.nome,
-                'morada': campo.morada,
-                'cidade': campo.cidade,
-                'pais': campo.pais,
-                'coordenadas': campo.coordenadas,
-                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S'),
-                'isactive': campo.isactive
-            }
-        })
-
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
 
 @login_required    
@@ -469,67 +419,6 @@ def save_polygon_view(request):
         return JsonResponse({'message': 'Polígono salvo com sucesso!'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-
-
-@require_http_methods(['GET'])
-def load_markers_view(request):
-    try:
-        # Carregar todos os campos do banco de dados
-        campos = Campos.objects.all()
-        markers = []
-
-        for campo in campos:
-            try:
-                coordenadas = json.loads(campo.coordenadas)  # Decodificar coordenadas JSON
-            except (ValueError, TypeError):
-                coordenadas = None  # Coordenadas inválidas ou ausentes
-
-            if coordenadas and "lat" in coordenadas and "lng" in coordenadas:
-                markers.append({
-                    'campoid': campo.campoid,
-                    'coordenadas': coordenadas,  # Agora como objeto JSON
-                    'nome': campo.nome,
-                    'morada': campo.morada,
-                    'cidade': campo.cidade,
-                    'pais': campo.pais,
-                    'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
-                })
-
-        # Retorna os dados no formato JSON
-        return JsonResponse(markers, safe=False)
-
-    except Exception as e:
-        # Se ocorrer um erro, retorna uma resposta com erro
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    
-def load_croplands(request):
-    status_filter = request.GET.get('status', '')  # Recebe o filtro da query string
-
-    if status_filter == 'active':
-        campos = Campos.objects.filter(isactive=True)
-    elif status_filter == 'inactive':
-        campos = Campos.objects.filter(isactive=False)
-    else:
-        campos = Campos.objects.all()
-
-    campos = campos.values(
-        'campoid', 'nome', 'cidade', 'morada', 'pais', 'coordenadas', 'isactive'
-    ).order_by('nome')
-
-    campos_list = []
-    for campo in campos:
-        try:
-            campo['coordenadas'] = json.loads(campo['coordenadas'])  # Decodificar JSON
-        except (ValueError, TypeError):
-            campo['coordenadas'] = None  # Define como None se inválido
-        campos_list.append(campo)
-
-    return JsonResponse({'status': 'success', 'campos': campos_list})
-
-
-def mapa_campos(request):
-    campos = Campos.objects.all()  # Traz os dados da BD
-    return render(request, 'mapa.html', {'campos': campos})  # Passa a variável campos para o template
 
 @login_required
 def load_vineyards_view(request):
@@ -745,7 +634,7 @@ def delete_request(request, pedidoid):
 
     return JsonResponse({'success': False, 'message': 'Método inválido.'})
 
-
+#CASTAS
 def grapevariety(request):
     # Obtém os filtros
     filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
@@ -854,124 +743,247 @@ def editvariety(request, castaid):
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 
+
+#CAMPOS
+@login_required
+def fields(request):
+    return render(request, 'fields.html')    
+
+
+@login_required
 @csrf_exempt
 @require_http_methods(['POST'])
-def save_marker(request):
-    if request.method == 'POST':
+def save_marker_view(request):
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        coordenadas = data.get('coordenadas')
+        nome = data.get('nome')
+        morada = data.get('morada')
+        cidade = data.get('cidade')
+        pais = data.get('pais')
+
+        if not coordenadas or not nome or not morada or not cidade:
+            return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
+        
+        # Validação das coordenadas
         try:
-            # Lê o corpo da requisição
-            data = json.loads(request.body)
-            nome = data.get('nome', '').strip()
-            morada = data.get('morada', '').strip()
-            cidade = data.get('cidade', '').strip()
-            pais = data.get('pais', '').strip()
-            coordenadas = data.get('coordenadas')
-
-            # Validação dos campos obrigatórios
-            if not nome or not morada or not cidade or not pais or not coordenadas:
-                return JsonResponse({'success': False, 'message': 'Faltando dados obrigatórios.'})
-
-            # Validação das coordenadas
-            try:
+            if isinstance(coordenadas, dict):
                 lat = float(coordenadas.get("lat"))
                 lng = float(coordenadas.get("lng"))
-                coordenadas_json = json.dumps({"lat": lat, "lng": lng})
+                coordenadas_json = {"lat": lat, "lng": lng}  # Garante formato JSON válido
+            else:
+                raise ValueError("Formato inválido para coordenadas")
+        except (ValueError, TypeError) as e:
+            return JsonResponse({'success': False, 'message': f'Coordenadas inválidas: {str(e)}'}, status=400)
+
+        campo = Campos.objects.create(
+            coordenadas=coordenadas_json,  # Coordenadas como JSON ou string
+            nome=nome,
+            morada=morada,
+            cidade=cidade,
+            pais=pais,
+            datacriacao=timezone.now(),
+            isactive=True
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'campo': {
+                'campoid': campo.campoid,
+                'nome': campo.nome,
+                'morada': campo.morada,
+                'cidade': campo.cidade,
+                'pais': campo.pais,
+                'coordenadas': campo.coordenadas,
+                'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S'),
+                'isactive': campo.isactive
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@require_http_methods(['GET'])
+def load_markers_view(request):
+    try:
+        # Carregar todos os campos do banco de dados
+        campos = Campos.objects.all()
+        markers = []
+
+        for campo in campos:
+            try:
+                coordenadas = json.loads(campo.coordenadas) if isinstance(campo.coordenadas, str) else campo.coordenadas
             except (ValueError, TypeError):
-                return JsonResponse({'success': False, 'message': 'Coordenadas inválidas.'})
+                coordenadas = None  # Coordenadas inválidas ou ausentes
 
-            # Verifica se o campo já existe
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT COUNT(*) 
-                    FROM campos 
-                    WHERE LOWER(nome) = LOWER(%s) AND LOWER(morada) = LOWER(%s) AND LOWER(cidade) = LOWER(%s)
-                    """,
-                    [nome, morada, cidade]
-                )
-                if cursor.fetchone()[0] > 0:
-                    return JsonResponse({'success': False, 'message': 'Esse campo já existe.'})
+            if coordenadas and "lat" in coordenadas and "lng" in coordenadas:
+                markers.append({
+                    'campoid': campo.campoid,
+                    'coordenadas': coordenadas,  # Agora como objeto JSON
+                    'nome': campo.nome,
+                    'morada': campo.morada,
+                    'cidade': campo.cidade,
+                    'pais': campo.pais,
+                    'datacriacao': campo.datacriacao.strftime('%Y-%m-%d %H:%M:%S')
+                })
 
-            # Insere o novo campo
-            with connection.cursor() as cursor:
-                cursor.callproc('sp_insert_campo', [coordenadas_json, nome, morada, cidade, pais])  # Passa diretamente o JSON
-                cursor.execute("SELECT currval('campos_campoid_seq')")  # Recupera o último ID gerado
-                new_campoid = cursor.fetchone()[0]
+        # Retorna os dados no formato JSON
+        return JsonResponse(markers, safe=False)
 
-            return JsonResponse({'success': True, 'id': new_campoid, 'nome': nome})
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'message': 'Formato de dados inválido.'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erro ao criar o campo: {str(e)}'})
-    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+    except Exception as e:
+        # Se ocorrer um erro, retorna uma resposta com erro
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def load_croplands(request):
+    status_filter = request.GET.get('status', '')  # Recebe o filtro da query string
+
+    if status_filter == 'active':
+        campos = Campos.objects.filter(isactive=True)
+    elif status_filter == 'inactive':
+        campos = Campos.objects.filter(isactive=False)
+    else:
+        campos = Campos.objects.all()
+
+    campos = campos.values(
+        'campoid', 'nome', 'cidade', 'morada', 'pais', 'coordenadas', 'isactive'
+    ).order_by('nome')
+
+    campos_list = []
+    for campo in campos:
+        try:
+            campo['coordenadas'] = campo['coordenadas']  # Decodificar JSON
+        except (ValueError, TypeError):
+            campo['coordenadas'] = None  # Define como None se inválido
+        
+        campos_list.append(campo)
+
+    return JsonResponse({'status': 'success', 'campos': campos_list})
+
+
+
+
+# @csrf_exempt
+# @require_http_methods(['POST'])
+# def save_marker(request):
+#     if request.method == 'POST':
+#         try:
+#             # Lê o corpo da requisição
+#             data = json.loads(request.body)
+#             nome = data.get('nome', '').strip()
+#             morada = data.get('morada', '').strip()
+#             cidade = data.get('cidade', '').strip()
+#             pais = data.get('pais', '').strip()
+#             coordenadas = data.get('coordenadas')
+
+#             # Validação dos campos obrigatórios
+#             if not nome or not morada or not cidade or not pais or not coordenadas:
+#                 return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Faltando dados obrigatórios.'})))
+
+#             # Validação das coordenadas
+#             try:
+#                 lat = float(coordenadas.get("lat"))
+#                 lng = float(coordenadas.get("lng"))
+#                 coordenadas_json = json.dumps({"lat": lat, "lng": lng})
+#             except (ValueError, TypeError):
+#                 return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Coordenadas inválidas.'})))
+
+#             # Verifica se o campo já existe
+#             with connection.cursor() as cursor:
+#                 cursor.execute(
+#                     """
+#                     SELECT COUNT(*) 
+#                     FROM campos 
+#                     WHERE LOWER(nome) = LOWER(%s) AND LOWER(morada) = LOWER(%s) AND LOWER(cidade) = LOWER(%s)
+#                     """,
+#                     [nome, morada, cidade]
+#                 )
+#                 if cursor.fetchone()[0] > 0:
+#                     return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Esse campo já existe.'})))
+
+#             # Insere o novo campo
+#             with connection.cursor() as cursor:
+#                 cursor.callproc('sp_insert_campo', [coordenadas_json, nome, morada, cidade, pais])  # Passa diretamente o JSON
+#                 cursor.execute("SELECT currval('campos_campoid_seq')")  # Recupera o último ID gerado
+#                 new_campoid = cursor.fetchone()[0]
+
+#             return JsonResponse(json.loads(json.dumps({'success': True, 'id': new_campoid, 'nome': nome})))
+#         except json.JSONDecodeError:
+#             return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Formato de dados inválido.'})))
+#         except Exception as e:
+#             return JsonResponse(json.loads(json.dumps({'success': False, 'message': f'Erro ao criar o campo: {str(e)}'})))
+#     return JsonResponse(json.loads(json.dumps({'success': False, 'message': 'Método não permitido.'})))
+
 
 def get_campo_data(request, campoid):
     try:
         campo = Campos.objects.get(pk=campoid)
+        # Decodificar coordenadas se forem armazenadas como string JSON
+        try:
+            coordenadas = json.loads(campo.coordenadas) if isinstance(campo.coordenadas, str) else campo.coordenadas
+        except (TypeError, ValueError):
+            coordenadas = None
         data = {
             "campoid":campo.campoid,
             "nome": campo.nome,
             "morada": campo.morada,
             "cidade": campo.cidade,
             "pais": campo.pais,
-            "coordenadas": {
-                "lat": campo.coordenadas.get("lat"),
-                "lng": campo.coordenadas.get("lng"),
-            },
+            "coordenadas": coordenadas if coordenadas else {"lat": None, "lng": None},
         }
         return JsonResponse({"status": "success", "campo": data})
     except Campos.DoesNotExist:
         return JsonResponse({"status": "error", "message": "Campo não encontrado"}, status=404)
-    
+    except Exception as e:
+        print(f"Erro ao buscar campo: {e}")  # Log para depuração
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
 @csrf_exempt
+@require_http_methods(['PUT'])
 def update_campo(request, campoid):
-    if request.method == 'PUT':
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+
+        # Obter dados enviados pelo cliente
+        nome = data.get('nome', '').strip()
+        morada = data.get('morada', '').strip()
+        cidade = data.get('cidade', '').strip()
+        pais = data.get('pais', '').strip()
+        coordenadas = data.get('coordenadas', None)
+
+        # Validar dados obrigatórios
+        if not nome or not morada or not cidade or not pais or not coordenadas:
+            return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios.'}, status=400)
+
         try:
-            data = json.loads(request.body.decode('utf-8'))
+            coordenadas_json = json.dumps(coordenadas)
+        except (ValueError, TypeError):
+            return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas.'}, status=400)
 
-            # Obter os valores enviados na requisição
-            nome = data.get('nome')
-            morada = data.get('morada')
-            cidade = data.get('cidade')
-            pais = data.get('pais')
-            coordenadas = data.get('coordenadas')
-            isactive = data.get('isactive')
-
-            # Validar os dados obrigatórios
-            if not nome or not morada or not cidade or not pais or not coordenadas:
-                return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios'}, status=400)
-
-            # Preparar as coordenadas para JSON
-            try:
-                lat = float(coordenadas["lat"])
-                lng = float(coordenadas["lng"])
-                coordenadas_json = json.dumps({"lat": lat, "lng": lng})
-            except (KeyError, ValueError, TypeError):
-                return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas'}, status=400)
-
-            # Chamar o procedimento armazenado
+        # Chamar o procedimento armazenado no banco de dados
+        try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                   "CALL update_campo(%s, %s, %s, %s, %s, %s, %s)",
-                    [campoid, coordenadas_json, nome, morada, cidade, pais, isactive]
+                    "CALL sp_update_campo(%s, %s, %s, %s, %s, %s)",
+                     [int(campoid), str(coordenadas_json), str(nome), str(morada), str(cidade), str(pais)]
                 )
-
-            # Retornar sucesso
-            return JsonResponse({'status': 'success', 'message': 'Campo atualizado com sucesso.'})
-
         except Exception as e:
-            print(f"Erro ao atualizar campo: {str(e)}")  # Log para depuração
-            if "não encontrado" in str(e):
-                return JsonResponse({'status': 'error', 'message': 'Campo não encontrado.'}, status=404)
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            return JsonResponse({'status': 'error', 'message': f'Erro ao executar procedimento: {str(e)}'}, status=500)
 
-    # Retornar erro para métodos não permitidos
-    return JsonResponse({'status': 'error', 'message': 'Método não permitido.'}, status=405)
+        # Retornar sucesso
+        return JsonResponse({'status': 'success', 'message': 'Campo atualizado com sucesso.'})
 
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Erro ao decodificar JSON.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Erro inesperado: {str(e)}'}, status=500)
+    
 @csrf_exempt
 def delete_campo(request, campoid):
     if request.method == 'POST':  # Alterado para POST
         try:
+            print(f"Tentando inativar o campo com ID: {campoid}")
             # Chamar o procedimento armazenado para inativar o campo
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_delete_campo(%s)", [campoid])

@@ -205,11 +205,20 @@
                     featureGroup: featureGroup
                 }
             }).addTo(map);
-    
+
             map.on('draw:created', function (e) {
                 const layer = e.layer;
                 const coordinates = layer.getLatLng();
                 featureGroup.addLayer(layer);
+
+                // Converte as coordenadas para uma string JSON com aspas duplas
+                const coordinatesJSON = JSON.stringify({ lat: coordinates.lat, lng: coordinates.lng });
+
+                // Atribui ao campo de coordenadas
+                const campoCoordinates = document.getElementById('campoCoordinates');
+                campoCoordinates.value = coordinatesJSON;
+
+                // Abre a sidebar
                 openSidebar(false, { coordenadas: coordinates });
             });
     
@@ -222,6 +231,7 @@
                 const campoPais = document.getElementById('campoPais');
                 const campoCoordinates = document.getElementById('campoCoordinates');
                 const campoForm = document.getElementById('campoForm');
+                
                 sidebar.style.display = 'flex';
                 sidebar.removeAttribute('inert'); // Remove inert para permitir interação
 
@@ -231,7 +241,9 @@
                     campoMorada.value = campo.morada || '';
                     campoCidade.value = campo.cidade || '';
                     campoPais.value = campo.pais || '';
-                    campoCoordinates.value = campo.coordenadas ? JSON.stringify(campo.coordenadas) : '';
+                    campoCoordinates.value = campo.coordenadas
+                        ? JSON.stringify(campo.coordenadas).replace(/'/g, '"')
+                        : '{"lat":null,"lng":null}';
                     campoForm.dataset.isEdit = 'true';
                     campoForm.dataset.campoid = campo.campoid;
                 } else {
@@ -240,7 +252,9 @@
                     campoMorada.value = '';
                     campoCidade.value = '';
                     campoPais.value = '';
-                    campoCoordinates.value = campo ? JSON.stringify(campo.coordenadas) : '';
+                    campoCoordinates.value = campo.coordenadas
+                        ? JSON.stringify(campo.coordenadas).replace(/'/g, '"')
+                        : '{"lat":null,"lng":null}';
                     campoForm.dataset.isEdit = 'false';
                     delete campoForm.dataset.campoid;
                 }
@@ -258,7 +272,7 @@
             // Event listeners para fechar a sidebar
             document.getElementById('closeSidebarButton').addEventListener('click', closeSidebar); // Botão "X"
             document.querySelector('.secondary-button').addEventListener('click', closeSidebar); // Botão "Cancelar"
-            
+
             function addRowToTable(campo) {
                 const row = document.createElement('tr');
                 row.dataset.id = campo.campoid;
@@ -278,9 +292,9 @@
                         </button>
                     </td>
                 `;
-                tableBody.appendChild(row);
-                filteredRows.push(row);
-                updateTable();
+                tableBody.appendChild(row); // Adicionar à tabela
+                filteredRows = Array.from(tableBody.querySelectorAll('tr')); // Atualizar os dados da tabela e aplicar filtros
+            	applyFilter();
             }
     
             function updateTable() {
@@ -292,6 +306,8 @@
     
                 renderPaginationButtons();
             }
+
+            
     
             function renderPaginationButtons() {
                 paginationContainer.innerHTML = '';
@@ -310,24 +326,28 @@
                 }
             }
     
-            // Função para inativar (deletar logicamente) um campo
+            // Função para inativar um campo
             document.addEventListener('click', function (e) {
-                if (e.target.closest('.delete-btn')) {
-                    const button = e.target.closest('.delete-btn');
-                    const campoid = button.dataset.id;
-    
+                const deleteButton = e.target.closest('.delete-btn');
+                if (deleteButton) {
+                    const campoid = deleteButton.dataset.id;
                     if (confirm('Tem certeza de que deseja inativar este campo?')) {
-                        fetch(`/delete_campo/${campoid}`, {
+                        fetch(`/delete_campo/${campoid}/`, {
                             method: 'POST',
                             headers: {
                                 'X-CSRFToken': '{{ csrf_token }}'
                             }
                         })
-                            .then(response => response.json())
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`Erro HTTP: ${response.status}`);
+                                }
+                                return response.json();
+                            })
                             .then(data => {
                                 if (data.status === 'success') {
-                                    button.disabled = true;
-                                    button.closest('tr').dataset.isactive = 'false';
+                                    deleteButton.disabled = true;
+                                    deleteButton.closest('tr').dataset.isactive = 'false';
                                     alert('Campo inativado com sucesso.');
                                     updateTable();
                                 } else {
@@ -336,6 +356,31 @@
                             })
                             .catch(error => console.error('Erro ao inativar campo:', error));
                     }
+                    return;
+                }
+
+                
+                const editButton = e.target.closest('.edit-btn');
+                if (editButton) {
+                    const campoid = editButton.dataset.id;
+                    fetch(`/get_campo_data/${campoid}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Erro ao buscar dados do campo');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.status === 'success') {
+                                openSidebar(true, data.campo);
+                            } else {
+                                alert(data.message || 'Erro ao carregar dados do campo.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro ao buscar campo:', error);
+                            alert('Ocorreu um erro ao carregar os dados do campo.');
+                        });
                 }
             });
     
@@ -345,14 +390,15 @@
                     if (data.status === 'success') {
                         tableBody.innerHTML = '';
                         featureGroup.clearLayers();
-                        allMarkers = {};
     
                         data.campos.forEach(item => {
+                            // Adicionar marcador apenas se as coordenadas forem válidas
                             if (item.coordenadas && item.coordenadas.lat && item.coordenadas.lng) {
                                 const latLng = [item.coordenadas.lat, item.coordenadas.lng];
                                 const marker = L.marker(latLng).bindPopup(`<b>${item.nome}</b>`);
                                 featureGroup.addLayer(marker);
-                                allMarkers[item.campoid] = marker;
+                            } else {
+                                console.warn('Coordenadas inválidas ou ausentes para o campo:', item.nome || 'Desconhecido');
                             }
                             addRowToTable(item);
                         });
@@ -395,6 +441,80 @@
                 filteredRows = Array.from(tableBody.querySelectorAll('tr'));
                 updateTable();
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('campoForm');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault(); // Evita o envio padrão do formulário
+
+                // Identifica se é edição ou criação
+                const isEdit = form.dataset.isEdit === 'true';
+                const campoid = form.dataset.campoid; // ID do campo, se for edição
+                
+                // Obtém os valores do formulário
+                const nome = document.getElementById('campoName').value.trim();
+                const morada = document.getElementById('campoMorada').value.trim();
+                const cidade = document.getElementById('campoCidade').value.trim();
+                const pais = document.getElementById('campoPais').value.trim();
+                const coordenadas = document.getElementById('campoCoordinates').value.trim();
+
+                // Valida campos obrigatórios
+                if (!nome || !morada || !cidade || !pais || !coordenadas) {
+                    alert('Por favor, preencha todos os campos obrigatórios.');
+                    return;
+                }
+
+                // URL e método HTTP para a operação
+                const url = isEdit ? `/update_campo/${campoid}/` : '/save_marker/';
+                const method = isEdit ? 'PUT' : 'POST';
+
+                // Valida e prepara coordenadas
+                let parsedCoordinates;
+                try {
+                    parsedCoordinates = JSON.parse(coordenadas); // Certifica-se de que é um objeto JSON
+                    if (!parsedCoordinates.lat || !parsedCoordinates.lng) {
+                        throw new Error('As coordenadas devem conter "lat" e "lng".');
+                    }
+                } catch (error) {
+                    alert('As coordenadas estão no formato inválido. Por favor, corrija.');
+                    return;
+                }
+
+                // Faz a solicitação ao backend
+                try {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            nome,
+                            morada,
+                            cidade,
+                            pais,
+                            coordenadas: parsedCoordinates 
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        alert(isEdit ? 'Campo editado com sucesso!' : `Campo criado com sucesso!`);
+                        form.reset();
+                        document.getElementById('campoSidebar').style.display = 'none';
+                        if (!isEdit) {
+                            addRowToTable(result.campo);
+                        }
+                    } else {
+                        alert(result.message || 'Erro ao salvar o campo.');
+                    }
+                } catch (error) {
+                    console.error('Erro na solicitação:', error);
+                    alert('Ocorreu um erro ao salvar o campo.');
+                }
+            });
         });
     </script>
     
