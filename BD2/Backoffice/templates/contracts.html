@@ -43,6 +43,11 @@
                     class="form-control" 
                     value="{{ filters.filterDate|default:'' }}">
             </div>
+            <div style="text-align:right; margin-bottom: 20px;" onclick="openAddContractModal()">
+                <button type="button" onclick="openAddContractModal()">
+                    <img src="{% static 'add.png' %}" title="Adicionar novo utilizador" alt="add" style="height: 25px; width: auto;">
+                </button>
+            </div>
             <div class="form-group" style="margin-top:24px; width:10%">
                 <button type="submit" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
             </div>
@@ -50,6 +55,65 @@
     </form>
 </div>
 
+
+
+
+<!-- Modal para adicionar contrato -->
+<div class="popup-overlay" id="addContractModal" style="display: none;">
+    <div class="popup-content">
+        <div class="popup-header">
+            <h5>Adicionar Contrato</h5>
+            <span class="modal-close" onclick="closeAddContractModal()">&times;</span>
+        </div>
+        <form id="addContractForm" method="post" action="."> <!-- Mesma URL -->
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="clienteId">Cliente:</label>
+                <select id="clienteId" name="clienteId" class="form-control" required>
+                    {% for cliente in clientes %}
+                    <option value="{{ cliente.clienteid.userid }}">{{ cliente.nif }} - {{ cliente.user.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="pedidoId">Item de Pedido:</label>
+                <select id="pedidoId" name="pedidoId" class="form-control">
+                    {% for pedido in pedidos %}
+                    <option value="{{ pedido.idpedido_item }}">{{ pedido.nome }} - {{ pedido.castaid.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="dataInicio">Data de Início:</label>
+                <input type="date" id="dataInicio" name="dataInicio" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="dataFim">Data de Fim:</label>
+                <input type="date" id="dataFim" name="dataFim" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="quantidadeEstimada">Quantidade Estimada:</label>
+                <input type="number" id="quantidadeEstimada" name="quantidadeEstimada" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="precoEstimado">Preço Estimado:</label>
+                <input type="number" id="precoEstimado" name="precoEstimado" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="quantidadeFinal">Quantidade Final:</label>
+                <input type="number" id="quantidadeFinal" name="quantidadeFinal" class="form-control" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="nomeContrato">Nome do Contrato:</label>
+                <input type="text" id="nomeContrato" name="nomeContrato" class="form-control" required>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                <button type="button" onclick="closeAddContractModal()" class="secondary-button">Cancelar</button>
+                <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 
     <!-- Tabela de entregas -->
@@ -84,6 +148,55 @@
     
 
     <script>
+    function openAddContractModal() {
+        document.getElementById('addContractModal').style.display = 'block';
+    }
+
+    function closeAddContractModal() {
+        document.getElementById('addContractModal').style.display = 'none';
+    }
+
+    document.getElementById('addContractForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Impede o envio normal do formulário
+
+        const formData = new FormData(this);
+
+        fetch('.', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+
+                // Adicionar dinamicamente à tabela
+                const newRow = `
+                    <tr>
+                        <td>${formData.get('clienteId')}</td>
+                        <td>${formData.get('pedidoId')}</td>
+                        <td>${formData.get('dataInicio')}</td>
+                        <td>${formData.get('dataFim')}</td>
+                        <td>${formData.get('quantidadeEstimada')}</td>
+                        <td>${formData.get('precoEstimado')}</td>
+                    </tr>
+                `;
+                document.querySelector('#contractTable tbody').insertAdjacentHTML('beforeend', newRow);
+
+                closeAddContractModal(); // Fecha o modal
+                this.reset(); // Reseta o formulário
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Ocorreu um erro ao criar o contrato.');
+        });
+    });
         document.getElementById('contractTable').addEventListener('click', function(event){
             const targetRow = event.target.closest('tr');
             if(targetRow && !targetRow.closest('thead')){
