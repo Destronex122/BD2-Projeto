@@ -15,7 +15,7 @@ from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, Estadostransporte
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte
 from django.utils import timezone
 from django.db.models.functions import Coalesce
 from django.db.models import Value, BooleanField, Case, When, F
@@ -427,6 +427,8 @@ def delete_note_harvest(request, notaid):
 @login_required
 def contracts(request):
 
+
+
     #Filtros
     filter_number = request.GET.get('filterNumber', '').strip()
     filter_date = request.GET.get('filterDate', None)
@@ -441,8 +443,64 @@ def contracts(request):
     if filter_client_nif:
         contratos = contratos.filter(clienteid__nif__icontains=filter_client_nif)
 
+    if request.method == 'POST':
+        try:
+            # Captura os valores enviados pelo formulário
+            cliente_id = int(request.POST.get('clienteId'))
+            pedido_id = int(request.POST.get('pedidoId')) if request.POST.get('pedidoId') else None
+            data_inicio = request.POST.get('dataInicio')
+            data_fim = request.POST.get('dataFim')
+            quantidade_estimada = float(request.POST.get('quantidadeEstimada'))
+            preco_estimado = float(request.POST.get('precoEstimado'))
+            quantidade_final = float(request.POST.get('quantidadeFinal'))  # Novo campo
+            nome = request.POST.get('nomeContrato')
+
+            # Verificar se `quantidade_final` atende à restrição
+            if quantidade_final < 0 or quantidade_final < quantidade_estimada:
+                raise ValueError("A quantidade final deve ser maior ou igual à quantidade estimada.")
+
+            # Valores padrão para campos opcionais
+            preco_final = 0
+            is_active = True
+
+            # Chamar o procedimento armazenado
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    CALL sp_criarcontrato(
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                """, [
+                    cliente_id, pedido_id, data_inicio, data_fim,
+                    quantidade_estimada, preco_estimado,
+                    quantidade_final, preco_final, nome, is_active
+                ])
+            return JsonResponse({'status': 'success', 'message': 'Contrato criado com sucesso!'})
+
+        except ValueError as ve:
+            return JsonResponse({'status': 'error', 'message': f'Erro nos valores fornecidos: {ve}'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Ocorreu um erro: {e}'})
+        
+    # Requisição GET para listar contratos
+    filter_number = request.GET.get('filterNumber', '').strip()
+    filter_date = request.GET.get('filterDate', None)
+    filter_client_nif = request.GET.get('filterClientNif', '').strip()
+
+    contratos = Contratos.objects.all()
+    clientes = Clientes.objects.filter(isactive=True)
+    pedidos = PedidosItem.objects.filter(isactive=True)
+
+    if filter_number:
+        contratos = contratos.filter(contratoid__icontains=filter_number)
+    if filter_date:
+        contratos = contratos.filter(datainicio=filter_date)
+    if filter_client_nif:
+        contratos = contratos.filter(clienteid__nif__icontains=filter_client_nif)
+
     return render(request, 'contracts.html', {
         'contrato': contratos,
+        'clientes': clientes,
+        'pedidos': pedidos,
         'filters': {
             'filterNumber': filter_number,
             'filterDate': filter_date,
