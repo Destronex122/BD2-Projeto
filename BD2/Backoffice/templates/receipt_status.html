@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Estados de Transporte{% endblock %}
+{% block title %}Estados de Recibos{% endblock %}
 
 {% block content %}
 
 {% load static %}
 
 <style>
-    #transportStateTable tbody tr:hover {
+    #receiptStatusTable tbody tr:hover {
         background-color: #f1f1f1;
         cursor: pointer;
     }
@@ -46,15 +46,15 @@
 
 <div class="editable-area newPadding">
     <div style="display:flex; justify-content: space-between; margin-bottom: 20px;">
-        <h1>Estados de transporte</h1>
+        <h1>Estados de recibos</h1>
         <div>
-            <button type="button" onclick="openAddTransportStateModal(false)">
+            <button type="button" onclick="openAddReceiptStatusModal(false)">
                 <img src="{% static 'add.png' %}" title="Adicionar novo estado" alt="add" style="height: 25px; width: auto;">
             </button>
         </div>
     </div>
 
-    <!-- Filtro de Estados de Transporte -->
+    <!-- Filtro de Estados de Recibos -->
     <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
         <div class="form-group" style="flex: 1; min-width: 200px; margin-top:16px">
             <label for="searchBar" style="display: block;">Estados:</label>
@@ -64,14 +64,14 @@
         <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2; margin-top:24px">Limpar</button>
     </div>
     
-    <table id="transportStateTable" class="table table-bordered">
+    <table id="receiptStatusTable" class="table table-bordered">
         <thead>
             <tr>
                 <th>Estado</th>
                 <th>Ações</th>
             </tr>
         </thead>
-        <tbody id="transportStateBody">
+        <tbody id="receiptStatusBody">
             {% for estado in estados %}
             <tr 
                 data-id="{{ estado.idestado }}" 
@@ -80,7 +80,7 @@
                 <td>
                     <button 
                         title="Editar estado" 
-                        onclick="openAddTransportStateModal(true, '{{ estado.idestado }}', '{{ estado.nome }}')" 
+                        onclick="openAddReceiptStatusModal(true, '{{ estado.idestado }}', '{{ estado.nome }}')" 
                         type="button">
                         <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
                     </button>
@@ -95,7 +95,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="2" class="no-data-message">Ainda não há estados de transporte adicionados.</td>
+                <td colspan="2" class="no-data-message">Ainda não há estados de recibos adicionados.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -103,24 +103,24 @@
     <div class="pagination" id="pagination"></div>
 
     <!-- Modal para adicionar/editar um estado -->
-    <div class="popup-overlay" id="addTransportStateModal" style="display: none;" inert>
+    <div class="popup-overlay" id="addReceiptStatusModal" style="display: none;" inert>
         <div class="popup-content">
             <div class="popup-header">
-                <h5 id="addTransportStateModalTitle">Adicionar estado</h5>
+                <h5 id="addReceiptStatusModalTitle">Adicionar estado</h5>
                 <div style="display:flex; justify-content: flex-end;">
-                    <span class="close" id="closeAddTransportStateModal">&times;</span>
+                    <span class="close" id="closeAddReceiptStatusModal">&times;</span>
                 </div>
             </div>
             <br>
             <div>
-                <form id="addTransportStateForm" method="post">
+                <form id="addReceiptStatusForm" method="post">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="transportStateName">Nome do estado</label>
-                        <input type="text" id="transportStateName" name="transportStateName" class="form-control" required>
+                        <label for="receiptStatusName">Nome do estado</label>
+                        <input type="text" id="receiptStatusName" name="receiptStatusName" class="form-control" required>
                     </div>
                     <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-                        <button type="button" class="secondary-button" id="cancelAddTransportState">Cancelar</button>
+                        <button type="button" class="secondary-button" id="cancelAddReceiptStatus">Cancelar</button>
                         <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
                     </div>
                 </form>
@@ -132,11 +132,11 @@
 <script>
     document.getElementById('apply-filter').addEventListener('click', function () {
         const searchValue = document.getElementById('searchBar').value.toLowerCase().trim();
-        const rows = Array.from(document.querySelectorAll('#transportStateTable tbody tr'));
+        const rows = Array.from(document.querySelectorAll('#receiptStatusTable tbody tr'));
 
         rows.forEach(row => {
-            const stateName = row.querySelector('td').textContent.toLowerCase();
-            if (stateName.includes(searchValue)) {
+            const statusName = row.querySelector('td').textContent.toLowerCase();
+            if (statusName.includes(searchValue)) {
                 row.style.display = ''; 
             } else {
                 row.style.display = 'none'; 
@@ -148,7 +148,7 @@
 
     document.getElementById('clear-filter').addEventListener('click', function () {
         document.getElementById('searchBar').value = ''; 
-        const rows = Array.from(document.querySelectorAll('#transportStateTable tbody tr'));
+        const rows = Array.from(document.querySelectorAll('#receiptStatusTable tbody tr'));
 
         rows.forEach(row => {
             row.style.display = ''; 
@@ -158,11 +158,11 @@
     });
 
     function checkEmptySearchResult() {
-        const rows = Array.from(document.querySelectorAll('#transportStateTable tbody tr'));
+        const rows = Array.from(document.querySelectorAll('#receiptStatusTable tbody tr'));
         const visibleRows = rows.filter(row => row.style.display !== 'none');
 
         if (visibleRows.length === 0) {
-            const tbody = document.querySelector('#transportStateTable tbody');
+            const tbody = document.querySelector('#receiptStatusTable tbody');
             const emptyRow = document.createElement('tr');
             emptyRow.setAttribute('id', 'no-results-row');
             emptyRow.innerHTML = `
@@ -179,11 +179,11 @@
         }
     }
     
-    function openAddTransportStateModal(isEdit = false, stateId = null, stateName = '') {
-        const modal = document.getElementById('addTransportStateModal');
-        const modalTitle = document.getElementById('addTransportStateModalTitle');
-        const transportStateNameInput = document.getElementById('transportStateName');
-        const addTransportStateForm = document.getElementById('addTransportStateForm');
+    function openAddReceiptStatusModal(isEdit = false, statusId = null, statusName = '') {
+        const modal = document.getElementById('addReceiptStatusModal');
+        const modalTitle = document.getElementById('addReceiptStatusModalTitle');
+        const receiptStatusNameInput = document.getElementById('receiptStatusName');
+        const addReceiptStatusForm = document.getElementById('addReceiptStatusForm');
 
         modal.style.display = 'flex';
         modal.removeAttribute('inert'); 
@@ -191,43 +191,43 @@
         modalTitle.textContent = isEdit ? 'Editar estado' : 'Adicionar estado';
 
         if (isEdit) {
-            transportStateNameInput.value = stateName;
-            addTransportStateForm.dataset.isEdit = 'true';
-            addTransportStateForm.dataset.stateId = stateId;
+            receiptStatusNameInput.value = statusName;
+            addReceiptStatusForm.dataset.isEdit = 'true';
+            addReceiptStatusForm.dataset.statusId = statusId;
         } else {
-            transportStateNameInput.value = '';
-            addTransportStateForm.dataset.isEdit = 'false';
-            addTransportStateForm.dataset.stateId = '';
+            receiptStatusNameInput.value = '';
+            addReceiptStatusForm.dataset.isEdit = 'false';
+            addReceiptStatusForm.dataset.statusId = '';
         }
     }
 
-    function closeAddTransportStateModal() {
-        const modal = document.getElementById('addTransportStateModal');
+    function closeAddReceiptStatusModal() {
+        const modal = document.getElementById('addReceiptStatusModal');
         modal.style.display = 'none';
         modal.setAttribute('inert', ''); 
 
-        const form = document.getElementById('addTransportStateForm');
+        const form = document.getElementById('addReceiptStatusForm');
         form.reset(); 
         delete form.dataset.isEdit;
-        delete form.dataset.stateId;
+        delete form.dataset.statusId;
     }
 
-    document.getElementById('closeAddTransportStateModal').addEventListener('click', closeAddTransportStateModal);
-    document.getElementById('cancelAddTransportState').addEventListener('click', closeAddTransportStateModal);
+    document.getElementById('closeAddReceiptStatusModal').addEventListener('click', closeAddReceiptStatusModal);
+    document.getElementById('cancelAddReceiptStatus').addEventListener('click', closeAddReceiptStatusModal);
 
-    document.getElementById('addTransportStateForm').addEventListener('submit', function (e) {
+    document.getElementById('addReceiptStatusForm').addEventListener('submit', function (e) {
         e.preventDefault();
 
         const isEdit = this.dataset.isEdit === 'true';
-        const stateId = this.dataset.stateId || null;
-        const stateName = document.getElementById('transportStateName').value;
+        const statusId = this.dataset.statusId || null;
+        const statusName = document.getElementById('receiptStatusName').value;
 
-        if (!stateName) {
+        if (!statusName) {
             alert('O nome do estado não pode ser vazio.');
             return;
         }
 
-        const url = isEdit ? `/edit_transport_state/${stateId}/` : "{% url 'add_transport_state' %}";
+        const url = isEdit ? `/edit_receipt_status/${statusId}/` : "{% url 'add_receipt_status' %}";
 
         fetch(url, {
             method: 'POST',
@@ -235,7 +235,7 @@
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}',
             },
-            body: JSON.stringify({ nome: stateName })
+            body: JSON.stringify({ nome: statusName })
         })
             .then(response => response.json())
             .then(data => {
@@ -252,7 +252,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-        const tableBody = document.getElementById('transportStateBody');
+        const tableBody = document.getElementById('receiptStatusBody');
         const paginationContainer = document.getElementById('pagination');
         const rowsPerPage = 5;
         let currentPage = 1;
@@ -295,10 +295,10 @@
         document.addEventListener('click', function (e) {
             if (e.target.closest('.delete-btn')) {
                 const deleteButton = e.target.closest('.delete-btn');
-                const stateId = deleteButton.getAttribute('data-id');
+                const statusId = deleteButton.getAttribute('data-id');
 
                 if (confirm('Tem certeza de que deseja eliminar este estado?')) {
-                    fetch(`/delete_transport_state/${stateId}/`, {
+                    fetch(`/delete_receipt_status/${statusId}/`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': '{{ csrf_token }}',
@@ -307,7 +307,7 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                removeRow(stateId);
+                                removeRow(statusId);
                             } else {
                                 alert(data.message || 'Erro ao eliminar o estado.');
                             }
