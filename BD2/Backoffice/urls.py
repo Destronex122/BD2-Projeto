@@ -44,4 +44,8 @@ urlpatterns = [
     path('get_campo_data/<int:campoid>/', views.get_campo_data, name='get_campo_data'),
     path('update_campo/<int:campoid>/', views.update_campo, name='update_campo'),
     path('delete_campo/<int:campoid>/', views.delete_campo, name='delete_campo'),
+    path('payment_methods/', views.payment_methods, name='payment_methods'),
+    path('addpaymentmethod/', views.add_payment_method, name='addpaymentmethod'),
+    path('deletepaymentmethod/<int:method_id>/', views.delete_payment_method, name='deletepaymentmethod'),
+    path('editpaymentmethod/<int:method_id>/', views.edit_payment_method, name='editpaymentmethod'),
 ]
