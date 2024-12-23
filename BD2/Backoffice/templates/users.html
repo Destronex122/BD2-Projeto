@@ -121,7 +121,11 @@
             
             <form id="addUserForm" onsubmit="addUser(event)">
                 <div class="form-group">
-                    <label for="newUserName">Nome:</label>
+                    <label for="newUserUsername">Username:</label>
+                    <input type="text" id="newUserUsername" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newUserName">Nome Completo:</label>
                     <input type="text" id="newUserName" class="form-control" required>
                 </div>
                 <div class="form-group">
@@ -129,12 +133,32 @@
                     <input type="email" id="newUserEmail" class="form-control" required>
                 </div>
                 <div class="form-group">
+                    <label for="newUserPassword">Senha:</label>
+                    <input type="password" id="newUserPassword" class="form-control" required>
+                </div>
+                <div class="form-group">
                     <label for="newUserPhone">Telefone:</label>
                     <input type="text" id="newUserPhone" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="newUserCity">Cidade:</label>
+                    <label for="newUserCity">Endereço:</label>
                     <input type="text" id="newUserCity" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newUserCampo">Campo:</label>
+                    <select id="newUserCampo" class="form-control" required>
+                        {% for campo in campos %}
+                        <option value="{{ campo.campoid }}">{{ campo.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newUserCargo">Cargo:</label>
+                    <select id="newUserCargo" class="form-control" required>
+                        {% for cargo in cargos %}
+                        <option value="{{ cargo.cargoid }}">{{ cargo.nome }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                     <button type="button" onclick="closeAddUserModal()" class="secondary-button">Cancelar</button>
@@ -145,6 +169,8 @@
     </div>
 
     <script>
+        const csrfToken = '{{ csrf_token }}';
+        
         // Adiciona o evento de clique na tabela
         document.getElementById('userTable').addEventListener('click', function(event) {
             const targetRow = event.target.closest('tr'); // Captura a linha clicada
@@ -169,31 +195,36 @@
     
         // Função para adicionar um novo utilizador à tabela
         function addUser(event) {
-            event.preventDefault();
-    
-            // Captura os valores dos campos do formulário
-            const newUserName = document.getElementById('newUserName').value;
-            const newUserEmail = document.getElementById('newUserEmail').value;
-            const newUserPhone = document.getElementById('newUserPhone').value;
-            const newUserCity = document.getElementById('newUserCity').value;
-    
-            // Cria uma nova linha na tabela com os valores capturados
-            const newRow = `
-                <tr>
-                    <td>${newUserName}</td>
-                    <td>${newUserEmail}</td>
-                    <td>${newUserPhone}</td>
-                    <td>${newUserCity}</td>
-                </tr>
-            `;
-    
-            // Adiciona a nova linha ao corpo da tabela
-            document.querySelector('#userTable tbody').insertAdjacentHTML('beforeend', newRow);
-    
-            // Fecha o modal e reseta o formulário
-            closeAddUserModal();
-            document.getElementById('addUserForm').reset();
-        }
+           event.preventDefault();
+
+           const formData = new FormData();
+           formData.append('username', document.getElementById('newUserName').value);
+           formData.append('nome', document.getElementById('newUserName').value);
+           formData.append('email', document.getElementById('newUserEmail').value);
+           formData.append('password', document.getElementById('newUserPassword').value);
+           formData.append('telefone', document.getElementById('newUserPhone').value);
+           formData.append('endereco', document.getElementById('newUserCity').value);
+           formData.append('campoid', document.getElementById('newUserCampo').value);
+           formData.append('cargoid', document.getElementById('newUserCargo').value);
+
+           fetch('/users/', {
+               method: 'POST',
+               headers: {
+                   'X-CSRFToken': csrfToken  // Inclua o token CSRF
+               },
+               body: formData
+           })
+           .then(response => response.json())
+           .then(data => {
+               if (data.message) {
+                   alert(data.message);
+                   location.reload(); // Atualiza a página para refletir as mudanças
+               } else if (data.error) {
+                   alert('Erro: ' + data.error);
+               }
+           })
+           .catch(error => console.error('Error:', error));
+}
     
         // Filtragem na tabela de utilizadores
         document.getElementById('applyFilters').addEventListener('click', function() {

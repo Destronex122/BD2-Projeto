@@ -20,6 +20,7 @@ from django.utils import timezone
 from django.db.models.functions import Coalesce
 from django.db.models import Value, BooleanField, Case, When, F
 import logging
+from django.contrib.auth.hashers import make_password
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
@@ -100,9 +101,40 @@ def users(request):
     #Cargos para a dropdown
     cargos = Cargo.objects.all()
 
+    #Campos para a dropdown
+   # campos = Campos.objects.all()
+
+    if request.method == "POST":
+        try:
+            # Capturar dados do formulário
+            username = request.POST['username']
+            nome = request.POST['nome']
+            email = request.POST['email']
+            password = request.POST['password']  # A senha será tratada pelo trigger
+            telefone = request.POST['telefone']
+            endereco = request.POST['endereco']
+            #campoid = request.POST.get('campoid')
+            cargoid = request.POST.get('cargoid')
+
+            # Encripta a senha
+            encrypted_password = make_password(password)
+
+            # Chamar o procedimento armazenado
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL sp_inserir_user(%s, %s, %s, %s, %s, %s, %s, %s);",
+                    [username, nome, email, encrypted_password, telefone, endereco, campoid, cargoid]
+                )
+
+            return JsonResponse({'message': 'Usuário adicionado com sucesso!'}, status=201)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
     return render(request, 'users.html', {
         'users': users,
-        'cargos':cargos,
+        'cargos': cargos,
+        'campos': campos,
         'filters': {
             'filterName': filter_name,
             'filterEmail': filter_email,
