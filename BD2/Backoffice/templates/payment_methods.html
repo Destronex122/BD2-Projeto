@@ -256,109 +256,109 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-    const tableBody = document.getElementById('paymentMethodBody');
-    const paginationContainer = document.getElementById('pagination');
-    const rowsPerPage = 5;
-    let currentPage = 1;
-    let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+        const tableBody = document.getElementById('paymentMethodBody');
+        const paginationContainer = document.getElementById('pagination');
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
 
-    /**
-     * Atualiza a tabela para exibir apenas as linhas da página atual
-     */
-    function updateTable() {
-        const startIndex = (currentPage - 1) * rowsPerPage;
-        const endIndex = startIndex + rowsPerPage;
+        /**
+         * Atualiza a tabela para exibir apenas as linhas da página atual
+         */
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
 
-        // Oculta todas as linhas
-        filteredRows.forEach(row => row.style.display = 'none');
+            // Oculta todas as linhas
+            filteredRows.forEach(row => row.style.display = 'none');
 
-        // Exibe as linhas da página atual
-        filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+            // Exibe as linhas da página atual
+            filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
 
-        renderPaginationButtons();
-    }
-
-    /**
-     * Renderiza os botões de paginação com base no número total de páginas
-     */
-    function renderPaginationButtons() {
-        paginationContainer.innerHTML = '';
-        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-
-        for (let i = 1; i <= totalPages; i++) {
-            const button = document.createElement('button');
-            button.textContent = i;
-            button.classList.add('pagination-button');
-            if (i === currentPage) button.classList.add('active');
-            button.addEventListener('click', () => {
-                currentPage = i;
-                updateTable();
-            });
-            paginationContainer.appendChild(button);
+            renderPaginationButtons();
         }
-    }
 
-    /**
-     * Insere uma nova linha ordenada alfabeticamente na tabela
-     * @param {number} id - ID do método de pagamento
-     * @param {string} nome - Nome do método de pagamento
-     */
-    function insertRowInOrder(id, nome) {
-        const newRow = document.createElement('tr');
-        newRow.setAttribute('data-id', id);
-        newRow.setAttribute('data-name', nome);
-        newRow.innerHTML = `
-            <td>${nome}</td>
-            <td>
-                <button onclick="openAddPaymentMethodModal(true, '${id}', '${nome}')" type="button">
-                    <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
-                </button>
-                <button type="button" class="delete-btn" data-id="${id}">
-                    <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
-                </button>
-            </td>
-        `;
+        /**
+         * Renderiza os botões de paginação com base no número total de páginas
+         */
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
 
-        let inserted = false;
-        const rows = Array.from(tableBody.querySelectorAll('tr'));
-        for (let row of rows) {
-            if (nome.toLowerCase() < row.dataset.name.toLowerCase()) {
-                tableBody.insertBefore(newRow, row);
-                inserted = true;
-                break;
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.add('pagination-button');
+                if (i === currentPage) button.classList.add('active');
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    updateTable();
+                });
+                paginationContainer.appendChild(button);
             }
         }
-        if (!inserted) tableBody.appendChild(newRow);
 
-        filteredRows = Array.from(tableBody.querySelectorAll('tr'));
-        updateTable();
-    }
-
-    /**
-     * Remove uma linha da tabela e atualiza a exibição
-     * @param {number} id - ID da linha a ser removida
-     */
-    function removeRow(id) {
-        const row = document.querySelector(`tr[data-id="${id}"]`);
-        if (row) row.remove();
-
-        filteredRows = Array.from(tableBody.querySelectorAll('tr'));
-        checkEmptyTable();
-        updateTable();
-    }
-
-    /**
-     * Verifica se a tabela está vazia e exibe uma mensagem caso esteja
-     */
-    function checkEmptyTable() {
-        if (tableBody.querySelectorAll('tr').length === 0) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="2" class="no-data-message">Ainda não há métodos de pagamento adicionados.</td>
-                </tr>
+        /**
+         * Insere uma nova linha ordenada alfabeticamente na tabela
+         * @param {number} id - ID do método de pagamento
+         * @param {string} nome - Nome do método de pagamento
+         */
+        function insertRowInOrder(id, nome) {
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-id', id);
+            newRow.setAttribute('data-name', nome);
+            newRow.innerHTML = `
+                <td>${nome}</td>
+                <td>
+                    <button onclick="openAddPaymentMethodModal(true, '${id}', '${nome}')" type="button">
+                        <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                    </button>
+                    <button type="button" class="delete-btn" data-id="${id}">
+                        <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                    </button>
+                </td>
             `;
+
+            let inserted = false;
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            for (let row of rows) {
+                if (nome.toLowerCase() < row.dataset.name.toLowerCase()) {
+                    tableBody.insertBefore(newRow, row);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted) tableBody.appendChild(newRow);
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            updateTable();
         }
-    }
+
+        /**
+         * Remove uma linha da tabela e atualiza a exibição
+         * @param {number} id - ID da linha a ser removida
+         */
+        function removeRow(id) {
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            if (row) row.remove();
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            checkEmptyTable();
+            updateTable();
+        }
+
+        /**
+         * Verifica se a tabela está vazia e exibe uma mensagem caso esteja
+         */
+        function checkEmptyTable() {
+            if (tableBody.querySelectorAll('tr').length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="2" class="no-data-message">Ainda não há métodos de pagamento adicionados.</td>
+                    </tr>
+                `;
+            }
+        }
 
     /**
      * Lida com a exclusão de um método de pagamento
