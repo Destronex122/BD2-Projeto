@@ -30,11 +30,6 @@
                     <li class="nav-item active">
                         <a class="nav-link" href="/backoffice/home">Início</a>
                     </li>
-                    <!-- {% if is_admin %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="/backoffice/fields">Campo</a>
-                        </li>
-                    {% endif %} -->
                     <li class="nav-item">
                         <a class="nav-link" href="/backoffice/vineyards">Vinhas</a>
                     </li>
@@ -65,7 +60,7 @@
                             <a class="dropdown-item" href="{% url 'grapevariety' %}">Gerir castas</a>
                             <a class="dropdown-item" href="{% url 'payment_methods' %}">Gerir métodos de pagamento</a>
                             <a class="dropdown-item" href="{% url 'transport_states' %}">Gerir estado do transporte</a>
-                            <a class="dropdown-item" href="{% url 'receipt_status' %}">Gerir estado das receitas</a>
+                            <a class="dropdown-item" href="{% url 'receipt_status' %}">Gerir estado dos recibos</a>
                             <a class="dropdown-item" href="{% url 'approved_status' %}">Gerir estado das aprovações</a>
                             {% endif %}
                             <div class="dropdown-divider"></div>
