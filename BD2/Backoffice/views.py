@@ -15,7 +15,7 @@ from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
 from django.db.models import Max
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes
 from django.utils import timezone
 from django.db.models.functions import Coalesce
 from django.db.models import Value, BooleanField, Case, When, F
@@ -1346,6 +1346,96 @@ def delete_receipt_status(request, status_id):
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_delete_estadorecibo(%s)", [status_id])
             return JsonResponse({'success': True, 'status_id': status_id})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao excluir o estado: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+
+#ESTADO DA APROVAÇÃO
+@login_required
+def approved_status(request):
+    # Obtém os dados do banco
+    states = Estadosaprovacoes.objects.all().order_by('nome')
+
+    # Filtro (opcional)
+    filter_state = request.GET.get('filter_method', '').strip()
+    if filter_state:
+        states = states.filter(nome__icontains=filter_state)
+
+    # Renderiza o template com os dados
+    return render(request, 'approved_status.html', {
+        'estados': states,  # Certifique-se de que 'estados' é a variável usada no template
+    })
+
+@csrf_exempt
+def add_approved_status(request):
+    if request.method == 'POST':
+        try:
+            # Lê os dados enviados pelo cliente
+            data = json.loads(request.body)
+            nome = data.get('nome', '').strip()
+
+            # Verifica se o nome é válido
+            if not nome:
+                return JsonResponse({'success': False, 'message': 'Nome inválido.'})
+
+            # Verifica se já existe um estado com o mesmo nome (case insensitive)
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM estadosaprovacoes WHERE LOWER(nome) = LOWER(%s)", [nome])
+                if cursor.fetchone()[0] > 0:
+                    return JsonResponse({'success': False, 'message': 'Esse estado já existe.'})
+
+            # Chama a procedure para inserir o estado e retorna o ID
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_insert_estadoaprovacoes(%s, %s)", [nome, None])
+                cursor.execute("SELECT currval('estadosaprovacoes_idaprovacao_seq')")
+                new_id = cursor.fetchone()[0]  # Obtém o ID retornado pelo OUT parameter
+
+            return JsonResponse({'success': True, 'id': new_id, 'nome': nome})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao criar o estado: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+
+@login_required
+def edit_approved_status(request, approvedId):
+    if request.method == 'POST':
+        try:
+            # Obtém os dados enviados pelo cliente
+            data = json.loads(request.body)
+            nome = data.get('nome', '').strip()
+
+            # Valida o nome do estado
+            if not nome:
+                return JsonResponse({'success': False, 'message': 'O nome do estado é obrigatório.'})
+
+            # Atualiza o estado usando a stored procedure
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_update_estadoaprovacoes(%s, %s)", [approvedId, nome])
+
+            return JsonResponse({'success': True, 'id': approvedId, 'nome': nome})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao editar o estado: {str(e)}'})
+
+        except Exception as e:
+            error_message = str(e)
+            if "duplicate key value violates unique constraint" in error_message:
+                return JsonResponse({'success': False, 'message': 'Esse método já existe.'})
+            logger.error(f"Erro ao editar o método: {error_message}")
+            return JsonResponse({'success': False, 'message': f'Erro ao editar o método: {error_message}'})
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+@login_required
+def delete_approved_status(request, approvedId):
+    if request.method == 'POST':
+        try:
+            # Exclui o estado usando a stored procedure
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_delete_estadorecibo(%s)", [approvedId])
+            return JsonResponse({'success': True, 'approvedId': approvedId})
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erro ao excluir o estado: {str(e)}'})
 

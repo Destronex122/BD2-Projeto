@@ -55,4 +55,8 @@ urlpatterns = [
     path('add_receipt_status/', views.add_receipt_status, name='add_receipt_status'), 
     path('edit_receipt_status/<int:status_id>/', views.edit_receipt_status, name='edit_receipt_status'),
     path('delete_receipt_status/<int:status_id>/', views.delete_receipt_status, name='delete_receipt_status'), 
+    path('approved_status/', views.approved_status, name='approved_status'), 
+    path('add_approved_status/', views.add_approved_status, name='add_approved_status'), 
+    path('edit_approved_status/<int:approvedId>/', views.edit_approved_status, name='edit_approved_status'),
+    path('delete_approved_status/<int:approvedId>/', views.delete_approved_status, name='delete_approved_status'), 
 ]
