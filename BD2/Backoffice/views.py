@@ -518,7 +518,7 @@ def contracts(request):
 def save_polygon_view(request):
     try:
         request_body = json.loads(request.body.decode('utf-8'))
-        save_marker(request_body)
+        save_marker_view(request_body)
         return JsonResponse({'message': 'Polígono salvo com sucesso!'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -973,6 +973,8 @@ def load_markers_view(request):
 
 def load_croplands(request):
     status_filter = request.GET.get('status', '')  # Recebe o filtro da query string
+    name_filter = request.GET.get('name', '').strip().lower()
+    city_filter = request.GET.get('cidade', '').strip().lower()
 
     if status_filter == 'active':
         campos = Campos.objects.filter(isactive=True)
@@ -980,6 +982,9 @@ def load_croplands(request):
         campos = Campos.objects.filter(isactive=False)
     else:
         campos = Campos.objects.all()
+
+    if name_filter:
+        campos = campos.filter(nome__icontains=name_filter) | campos.filter(cidade__icontains=city_filter)
 
     campos = campos.values(
         'campoid', 'nome', 'cidade', 'morada', 'pais', 'coordenadas', 'isactive'
