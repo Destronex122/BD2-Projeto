@@ -50,6 +50,9 @@ def login_view(request):
     context = {'form': form}
     return render(request, 'login.html', context)
 
+def settings(request):
+    return render(request, 'settings.html')
+
 @login_required
 def backofficeIndex(request):
     return render(request, 'backofficeIndex.html')
@@ -768,25 +771,26 @@ def delete_request(request, pedidoid):
 def grapevariety(request):
     # Obtém os filtros
     filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
-    status_filter = request.GET.get('status', '')  # Padrão: mostrar ativos
+    status_filter = request.GET.get('status', 'active')  # Padrão: mostrar ativos
 
-    # Anotação para tratar NULL como False
+    # Consulta base com anotação
     grapevarieties = Castas.objects.annotate(
         isactive_cleaned=Coalesce('isactive', Value(False), output_field=BooleanField())
     ).order_by('nome')
 
-    # Lógica de filtro por status
+    # Filtros de status
     if status_filter == 'active':
         grapevarieties = grapevarieties.filter(isactive_cleaned=True)
     elif status_filter == 'inactive':
         grapevarieties = grapevarieties.filter(isactive_cleaned=False)
-    # Status 'all' não aplica filtro
 
-    # Filtro pelo nome da casta
+    # Filtro pelo nome
     if filter_grapevariety:
         grapevarieties = grapevarieties.filter(nome__icontains=filter_grapevariety)
 
-    # Renderização
+    # DEBUG para certificar os dados retornados
+    print("Consulta retornada:", grapevarieties)
+
     return render(request, 'grapevariety.html', {
         'castas': grapevarieties,
         'filters': {
@@ -794,6 +798,7 @@ def grapevariety(request):
             'status': status_filter,
         },
     })
+
 
 @csrf_exempt
 def addvariety(request):

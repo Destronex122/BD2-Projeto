@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<style>
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e9e8e2;
+    }
+    .tabs button {
+        padding: 10px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    .tabs button.active {
+        font-weight: bold;
+        border-bottom: 2px solid #616646;
+    }
+  
+    .buttonTab {
+        background-color: #616646;
+        color: black !important;
+        padding: 10px;
+        border: none;
+        border-radius: 0px !important;
+        cursor: pointer;
+    }
+
+</style>
+
+<div>
+    <div class="tabs" style="margin-top:24px">
+        <button class="tab-button active buttonTab" data-url="{% url 'grapevariety' %}" onclick="loadTabContent(this)">Castas</button>
+        <button class="tab-button buttonTab" data-url="{% url 'payment_methods' %}" onclick="loadTabContent(this)">Métodos de pagamento</button>
+        <button class="tab-button buttonTab" data-url="{% url 'approved_status' %}" onclick="loadTabContent(this)">Estados de aprovação</button>
+        <button class="tab-button buttonTab" data-url="{% url 'receipt_status' %}" onclick="loadTabContent(this)">Estados dos recibos</button>
+        <button class="tab-button buttonTab" data-url="{% url 'transport_states' %}" onclick="loadTabContent(this)">Estados do transporte</button>
+    </div>
+    <div id="tab-content">Carregando...</div>
+</div>
+
+<script>
+    function loadTabContent(button) {
+        // Remove 'active' class from all buttons
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        // Add 'active' class to clicked button
+        button.classList.add('active');
+        // Get URL for the content
+        const url = button.getAttribute('data-url');
+        const contentDiv = document.getElementById('tab-content');
+        contentDiv.innerHTML = 'Carregando...';
+
+        // Fetch the content using AJAX
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error('Erro ao carregar o conteúdo');
+                return response.text();
+            })
+            .then(html => {
+                contentDiv.innerHTML = html;
+            })
+            .catch(error => {
+                contentDiv.innerHTML = `<p>Erro ao carregar o conteúdo: ${error.message}</p>`;
+            });
+    }
+
+    // Load the first tab on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelector('.tab-button.active').click();
+    });
+</script>
+{% endblock %}
