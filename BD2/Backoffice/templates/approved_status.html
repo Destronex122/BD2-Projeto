@@ -85,7 +85,7 @@
                         <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
                     </button>
                     <button 
-                        title="Excluir estado" 
+                        title="Eliminar estado" 
                         type="button" 
                         class="delete-btn" 
                         data-id="{{ estado.idaprovacao }}">
@@ -95,7 +95,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="2" class="no-data-message">Ainda não há estados de recibos adicionados.</td>
+                <td colspan="2" class="no-data-message">Ainda não há estados de aprovações adicionados.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -117,7 +117,7 @@
                     {% csrf_token %}
                     <div class="form-group">
                         <label for="approvedStatusName">Nome do estado</label>
-                        <input type="text" id="aprovedStatusName" name="approvedStatusName" class="form-control" required>
+                        <input type="text" id="approvedStatusName" name="approvedStatusName" class="form-control" required>
                     </div>
                     <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                         <button type="button" class="secondary-button" id="cancelAddApprovedStatus">Cancelar</button>

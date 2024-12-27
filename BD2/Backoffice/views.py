@@ -1434,9 +1434,9 @@ def delete_approved_status(request, approvedId):
         try:
             # Exclui o estado usando a stored procedure
             with connection.cursor() as cursor:
-                cursor.execute("CALL sp_delete_estadorecibo(%s)", [approvedId])
+                cursor.execute("CALL sp_delete_estadoaprovacoes(%s)", [approvedId])
             return JsonResponse({'success': True, 'approvedId': approvedId})
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erro ao excluir o estado: {str(e)}'})
+            return JsonResponse({'success': False, 'message': f'Erro ao eliminar o estado: {str(e)}'})
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
