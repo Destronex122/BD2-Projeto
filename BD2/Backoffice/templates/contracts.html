@@ -126,6 +126,7 @@
                 <th>Data de fim</th>
                 <th>Quantidade estimada</th>
                 <th>Preço estimado</th>
+                <th>Ações</th>
             </tr>
         </thead>
         <tbody>
@@ -137,6 +138,14 @@
                 <td>{{ contrato.datafim|date:'Y-m-d'}}</td>
                 <td>{{ contrato.qtdeestimada }}</td>
                 <td>{{ contrato.precoestimado }}</td>
+                <td>
+                    <form method="post" class="delete-form" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="deleteContract" value="{{ contrato.contratoid }}">
+                        
+                        <button type="submit" class="delete-btn"><img src="{% static 'delete.png' %}" title="Eliminar campo" style="height: 25px; width: auto;"></button>
+                    </form>
+                </td>
             </tr>
             {% empty %}
             <tr>

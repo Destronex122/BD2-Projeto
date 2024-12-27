@@ -429,67 +429,12 @@ def delete_note_harvest(request, notaid):
 
 @login_required
 def contracts(request):
-
-
-
-    #Filtros
+    # Filtros
     filter_number = request.GET.get('filterNumber', '').strip()
     filter_date = request.GET.get('filterDate', None)
     filter_client_nif = request.GET.get('filterClientNif', '').strip()
 
-    contratos = Contratos.objects.all()
-
-    if filter_number:
-        contratos = contratos.filter(contratoid__icontains=filter_number)
-    if filter_date:
-        contratos = contratos.filter(datainicio=filter_date)
-    if filter_client_nif:
-        contratos = contratos.filter(clienteid__nif__icontains=filter_client_nif)
-
-    if request.method == 'POST':
-        try:
-            # Captura os valores enviados pelo formulário
-            cliente_id = int(request.POST.get('clienteId'))
-            pedido_id = int(request.POST.get('pedidoId')) if request.POST.get('pedidoId') else None
-            data_inicio = request.POST.get('dataInicio')
-            data_fim = request.POST.get('dataFim')
-            quantidade_estimada = float(request.POST.get('quantidadeEstimada'))
-            preco_estimado = float(request.POST.get('precoEstimado'))
-            quantidade_final = float(request.POST.get('quantidadeFinal'))  # Novo campo
-            nome = request.POST.get('nomeContrato')
-
-            # Verificar se `quantidade_final` atende à restrição
-            if quantidade_final < 0 or quantidade_final < quantidade_estimada:
-                raise ValueError("A quantidade final deve ser maior ou igual à quantidade estimada.")
-
-            # Valores padrão para campos opcionais
-            preco_final = 0
-            is_active = True
-
-            # Chamar o procedimento armazenado
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    CALL sp_criarcontrato(
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                    )
-                """, [
-                    cliente_id, pedido_id, data_inicio, data_fim,
-                    quantidade_estimada, preco_estimado,
-                    quantidade_final, preco_final, nome, is_active
-                ])
-            return JsonResponse({'status': 'success', 'message': 'Contrato criado com sucesso!'})
-
-        except ValueError as ve:
-            return JsonResponse({'status': 'error', 'message': f'Erro nos valores fornecidos: {ve}'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': f'Ocorreu um erro: {e}'})
-        
-    # Requisição GET para listar contratos
-    filter_number = request.GET.get('filterNumber', '').strip()
-    filter_date = request.GET.get('filterDate', None)
-    filter_client_nif = request.GET.get('filterClientNif', '').strip()
-
-    contratos = Contratos.objects.all()
+    contratos = Contratos.objects.filter(isactive=True)  # Apenas contratos ativos
     clientes = Clientes.objects.filter(isactive=True)
     pedidos = PedidosItem.objects.filter(isactive=True)
 
@@ -500,6 +445,57 @@ def contracts(request):
     if filter_client_nif:
         contratos = contratos.filter(clienteid__nif__icontains=filter_client_nif)
 
+    # Verificar se é uma requisição POST para criar ou excluir contrato
+    if request.method == 'POST':
+        if 'deleteContract' in request.POST:
+            contratoid = int(request.POST.get('deleteContract'))
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("CALL sp_delete_contrato(%s)", [contratoid])
+                return JsonResponse({'status': 'success', 'message': 'Contrato excluído com sucesso!'})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f'Ocorreu um erro: {e}'})
+
+        else:
+            # Criar um novo contrato
+            try:
+                # Captura os valores enviados pelo formulário
+                cliente_id = int(request.POST.get('clienteId'))
+                pedido_id = int(request.POST.get('pedidoId')) if request.POST.get('pedidoId') else None
+                data_inicio = request.POST.get('dataInicio')
+                data_fim = request.POST.get('dataFim')
+                quantidade_estimada = float(request.POST.get('quantidadeEstimada'))
+                preco_estimado = float(request.POST.get('precoEstimado'))
+                quantidade_final = float(request.POST.get('quantidadeFinal'))
+                nome = request.POST.get('nomeContrato')
+
+                # Verificar restrições
+                if quantidade_final < 0 or quantidade_final < quantidade_estimada:
+                    raise ValueError("A quantidade final deve ser maior ou igual à quantidade estimada.")
+
+                # Valores padrão para campos opcionais
+                preco_final = 0
+                is_active = True
+
+                # Chamar o procedimento armazenado
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        CALL sp_criarcontrato(
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        )
+                    """, [
+                        cliente_id, pedido_id, data_inicio, data_fim,
+                        quantidade_estimada, preco_estimado,
+                        quantidade_final, preco_final, nome, is_active
+                    ])
+                return JsonResponse({'status': 'success', 'message': 'Contrato criado com sucesso!'})
+
+            except ValueError as ve:
+                return JsonResponse({'status': 'error', 'message': f'Erro nos valores fornecidos: {ve}'})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f'Ocorreu um erro: {e}'})
+
+    # Renderizar a página de contratos
     return render(request, 'contracts.html', {
         'contrato': contratos,
         'clientes': clientes,
