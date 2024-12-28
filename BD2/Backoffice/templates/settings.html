@@ -45,6 +45,209 @@
 </div>
 
 <script>
+    function initializeGrapeVarietyTable() {
+        const searchBar = document.getElementById('searchBar');
+        const statusFilter = document.getElementById('statusFilter');
+        const applyFilterButton = document.getElementById('apply-filter');
+        const clearFilterButton = document.getElementById('clear-filter');
+        const tableBody = document.getElementById('grapeVarietyBody');
+        const paginationContainer = document.getElementById('pagination');
+
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = [];
+
+        // Aplica os filtros e atualiza a tabela
+        function applyFilter() {
+            const query = searchBar.value.toLowerCase().trim();
+            const status = statusFilter.value;
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
+                const name = row.dataset.name.toLowerCase();
+                const isActive = row.dataset.isactive === 'true';
+
+                const statusMatch =
+                    (status === 'active' && isActive) ||
+                    (status === 'inactive' && !isActive) ||
+                    (status === 'all');
+
+                return name.includes(query) && statusMatch;
+            });
+
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Atualiza a tabela para exibir as linhas filtradas
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            // Remove mensagem de "nenhum registro encontrado", se existir
+            const noResultsRow = document.getElementById('no-results-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+
+            // Oculta todas as linhas antes de processar
+            Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+
+            const visibleRows = filteredRows.slice(startIndex, endIndex);
+
+            if (visibleRows.length > 0) {
+                // Exibe apenas as linhas visíveis
+                visibleRows.forEach(row => (row.style.display = ''));
+            } else {
+                // Adiciona mensagem de "nenhum registro encontrado" se não houver resultados
+                const emptyRow = document.createElement('tr');
+                emptyRow.setAttribute('id', 'no-results-row');
+                emptyRow.innerHTML = `
+                    <td colspan="2" class="no-data-message">Nenhum registro encontrado com os filtros aplicados.</td>
+                `;
+                tableBody.appendChild(emptyRow);
+            }
+
+            renderPaginationButtons();
+        }
+
+        // Renderiza os botões de paginação
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) button.classList.add('active');
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+        }
+
+        // Limpa os filtros
+        function clearFilter() {
+            searchBar.value = '';
+            statusFilter.value = 'all';
+            applyFilter();
+        }
+
+        // Eventos de filtro
+        applyFilterButton.addEventListener('click', applyFilter);
+        clearFilterButton.addEventListener('click', clearFilter);
+
+        // Inicializa a tabela
+        filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+        updateTable();
+    }
+
+
+    function initializePaymentMethodPage() {
+        const tableBody = document.getElementById('paymentMethodBody');
+        const paginationContainer = document.getElementById('pagination');
+        const searchBar = document.getElementById('searchBar');
+        const applyFilterButton = document.getElementById('apply-filter');
+        const clearFilterButton = document.getElementById('clear-filter');
+
+        if (!tableBody) {
+            console.error('Tabela de métodos de pagamento não encontrada.');
+            return;
+        }
+
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+
+        // Aplica os filtros
+        function applyFilter() {
+            const query = searchBar.value.toLowerCase().trim();
+
+            // Filtra as linhas da tabela com base na busca
+            filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
+                const nameCell = row.querySelector('td:first-child'); // Certifique-se que está acessando a célula certa
+                if (!nameCell) return false; // Ignorar linhas inválidas
+
+                const name = nameCell.textContent.toLowerCase().trim();
+                return name.includes(query); // Verifica se o nome contém o termo de busca
+            });
+
+            currentPage = 1; // Reseta para a primeira página
+            updateTable(); // Atualiza a tabela com base no filtro
+        }
+
+        // Atualiza a tabela com paginação
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            // Remove mensagem de "Nenhum resultado" existente
+            const noResultsRow = document.getElementById('no-results-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+
+            // Oculta todas as linhas antes de aplicar o filtro
+            Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+
+            const visibleRows = filteredRows.slice(startIndex, endIndex);
+
+            if (visibleRows.length > 0) {
+                // Mostra apenas as linhas visíveis
+                visibleRows.forEach(row => (row.style.display = ''));
+            } else {
+                // Adiciona mensagem de "Nenhum método corresponde ao filtro aplicado"
+                const emptyRow = document.createElement('tr');
+                emptyRow.setAttribute('id', 'no-results-row');
+                emptyRow.innerHTML = `
+                    <td colspan="2" class="no-data-message">Nenhum método corresponde ao filtro aplicado.</td>
+                `;
+                tableBody.appendChild(emptyRow);
+            }
+
+            renderPaginationButtons();
+        }
+
+        // Renderiza os botões de paginação
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) button.classList.add('active');
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+        }
+
+        // Limpa os filtros
+        function clearFilter() {
+            searchBar.value = '';
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Eventos de filtro
+        applyFilterButton.addEventListener('click', applyFilter);
+        clearFilterButton.addEventListener('click', clearFilter);
+
+        // Inicializa a tabela ao carregar a página
+        updateTable();
+    }
+
     function loadTabContent(button) {
         // Remove 'active' class from all buttons
         document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -63,6 +266,16 @@
             })
             .then(html => {
                 contentDiv.innerHTML = html;
+                
+                // Determine which initialization function to call
+                if (url.includes('grapevariety') && typeof initializeGrapeVarietyTable === 'function') {
+                    initializeGrapeVarietyTable();
+                }
+                if (url.includes('payment_methods') && typeof initializePaymentMethodPage === 'function') {
+                    initializePaymentMethodPage();
+                }
+                
+                
             })
             .catch(error => {
                 contentDiv.innerHTML = `<p>Erro ao carregar o conteúdo: ${error.message}</p>`;
