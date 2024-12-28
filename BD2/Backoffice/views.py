@@ -597,7 +597,7 @@ def requestdetail(request, pedidoid):
         'clienteid': pedido.clienteid.clienteid if pedido.clienteid else None,
         'cliente_nome': pedido.clienteid if pedido.clienteid else "Cliente não especificado",
         'aprovadorid': pedido.aprovadorid.userid if pedido.aprovadorid else None,
-        'aprovador_nome': pedido.aprovadorid if pedido.aprovadorid else "Aprovador não especificado",
+        'aprovador_nome': pedido.aprovadorid.nome if pedido.aprovadorid else "Aprovador não especificado",
         'datainicio': pedido.datainicio,
         'datafim': pedido.datafim,
         'precoestimado': pedido.precoestimado,
