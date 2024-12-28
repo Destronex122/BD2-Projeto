@@ -528,7 +528,56 @@ def load_vineyards_view(request):
 @login_required
 def requestdetail(request, pedidoid):
     pedido = get_object_or_404(Pedidos, pedidoid=pedidoid)
-    # Recupera notas associadas ao pedido
+    
+    # Atualizar o estado do pedido_item
+    if request.method == "POST" and "updateEstado" in request.POST:
+        idpedido_item = int(request.POST.get("idpedido_item"))
+        novo_estado = request.POST.get("novo_estado")  # Aceite ou Rejeitado
+        try:
+            with connection.cursor() as cursor:
+                # Atualiza o estado do pedido_item
+                cursor.execute("""
+                    UPDATE pedidos_item
+                    SET estadoaprovacaoid = (
+                        SELECT idaprovacao FROM estadosaprovacoes WHERE nome = %s
+                    )
+                    WHERE idpedido_item = %s
+                """, [novo_estado, idpedido_item])
+            return JsonResponse({'status': 'success', 'message': f'Estado atualizado para "{novo_estado}" com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Ocorreu um erro: {e}'})
+    
+    # Recupera os itens do pedido
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT 
+                pi.idpedido_item, 
+                pi.idpedido, 
+                c.nome AS casta_nome, 
+                pi.quantidade, 
+                e.idaprovacao AS estado_id, 
+                e.nome AS estado_nome
+            FROM pedidos_item pi
+            LEFT JOIN castas c ON pi.castaid = c.castaid
+            LEFT JOIN estadosaprovacoes e ON pi.estadoaprovacaoid = e.idaprovacao
+            WHERE pi.idpedido = %s
+            ORDER BY pi.idpedido_item
+        """, [pedidoid])
+        pedido_items = cursor.fetchall()
+    
+    # Mapeia os dados para uma lista de dicionários
+    pedido_items_list = [
+        {
+            "idpedido_item": item[0],
+            "idpedido": item[1],
+            "casta_nome": item[2],
+            "quantidade": item[3],
+            "estado_id": item[4],
+            "estado_nome": item[5],
+        }
+        for item in pedido_items
+    ]
+    
     # Consulta as notas relacionadas ao pedido
     with connection.cursor() as cursor:
         cursor.execute(
@@ -553,7 +602,13 @@ def requestdetail(request, pedidoid):
         'datafim': pedido.datafim,
         'precoestimado': pedido.precoestimado,
     }
-    return render(request, 'requestdetail.html', {'pedido': pedido_context,'notas': notas_list})
+    
+    return render(request, 'requestdetail.html', {
+        'pedido': pedido_context,
+        'notas': notas_list,
+        'pedido_items': pedido_items_list,
+    })
+
 
 # @login_required
 @login_required

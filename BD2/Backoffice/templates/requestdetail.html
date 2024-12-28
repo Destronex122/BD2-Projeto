@@ -6,6 +6,32 @@
 
 {% load static %}
 <style>
+        .accept-btn {
+        background-color: #616646;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .accept-btn:hover {
+        background-color: #616646;
+    }
+
+    .reject-btn {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .reject-btn:hover {
+        background-color: #e53935;
+    }
+
     a {
         color: #616646;
     }
@@ -149,6 +175,52 @@
                 </div>            
             </div>
         </div>
+        </div>
+        <div class="editable-area">
+            <h2>Itens do Pedido</h2>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID Item</th>
+                        <th>Casta</th>
+                        <th>Quantidade</th>
+                        <th>Estado</th>
+                        <th>Ações</th> <!-- Nova coluna -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pedido_items %}
+                    <tr>
+                        <td>{{ item.idpedido_item }}</td>
+                        <td>{{ item.casta_nome }}</td>
+                        <td>{{ item.quantidade }}</td>
+                        <td>{{ item.estado_nome }}</td>
+                        <td>
+                            {% if item.estado_id == 6 %} <!-- Mostrar botões apenas se estado for "Pendente" -->
+                                <form method="post" class="estado-form" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="idpedido_item" value="{{ item.idpedido_item }}">
+                                    <input type="hidden" name="updateEstado" value="Aceite">
+                                    <button type="submit" class="accept-btn">Aceitar</button>
+                                </form>
+                                <form method="post" class="estado-form" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="idpedido_item" value="{{ item.idpedido_item }}">
+                                    <input type="hidden" name="updateEstado" value="Rejeitado">
+                                    <button type="submit" class="reject-btn">Rejeitar</button>
+                                </form>
+                            {% else %}
+                                <span>Sem ações disponíveis</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">Nenhum item encontrado para este pedido.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -350,6 +422,37 @@
 
     // Chama a função de inicialização do carrossel
     initCarousel();
+
+    document.querySelectorAll('.estado-form').forEach(form => {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault(); // Impede o envio padrão do formulário
+
+            const formData = new FormData(this);
+            const idpedido_item = formData.get('idpedido_item');
+            const novo_estado = formData.get('updateEstado');
+
+            if (confirm(`Tem certeza de que deseja alterar o estado para "${novo_estado}"?`)) {
+                fetch('.', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                        location.reload(); // Recarrega a página
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Erro:', error));
+            }
+        });
+    });
+
 </script>
 
 {% endblock %}
