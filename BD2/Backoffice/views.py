@@ -1092,7 +1092,7 @@ def update_campo(request, campoid):
         # Validar dados obrigatórios
         if not nome or not morada or not cidade or not pais or not coordenadas:
             return JsonResponse({'status': 'error', 'message': 'Faltando dados obrigatórios.'}, status=400)
-
+        
         try:
             coordenadas_json = json.dumps(coordenadas)
         except (ValueError, TypeError):

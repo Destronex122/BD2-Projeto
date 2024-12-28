@@ -151,686 +151,6 @@
     </div>
 
     <script>
-        // document.addEventListener('DOMContentLoaded', function () {
-        //     const searchBar = document.getElementById("search-bar");
-        //     const statusFilter = document.getElementById("statusFilter");
-        //     const applyFilterButton = document.getElementById("apply-filter");
-        //     const clearFilterButton = document.getElementById("clear-filter");
-        //     const tableBody = document.getElementById("table-body");
-        //     const paginationContainer = document.getElementById("pagination");
-        //     const addFieldModal = document.getElementById("addFieldModal");
-        //     const addFieldForm = document.getElementById("addFieldForm");
-        //     const rowsPerPage = 5;
-        //     let currentPage = 1;
-        //     let filteredRows = [];
-        //     let fieldsData = [];
-            
-            
-        //     // Função para limpar os filtros
-        //     function clearFilter() {
-        //         searchBar.value = '';
-        //         statusFilter.value = 'all';
-        //         applyFilter();
-        //     }
-    
-        //     // Inicializar o mapa
-        //     const map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
-        //     map.removeControl(map.attributionControl);
-    
-        //     const layerControl = L.control.layers({}, {}).addTo(map);
-        //     const osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        //         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        //     }).addTo(map);
-    
-        //     const googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-        //         maxZoom: 20,
-        //         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        //     });
-    
-        //     // Adicionar traduções ao mapa
-        //     L.drawLocal.draw.toolbar.actions.text = 'Cancelar';
-        //     L.drawLocal.draw.handlers.marker.tooltip.start = 'Clique no mapa para adicionar o marcador.';
-        //     L.drawLocal.draw.toolbar.buttons.marker = 'Adicionar um marcador';
-    
-        //     layerControl.addBaseLayer(osmLayer, 'Mapa');
-        //     layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
-    
-        //     const featureGroup = new L.FeatureGroup().addTo(map);
-    
-        //     const drawControl = new L.Control.Draw({
-        //         draw: {
-        //             marker: true,
-        //             polygon: false,
-        //             circle: false,
-        //             rectangle: false,
-        //             circlemarker: false,
-        //             polyline: false
-        //         },
-        //         edit: {
-        //             featureGroup: featureGroup
-        //         }
-        //     }).addTo(map);
-
-        //     map.on('draw:created', function (e) {
-        //         const layer = e.layer;
-        //         const coordinates = layer.getLatLng();
-        //         featureGroup.addLayer(layer);
-
-        //         // Converte as coordenadas para uma string JSON com aspas duplas
-        //         const coordinatesJSON = JSON.stringify({ lat: coordinates.lat, lng: coordinates.lng });
-
-        //         // Atribui ao campo de coordenadas
-        //         const campoCoordinates = document.getElementById('campoCoordinates');
-        //         campoCoordinates.value = coordinatesJSON;
-
-        //         // Abre a sidebar
-        //         openSidebar(false, { coordenadas: coordinates });
-        //     });
-    
-        //     function openSidebar(isEdit = false, campo = null) {
-        //         const sidebar = document.getElementById('campoSidebar');
-        //         const title = document.getElementById('campoSidebarTitle');
-        //         const campoName = document.getElementById('campoName');
-        //         const campoMorada = document.getElementById('campoMorada');
-        //         const campoCidade = document.getElementById('campoCidade');
-        //         const campoPais = document.getElementById('campoPais');
-        //         const campoCoordinates = document.getElementById('campoCoordinates');
-        //         const campoForm = document.getElementById('campoForm');
-                
-        //         sidebar.style.display = 'flex';
-        //         sidebar.removeAttribute('inert'); // Remove inert para permitir interação
-
-        //         if (isEdit && campo) {
-        //             title.textContent = 'Editar campo';
-        //             campoName.value = campo.nome || '';
-        //             campoMorada.value = campo.morada || '';
-        //             campoCidade.value = campo.cidade || '';
-        //             campoPais.value = campo.pais || '';
-        //             campoCoordinates.value = campo.coordenadas
-        //                 ? JSON.stringify(campo.coordenadas).replace(/'/g, '"')
-        //                 : '{"lat":null,"lng":null}';
-        //             campoForm.dataset.isEdit = 'true';
-        //             campoForm.dataset.campoid = campo.campoid;
-        //         } else {
-        //             title.textContent = 'Adicionar campo';
-        //             campoName.value = '';
-        //             campoMorada.value = '';
-        //             campoCidade.value = '';
-        //             campoPais.value = '';
-        //             campoCoordinates.value = campo.coordenadas
-        //                 ? JSON.stringify(campo.coordenadas).replace(/'/g, '"')
-        //                 : '{"lat":null,"lng":null}';
-        //             campoForm.dataset.isEdit = 'false';
-        //             delete campoForm.dataset.campoid;
-        //         }
-
-        //         setTimeout(() => sidebar.classList.add('open'), 10);
-        //     }
-
-        //    // Close the sidebar
-        //     function closeSidebar() {
-        //         const sidebar = document.getElementById('campoSidebar');
-        //         sidebar.style.display = 'none'; // Fecha a sidebar alterando o estilo
-        //         sidebar.classList.remove('open');
-        //     }
-
-        //     // Event listeners para fechar a sidebar
-        //     document.getElementById('closeSidebarButton').addEventListener('click', closeSidebar); // Botão "X"
-        //     document.querySelector('.secondary-button').addEventListener('click', closeSidebar); // Botão "Cancelar"
-
-        //     function addRowToTable(campo) {
-        //         const row = document.createElement('tr');
-        //         row.dataset.id = campo.campoid;
-        //         row.dataset.name = campo.nome.toLowerCase();
-        //         row.dataset.city = campo.cidade.toLowerCase();
-        //         row.dataset.isactive = String(campo.isactive);
-    
-        //         row.innerHTML = `
-        //             <td>${campo.nome}</td>
-        //             <td>${campo.cidade}</td>
-        //             <td>
-        //                 <button class="edit-btn" data-id="${campo.campoid}">
-        //                     <img src="{% static 'edit.png' %}" alt="Edit" style="height: 25px; width: auto;">
-        //                 </button>
-        //                 <button class="delete-btn" data-id="${campo.campoid}" ${campo.isactive ? '' : 'disabled'}>
-        //                     <img src="{% static 'delete.png' %}" alt="Delete" style="height: 25px; width: auto;">
-        //                 </button>
-        //             </td>
-        //         `;
-        //         tableBody.appendChild(row); // Adicionar à tabela
-        //         filteredRows = Array.from(tableBody.querySelectorAll('tr')); // Atualizar os dados da tabela e aplicar filtros
-        //     	applyFilter();
-        //     }
-    
-        //     function updateTable() {
-        //         const startIndex = (currentPage - 1) * rowsPerPage;
-        //         const endIndex = startIndex + rowsPerPage;
-    
-        //         Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
-        //         filteredRows.slice(startIndex, endIndex).forEach(row => (row.style.display = ''));
-    
-        //         renderPaginationButtons();
-        //     }
-
-            
-    
-        //     function renderPaginationButtons() {
-        //         paginationContainer.innerHTML = '';
-        //         const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-    
-        //         for (let i = 1; i <= totalPages; i++) {
-        //             const button = document.createElement('button');
-        //             button.textContent = i;
-        //             button.classList.add('pagination-button');
-        //             if (i === currentPage) button.classList.add('active');
-        //             button.addEventListener('click', () => {
-        //                 currentPage = i;
-        //                 updateTable();
-        //             });
-        //             paginationContainer.appendChild(button);
-        //         }
-        //     }
-    
-        //     // Função para inativar um campo
-        //     document.addEventListener('click', function (e) {
-        //         const deleteButton = e.target.closest('.delete-btn');
-        //         if (deleteButton) {
-        //             const campoid = deleteButton.dataset.id;
-        //             if (confirm('Tem certeza de que deseja inativar este campo?')) {
-        //                 fetch(`/delete_campo/${campoid}/`, {
-        //                     method: 'POST',
-        //                     headers: {
-        //                         'X-CSRFToken': '{{ csrf_token }}'
-        //                     }
-        //                 })
-        //                     .then(response => {
-        //                         if (!response.ok) {
-        //                             throw new Error(`Erro HTTP: ${response.status}`);
-        //                         }
-        //                         return response.json();
-        //                     })
-        //                     .then(data => {
-        //                         if (data.status === 'success') {
-        //                             deleteButton.disabled = true;
-        //                             deleteButton.closest('tr').dataset.isactive = 'false';
-        //                             alert('Campo inativado com sucesso.');
-        //                             updateTable();
-        //                         } else {
-        //                             alert(`Erro: ${data.message}`);
-        //                         }
-        //                     })
-        //                     .catch(error => console.error('Erro ao inativar campo:', error));
-        //             }
-        //             return;
-        //         }
-
-                
-        //         const editButton = e.target.closest('.edit-btn');
-        //         if (editButton) {
-        //             const campoid = editButton.dataset.id;
-        //             fetch(`/get_campo_data/${campoid}`)
-        //                 .then(response => {
-        //                     if (!response.ok) {
-        //                         throw new Error('Erro ao buscar dados do campo');
-        //                     }
-        //                     return response.json();
-        //                 })
-        //                 .then(data => {
-        //                     if (data.status === 'success') {
-        //                         openSidebar(true, data.campo);
-        //                     } else {
-        //                         alert(data.message || 'Erro ao carregar dados do campo.');
-        //                     }
-        //                 })
-        //                 .catch(error => {
-        //                     console.error('Erro ao buscar campo:', error);
-        //                     alert('Ocorreu um erro ao carregar os dados do campo.');
-        //                 });
-        //         }
-        //     });
-    
-        //     fetch('/load_croplands/', { method: 'GET' })
-        //         .then(response => response.json())
-        //         .then(data => {
-        //             if (data.status === 'success') {
-        //                 tableBody.innerHTML = '';
-        //                 featureGroup.clearLayers();
-    
-        //                 data.campos.forEach(item => {
-        //                     // Adicionar marcador apenas se as coordenadas forem válidas
-        //                     if (item.coordenadas && item.coordenadas.lat && item.coordenadas.lng) {
-        //                         const latLng = [item.coordenadas.lat, item.coordenadas.lng];
-        //                         const marker = L.marker(latLng).bindPopup(`<b>${item.nome}</b>`);
-        //                         featureGroup.addLayer(marker);
-        //                     } else {
-        //                         console.warn('Coordenadas inválidas ou ausentes para o campo:', item.nome || 'Desconhecido');
-        //                     }
-        //                     addRowToTable(item);
-        //                 });
-    
-        //                 initPagination();
-        //                 applyFilter();
-        //             } else {
-        //                 console.error('Erro ao carregar campos:', data.message);
-        //             }
-        //         })
-        //         .catch(error => console.error('Erro ao carregar campos:', error));
-    
-        //     function applyFilter() {
-        //         const query = searchBar.value.toLowerCase().trim();
-        //         const status = statusFilter.value;
-    
-        //         filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
-        //             const name = row.dataset.name;
-        //             const city = row.dataset.city;
-        //             const isActive = row.dataset.isactive === 'true';
-    
-        //             const matchesStatus =
-        //                 status === 'all' ||
-        //                 (status === 'active' && isActive) ||
-        //                 (status === 'inactive' && !isActive);
-    
-        //             const matchesQuery = name.includes(query) || city.includes(query);
-    
-        //             return matchesStatus && matchesQuery;
-        //         });
-    
-        //         currentPage = 1;
-        //         updateTable();
-        //     }
-    
-        //     applyFilterButton.addEventListener('click', applyFilter);
-        //     clearFilterButton.addEventListener('click', clearFilter);
-    
-        //     function initPagination() {
-        //         filteredRows = Array.from(tableBody.querySelectorAll('tr'));
-        //         updateTable();
-        //     }
-        // });
-
-        // document.addEventListener('DOMContentLoaded', function () {
-        //     // Inicializar o mapa primeiro, para garantir que está disponível
-        //     const map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
-        //     map.removeControl(map.attributionControl);
-
-        //     const layerControl = L.control.layers({}, {}).addTo(map);
-        //     const osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        //         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        //     }).addTo(map);
-
-        //     const googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-        //         maxZoom: 20,
-        //         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        //     });
-
-        //     layerControl.addBaseLayer(osmLayer, 'Mapa');
-        //     layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
-
-        //     const featureGroup = new L.FeatureGroup().addTo(map); // Para armazenar os marcadores do mapa
-
-        //     const rowsPerPage = 5;
-        //     let currentPage = 1;
-        //     let filteredRows = [];
-        //     let camposData = [];
-
-        //     const searchBar = document.getElementById("search-bar");
-        //     const statusFilter = document.getElementById("statusFilter");
-        //     const applyFilterButton = document.getElementById("apply-filter");
-        //     const clearFilterButton = document.getElementById("clear-filter");
-        //     const tableBody = document.getElementById("table-body");
-        //     const paginationContainer = document.getElementById("pagination");
-
-        //     // Função para carregar os dados filtrados
-        //     function loadFilteredData() {
-        //         const status = statusFilter.value;
-        //         const name = searchBar.value.trim().toLowerCase(); // Valor do campo de pesquisa em minúsculas
-
-        //     //Função para inativar um campo
-        //     document.addEventListener('click', function (e) {
-        //         const deleteButton = e.target.closest('.delete-btn');
-        //         if (deleteButton) {
-        //             const campoid = deleteButton.dataset.id;
-        //             if (confirm('Tem certeza de que deseja inativar este campo?')) {
-        //                 fetch(`/delete_campo/${campoid}/`, {
-        //                     method: 'POST',
-        //                     headers: {
-        //                         'X-CSRFToken': '{{ csrf_token }}'
-        //                     }
-        //                 })
-        //                     .then(response => {
-        //                         if (!response.ok) {
-        //                             throw new Error(`Erro HTTP: ${response.status}`);
-        //                         }
-        //                         return response.json();
-        //                     })
-        //                     .then(data => {
-        //                         if (data.status === 'success') {
-        //                             deleteButton.disabled = true;
-        //                             deleteButton.closest('tr').dataset.isactive = 'false';
-        //                             alert('Campo inativado com sucesso.');
-        //                             updateTable();
-        //                         } else {
-        //                             alert(`Erro: ${data.message}`);
-        //                         }
-        //                     })
-        //                     .catch(error => console.error('Erro ao inativar campo:', error));
-        //             }
-        //             return;
-        //         }
-
-                
-        //         const editButton = e.target.closest('.edit-btn');
-        //         if (editButton) {
-        //             const campoid = editButton.dataset.id;
-        //             fetch(`/get_campo_data/${campoid}`)
-        //                 .then(response => {
-        //                     if (!response.ok) {
-        //                         throw new Error('Erro ao buscar dados do campo');
-        //                     }
-        //                     return response.json();
-        //                 })
-        //                 .then(data => {
-        //                     if (data.status === 'success') {
-        //                         openSidebar(true, data.campo);
-        //                     } else {
-        //                         alert(data.message || 'Erro ao carregar dados do campo.');
-        //                     }
-        //                 })
-        //                 .catch(error => {
-        //                     console.error('Erro ao buscar campo:', error);
-        //                     alert('Ocorreu um erro ao carregar os dados do campo.');
-        //                 });
-        //         }
-        //     });
-
-        //     // Função para adicionar uma linha à tabela
-        //     function addRowToTable(campo) {
-        //         const row = document.createElement('tr');
-        //         row.dataset.id = campo.campoid;
-        //         row.dataset.name = campo.nome.toLowerCase();
-        //         row.dataset.city = campo.cidade.toLowerCase();
-        //         row.dataset.isactive = String(campo.isactive);
-
-        //         row.innerHTML = `
-        //             <td>${campo.nome}</td>
-        //             <td>${campo.cidade}</td>
-        //             <td>
-        //                 <button class="edit-btn" data-id="${campo.campoid}">
-        //                     <img src="{% static 'edit.png' %}" alt="Edit" style="height: 25px; width: auto;">
-        //                 </button>
-        //                 <button class="delete-btn" data-id="${campo.campoid}" ${campo.isactive ? '' : 'disabled'}>
-        //                     <img src="{% static 'delete.png' %}" alt="Delete" style="height: 25px; width: auto;">
-        //                 </button>
-        //             </td>
-        //         `;
-        //         tableBody.appendChild(row);
-        //     }
-
-        //     // Função para atualizar a tabela com base na página atual
-        //     function updateTable() {
-        //         const startIndex = (currentPage - 1) * rowsPerPage;
-        //         const endIndex = startIndex + rowsPerPage;
-
-        //         // Verificar se filteredRows não está vazio antes de tentar manipular as linhas
-        //         if (!filteredRows || filteredRows.length === 0) {
-        //             console.log("Não há campos para exibir.");
-        //             return;
-        //         }
-
-        //         // Ocultar todas as linhas e exibir apenas as da página atual
-        //         Array.from(tableBody.querySelectorAll('tr')).forEach(row => row.style.display = 'none');
-                
-        //         // Aqui estamos fazendo com que a cada página de dados a linha seja exibida corretamente
-        //         filteredRows.slice(startIndex, endIndex).forEach(item => {
-        //             const row = document.querySelector(`[data-id="${item.campoid}"]`);
-        //             if (row) row.style.display = ''; // Exibir a linha
-        //         });
-        //     }
-
-        //     // Função para renderizar os botões de paginação
-        //     function renderPaginationButtons() {
-        //         paginationContainer.innerHTML = '';
-        //         const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-
-        //         for (let i = 1; i <= totalPages; i++) {
-        //             const button = document.createElement('button');
-        //             button.textContent = i;
-        //             button.classList.add('pagination-button');
-        //             if (i === currentPage) button.classList.add('active');
-        //             button.addEventListener('click', () => {
-        //                 currentPage = i;
-        //                 updateTable();
-        //             });
-        //             paginationContainer.appendChild(button);
-        //         }
-        //     }
-
-            
-
-        //         // Fazer a requisição para carregar os dados filtrados
-        //         fetch(`/load_croplands/?status=${status}&name=${name}`)
-        //             .then(response => response.json())
-        //             .then(data => {
-        //                 if (data.status === 'success') {
-        //                     featureGroup.clearLayers(); // Limpar os marcadores antigos
-        //                     tableBody.innerHTML = ''; // Limpar a tabela
-
-        //                     filteredRows = data.campos.filter(campo => {
-        //                         const nomeMatch = campo.nome.toLowerCase().includes(name);  // Filtrando pelo nome
-        //                         const cidadeMatch = campo.cidade.toLowerCase().includes(name);  // Filtrando pela cidade
-        //                         const statusMatch = (status === 'all') || 
-        //                             (status === 'active' && campo.isactive) || 
-        //                             (status === 'inactive' && !campo.isactive);
-        //                         return (nomeMatch || cidadeMatch) && statusMatch;  // Filtrar se nome ou cidade batem com a pesquisa
-        //                     });
-
-        //                     // Depuração: Verifique os dados que estão sendo filtrados
-        //                     console.log('Dados filtrados:', filteredRows);
-
-        //                     // Verificar se a resposta contém campos
-        //                     if (filteredRows.length > 0) {
-        //                         filteredRows.forEach(item => {
-        //                             // Adicionar o marcador ao mapa se as coordenadas forem válidas
-        //                             if (item.coordenadas && item.coordenadas.lat && item.coordenadas.lng) {
-        //                                 const latLng = [item.coordenadas.lat, item.coordenadas.lng];
-        //                                 const marker = L.marker(latLng).bindPopup(`<b>${item.nome}</b>`);
-        //                                 featureGroup.addLayer(marker);
-        //                             }
-        //                             addRowToTable(item); // Adicionar a linha à tabela
-        //                         });
-        //                     } else {
-        //                         console.log('Nenhum campo encontrado para os filtros aplicados.');
-        //                     }
-
-        //                     updateTable(); // Atualizar a tabela com a paginação
-        //                     renderPaginationButtons(); // Renderizar os botões de paginação
-        //                 } else {
-        //                     console.error('Erro ao carregar campos:', data.message);
-        //                 }
-        //             })
-        //             .catch(error => console.error('Erro ao carregar campos:', error));
-        //     }
-
-        //     // Função para aplicar o filtro
-        //     function applyFilter() {
-        //         currentPage = 1;  // Resetar para a primeira página ao aplicar um novo filtro
-        //         loadFilteredData();  // Recarregar os dados com o filtro atual
-        //     }
-
-        //     // Função para limpar os filtros
-        //     function clearFilter() {
-        //         searchBar.value = '';  // Limpar o campo de pesquisa
-        //         statusFilter.value = 'all';  // Definir o filtro de status como "Todos"
-        //         applyFilter(); // Recarregar com os filtros padrão (todos os campos)
-        //     }
-
-        //     // Inicializar o controle de desenho do mapa
-        //     const drawControl = new L.Control.Draw({
-        //         draw: {
-        //             marker: true,
-        //             polygon: false,
-        //             circle: false,
-        //             rectangle: false,
-        //             circlemarker: false,
-        //             polyline: false
-        //         },
-        //         edit: {
-        //             featureGroup: featureGroup
-        //         }
-        //     }).addTo(map);
-
-        //     // Evento para adicionar um marcador ao mapa
-        //     map.on('draw:created', function (e) {
-        //         const layer = e.layer;
-        //         const coordinates = layer.getLatLng();
-        //         featureGroup.addLayer(layer);
-
-        //         // Converter as coordenadas para JSON
-        //         const coordinatesJSON = JSON.stringify({ lat: coordinates.lat, lng: coordinates.lng });
-
-        //         // Atribuir as coordenadas ao campo de entrada da sidebar
-        //         const campoCoordinates = document.getElementById('campoCoordinates');
-        //         campoCoordinates.value = coordinatesJSON;
-
-        //         // Abrir a sidebar para adicionar o campo
-        //         openSidebar(false, { coordenadas: coordinates });
-        //     });
-
-        //     // Função para abrir a sidebar
-        //     function openSidebar(isEdit = false, campo = null) {
-        //         const sidebar = document.getElementById('campoSidebar');
-        //         const title = document.getElementById('campoSidebarTitle');
-        //         const campoName = document.getElementById('campoName');
-        //         const campoMorada = document.getElementById('campoMorada');
-        //         const campoCidade = document.getElementById('campoCidade');
-        //         const campoPais = document.getElementById('campoPais');
-        //         const campoCoordinates = document.getElementById('campoCoordinates');
-        //         const campoForm = document.getElementById('campoForm');
-                
-        //         sidebar.style.display = 'flex';
-        //         sidebar.removeAttribute('inert'); // Remove inert para permitir interação
-
-        //         if (isEdit && campo) {
-        //             title.textContent = 'Editar campo';
-        //             campoName.value = campo.nome || '';
-        //             campoMorada.value = campo.morada || '';
-        //             campoCidade.value = campo.cidade || '';
-        //             campoPais.value = campo.pais || '';
-        //             campoCoordinates.value = campo.coordenadas
-        //                 ? JSON.stringify(campo.coordenadas).replace(/'/g, '"')
-        //                 : '{"lat":null,"lng":null}';
-        //             campoForm.dataset.isEdit = 'true';
-        //             campoForm.dataset.campoid = campo.campoid;
-        //         } else {
-        //             title.textContent = 'Adicionar campo';
-        //             campoName.value = '';
-        //             campoMorada.value = '';
-        //             campoCidade.value = '';
-        //             campoPais.value = '';
-        //             campoCoordinates.value = campo.coordenadas
-        //                 ? JSON.stringify(campo.coordenadas).replace(/'/g, '"')
-        //                 : '{"lat":null,"lng":null}';
-        //             campoForm.dataset.isEdit = 'false';
-        //             delete campoForm.dataset.campoid;
-        //         }
-
-        //         setTimeout(() => sidebar.classList.add('open'), 10);
-        //     }
-
-        //     // Função para fechar a sidebar
-        //     function closeSidebar() {
-        //         const sidebar = document.getElementById('campoSidebar');
-        //         sidebar.style.display = 'none'; // Fecha a sidebar
-        //         sidebar.classList.remove('open');
-        //     }
-
-        //     // Event listeners para fechar a sidebar
-        //     document.getElementById('closeSidebarButton').addEventListener('click', closeSidebar); // Botão "X"
-        //     document.querySelector('.secondary-button').addEventListener('click', closeSidebar); // Botão "Cancelar"
-
-        //     // Adicionando os event listeners aos botões
-        //     applyFilterButton.addEventListener('click', applyFilter);
-        //     clearFilterButton.addEventListener('click', clearFilter);
-
-        //     // Carregar os dados iniciais
-        //     loadFilteredData();
-        // });
-
-
-        // document.addEventListener('DOMContentLoaded', () => {
-        //     const form = document.getElementById('campoForm');
-
-        //     form.addEventListener('submit', async (event) => {
-        //         event.preventDefault(); // Evita o envio padrão do formulário
-
-        //         // Identifica se é edição ou criação
-        //         const isEdit = form.dataset.isEdit === 'true';
-        //         const campoid = form.dataset.campoid; // ID do campo, se for edição
-                
-        //         // Obtém os valores do formulário
-        //         const nome = document.getElementById('campoName').value.trim();
-        //         const morada = document.getElementById('campoMorada').value.trim();
-        //         const cidade = document.getElementById('campoCidade').value.trim();
-        //         const pais = document.getElementById('campoPais').value.trim();
-        //         const coordenadas = document.getElementById('campoCoordinates').value.trim();
-
-        //         // Valida campos obrigatórios
-        //         if (!nome || !morada || !cidade || !pais || !coordenadas) {
-        //             alert('Por favor, preencha todos os campos obrigatórios.');
-        //             return;
-        //         }
-
-        //         // URL e método HTTP para a operação
-        //         const url = isEdit ? `/update_campo/${campoid}/` : '/save_marker/';
-        //         const method = isEdit ? 'PUT' : 'POST';
-
-        //         // Valida e prepara coordenadas
-        //         let parsedCoordinates;
-        //         try {
-        //             parsedCoordinates = JSON.parse(coordenadas); // Certifica-se de que é um objeto JSON
-        //             if (!parsedCoordinates.lat || !parsedCoordinates.lng) {
-        //                 throw new Error('As coordenadas devem conter "lat" e "lng".');
-        //             }
-        //         } catch (error) {
-        //             alert('As coordenadas estão no formato inválido. Por favor, corrija.');
-        //             return;
-        //         }
-
-        //         // Faz a solicitação ao backend
-        //         try {
-        //             const response = await fetch(url, {
-        //                 method: method,
-        //                 headers: {
-        //                     'Content-Type': 'application/json',
-        //                     'X-CSRFToken': '{{ csrf_token }}'
-        //                 },
-        //                 body: JSON.stringify({
-        //                     nome,
-        //                     morada,
-        //                     cidade,
-        //                     pais,
-        //                     coordenadas: parsedCoordinates 
-        //                 })
-        //             });
-                    
-        //             const result = await response.json();
-        //             if (result.status === 'success') {
-        //                 alert(isEdit ? 'Campo editado com sucesso!' : `Campo criado com sucesso!`);
-        //                 form.reset();
-        //                 document.getElementById('campoSidebar').style.display = 'none';
-        //                 if (!isEdit) {
-        //                     addRowToTable(result.campo);
-        //                 }
-        //             } else {
-        //                 alert(result.message || 'Erro ao salvar o campo.');
-        //             }
-        //         } catch (error) {
-        //             console.error('Erro na solicitação:', error);
-        //             alert('Ocorreu um erro ao salvar o campo.');
-        //         }
-        //     });
-        // });
-        
         document.addEventListener('DOMContentLoaded', function () {
             // Inicializar o mapa primeiro, para garantir que está disponível
             const map = L.map('map').setView([39.615844061055384, -7.905762121081353], 6);
@@ -850,6 +170,8 @@
             L.drawLocal.draw.toolbar.actions.text = 'Cancelar';
             L.drawLocal.draw.handlers.marker.tooltip.start = 'Clique no mapa para adicionar o marcador.';
             L.drawLocal.draw.toolbar.buttons.marker = 'Adicionar um marcador';
+            document.querySelector('.leaflet-control-zoom-in').setAttribute('title', 'Aproximar');
+            document.querySelector('.leaflet-control-zoom-out').setAttribute('title', 'Afastar');
 
             layerControl.addBaseLayer(osmLayer, 'Mapa');
             layerControl.addBaseLayer(googleSat, 'Visão de Satélite');
@@ -1072,9 +394,7 @@
                     circlemarker: false,
                     polyline: false
                 },
-                edit: {
-                    featureGroup: featureGroup
-                }
+                
             }).addTo(map);
 
             // Evento para adicionar um marcador ao mapa
@@ -1194,7 +514,7 @@
                 }
 
                 // Faz a solicitação ao backend
-                try {
+                try{
                     const response = await fetch(url, {
                         method: method,
                         headers: {
@@ -1212,23 +532,49 @@
 
                     const result = await response.json();
 
-                    // Verifique o status da resposta
                     if (result.status === 'success') {
                         alert(isEdit ? 'Campo editado com sucesso!' : `Campo criado com sucesso!`);
                         form.reset();
                         document.getElementById('campoSidebar').style.display = 'none';
-                        if (!isEdit) {
+                        loadFilteredData(); // Atualize o mapa e a tabela com os novos dados
+
+                        if (isEdit) {
+                            const updatedCampo = {
+                                campoid: form.dataset.campoid,  // Use o ID do campo que você está editando
+                                nome: document.getElementById('campoName').value,
+                                morada: document.getElementById('campoMorada').value,
+                                cidade: document.getElementById('campoCidade').value,
+                                pais: document.getElementById('campoPais').value,
+                            };
+                            console.log("Dados do campo atualizado:", updatedCampo);
+                            const index = filteredRows.findIndex(row => row.campoid === updatedCampo.campoid);
+
+                            if (index !== -1) {
+                                filteredRows[index] = updatedCampo;
+                                updateRowInTable(updatedCampo);
+                            }
+                        } else {
+                            filteredRows.push(result.campo);
                             addRowToTable(result.campo);
-                        } 
-                        // Verifica se a tabela está vazia e exibe a mensagem
-                        checkEmptyTable(); 
+                        }
+
+                        filteredRows.sort((a, b) => a.nome.localeCompare(b.nome));
+                        const updatedIndex = filteredRows.findIndex(row => row.campoid === result.campo.campoid);
+                        currentPage = updatedIndex !== -1
+                            ? Math.ceil((updatedIndex + 1) / rowsPerPage)
+                            : currentPage;
+
+                        updateTable();
+                        renderPaginationButtons();
                     } else {
                         alert(result.message || 'Erro ao salvar o campo.');
                     }
-                } catch (error) {
-                    console.error('Erro na solicitação:', error);
-                    alert('Ocorreu um erro ao salvar o campo.');
+
                 }
+                catch(error){
+                    console.log(error)
+                }
+                
             });
         });
     </script>
