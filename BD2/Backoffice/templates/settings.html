@@ -41,7 +41,7 @@
         <button class="tab-button buttonTab" data-url="{% url 'receipt_status' %}" onclick="loadTabContent(this)">Estados dos recibos</button>
         <button class="tab-button buttonTab" data-url="{% url 'transport_states' %}" onclick="loadTabContent(this)">Estados do transporte</button>
     </div>
-    <div id="tab-content">Carregando...</div>
+    <div id="tab-content">A carregar conteúdo...</div>
 </div>
 
 <script>
@@ -53,7 +53,7 @@
         // Get URL for the content
         const url = button.getAttribute('data-url');
         const contentDiv = document.getElementById('tab-content');
-        contentDiv.innerHTML = 'Carregando...';
+        contentDiv.innerHTML = 'A carregar conteúdo...';
 
         // Fetch the content using AJAX
         fetch(url)
