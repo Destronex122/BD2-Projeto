@@ -822,7 +822,7 @@ def delete_request(request, pedidoid):
 def grapevariety(request):
     # Obtém os filtros
     filter_grapevariety = request.GET.get('filter_grapevariety', '').strip()
-    status_filter = request.GET.get('status', 'active')  # Padrão: mostrar ativos
+    status_filter = request.GET.get('status', 'all')  # Padrão: mostrar ativos
 
     # Consulta base com anotação
     grapevarieties = Castas.objects.annotate(
@@ -838,9 +838,6 @@ def grapevariety(request):
     # Filtro pelo nome
     if filter_grapevariety:
         grapevarieties = grapevarieties.filter(nome__icontains=filter_grapevariety)
-
-    # DEBUG para certificar os dados retornados
-    print("Consulta retornada:", grapevarieties)
 
     return render(request, 'grapevariety.html', {
         'castas': grapevarieties,

@@ -387,9 +387,9 @@
                 const isActive = row.dataset.isactive === 'true';
 
                 const statusMatch =
-                    (status === 'active' && isActive) ||
-                    (status === 'inactive' && !isActive) ||
-                    (status === 'all');
+                    (status === 'all') || 
+                    (status === 'active' && isActive) || 
+                    (status === 'inactive' && !isActive);
 
                 return name.includes(query) && statusMatch;
             });
