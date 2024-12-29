@@ -129,8 +129,8 @@
                     <td>${item.DataPlantacao || 'N/A'}</td>
                     <td>${item.Hectares || 'N/A'}</td>
                     <td>
-                        <button>Editar</button>
-                        <button>Excluir</button>
+                        <button><img src="{% static 'edit.png' %}" title="Editar vinha" alt="edit" style="height: 25px; width: auto;"></button>
+                        <button><img src="{% static 'delete.png' %}" title="Eliminar vinha" alt="delete" style="height: 25px; width: auto;"></button>
                     </td>
                 `;
                 tableBody.appendChild(row);
