@@ -10,6 +10,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotFound
 from django.apps import apps
+from django.conf import settings
 
 
 # Create your views here.
@@ -84,6 +85,35 @@ def save_marker_view(request):
         return JsonResponse({'message': 'Marcador salvo com sucesso!'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+@login_required
+@csrf_exempt
+@require_http_methods(['POST'])
+def save_field(request):
+    try:
+        # Obter os dados do formulário
+        name = request.POST.get('name')
+        location = request.POST.get('location')
+        coordinates = request.POST.get('coordinates')
+
+        # Valida se os campos obrigatórios estão preenchidos
+        if not name or not location or not coordinates:
+            return JsonResponse({"error": "Os campos 'name', 'location' e 'coordinates' são obrigatórios."}, status=400)
+
+        # Salvar os dados no MongoDB
+        new_field = {
+            "name": name,
+            "location": location,
+            "coordinates": coordinates
+        }
+        result = settings.DB[settings.COLLECTION_COORDINATES].insert_one(new_field)
+        print(result)
+
+        return render(request, 'fields.html')
+    except Exception as e:
+        return JsonResponse({"error": f"Erro interno: {str(e)}"}, status=500)
+
+
 
 @login_required    
 @csrf_exempt
