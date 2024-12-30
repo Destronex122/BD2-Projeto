@@ -413,84 +413,56 @@
     }
 
     //Ação de submeter dados na BD das colheitas (e períodos)
-    // function submitHarvest(event) {
-    //     event.preventDefault();
-    //     const harvestId = document.getElementById('harvestId').value;
-    //     const vinhaId = document.getElementById('vinhaId').value;
-    //     const isEdit = harvestId !== '';
-
-    //     const url = isEdit ? `/edit-harvest/${harvestId}/` : '/create-harvest/';
-    //     const harvestData = new FormData();
-    //     harvestData.append("colheitaid", isEdit ? document.getElementById('harvestId').value : "");
-    //     harvestData.append("vinhaId", vinhaId);
-    //     harvestData.append("pesoTotal", document.getElementById('harvestPesoTotal').value);
-    //     harvestData.append("precoPorTonelada", document.getElementById('harvestPrecoPorTonelada').value);
-    //     harvestData.append("periodoInicio", document.getElementById('harvestPeriodoInicio').value);
-    //     harvestData.append("periodoFim", document.getElementById('harvestPeriodoFim').value);
-    //     harvestData.append("previsaoFimColheita", document.getElementById('harvestPrevisaoFim').value);
-    //     harvestData.append("periodoAno", document.getElementById('harvestPeriodoAno').value);
-    //     fetch(url, {
-    //         method: 'POST',
-    //         headers: {
-    //             "X-CSRFToken": getCSRFToken(),
-    //         },
-    //         body: harvestData,
-    //     })
-    //     .then(response => {
-    //         if (!response.ok) {
-    //             throw new Error(`Erro HTTP: ${response.status}`);
-    //         }
-    //         // Verificar o cabeçalho da resposta
-    //         const contentType = response.headers.get("content-type");
-    //         if (contentType && contentType.includes("application/json")) {
-    //             return response.json();
-    //         } else {
-    //             throw new Error("Resposta do servidor não é JSON.");
-    //         }
-    //     })
-    //     .then(data => {
-    //         if (data.success) {
-    //             alert(data.message);
-    //             location.reload();
-    //         } else {
-    //             alert("Erro: " + data.message);
-    //         }
-    //     })
-    //     .catch(error => {
-    //         console.error("Erro na requisição:", error);
-    //         alert("Erro ao salvar: " + error.message);
-    //     });
-    // }
-
-    function getHarvestFormData() {
-        return {
-            colheitaid: document.getElementById('harvestId').value,
-            vinhaId: document.getElementById('vinhaId').value,
-            pesoTotal: document.getElementById('harvestPesoTotal').value,
-            precoPorTonelada: document.getElementById('harvestPrecoPorTonelada').value,
-            periodoInicio: document.getElementById('harvestPeriodoInicio').value,
-            periodoFim: document.getElementById('harvestPeriodoFim').value,
-            previsaoFimColheita: document.getElementById('harvestPrevisaoFim').value,
-            periodoAno: document.getElementById('harvestPeriodoAno').value,
-        };
-    }
-
     function submitHarvest(event) {
         event.preventDefault();
-        const url = isEdit ? `/edit-harvest/${harvestId}/` : '/create-harvest/';
-        const harvestData = getHarvestFormData();
+        const harvestId = document.getElementById('harvestId').value;
+        const vinhaId = document.getElementById('vinhaId').value;
+        const isEdit = harvestId !== '';
 
+        const url = isEdit ? `/edit-harvest/${harvestId}/` : '/create-harvest/';
+        const harvestData = new FormData();
+        if (isEdit) {
+            harvestData.append("colheitaid", harvestId);  // Append the harvestId for editing
+        }
+        //harvestData.append("colheitaid", isEdit ? document.getElementById('harvestId').value : "");
+        harvestData.append("vinhaId", vinhaId);
+        harvestData.append("pesoTotal", document.getElementById('harvestPesoTotal').value);
+        harvestData.append("precoPorTonelada", document.getElementById('harvestPrecoPorTonelada').value);
+        harvestData.append("periodoInicio", document.getElementById('harvestPeriodoInicio').value);
+        harvestData.append("periodoFim", document.getElementById('harvestPeriodoFim').value);
+        harvestData.append("previsaoFimColheita", document.getElementById('harvestPrevisaoFim').value);
+        harvestData.append("periodoAno", document.getElementById('harvestPeriodoAno').value);
         fetch(url, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCSRFToken(),
-                'Content-Type': 'application/json',
+                "X-CSRFToken": getCSRFToken(),
             },
-            body: JSON.stringify(harvestData),
+            body: harvestData,
         })
-        .then(response => response.json())
-        .then(handleResponse)
-        .catch(handleError);
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            // Verificar o cabeçalho da resposta
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                return response.json();
+            } else {
+                throw new Error("Resposta do servidor não é JSON.");
+            }
+        })
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Erro: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Erro na requisição:", error);
+            alert("Erro ao salvar: " + error.message);
+        });
     }
 
     //Ação de inativar colheita

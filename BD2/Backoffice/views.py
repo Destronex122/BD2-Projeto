@@ -250,7 +250,7 @@ def create_harvest(request):
             vinha_id = request.POST.get('vinhaId')
             if not vinha_id or not vinha_id.isdigit():
                 return JsonResponse({'success': False, 'message': 'ID da vinha deve ser um número válido.'})
-            vinha_id = int(vinha_id)  # Converte para inteiro
+            vinha_id = int(vinha_id) 
 
             # Verifica se a vinha existe
             try:
@@ -324,7 +324,8 @@ def create_harvest(request):
 @login_required
 def edit_harvest(request, colheita_id):
     # Buscar a colheita com o ID especificado
-    harvest = get_object_or_404(Colheitas, id=colheita_id)
+    #harvest = get_object_or_404(Colheitas, id=colheita_id)
+    harvest = get_object_or_404(Colheitas, pk=colheita_id)
     
     # Obter todas as vinhas
     vinhas = Vinhas.objects.all()
@@ -436,6 +437,7 @@ def harvestdetail(request, colheitaid):
         'previsao_fim_colheita': colheita.previsaofimcolheita,
         'terminada': "Sim" if colheita.terminada else "Não",
         'data_termino': colheita.datapesagem if colheita.terminada else "Não terminada",
+        'isactive': colheita.isactive,
     }
 
     return render(
