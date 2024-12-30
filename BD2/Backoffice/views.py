@@ -21,6 +21,7 @@ from django.db.models import Value, BooleanField, Case, When, F, Q, Max
 import logging
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render
+from datetime import datetime
 
 
 # Conectar ao MongoDB
@@ -219,11 +220,12 @@ def harvest(request):
             'vinha_id': colheita.vinhaid.id if colheita.vinhaid and hasattr(colheita.vinhaid, 'id') else None,
             'peso_total': colheita.pesototal,
             'preco_por_tonelada': colheita.precoportonelada,
-            'data_ultima_pesagem': colheita.data_ultima_pesagem,
+            'data_ultima_pesagem': colheita.data_ultima_pesagem or '-',
             'periodo_inicio': colheita.periodoid.datainicio if colheita.periodoid else None,
             'periodo_fim': colheita.periodoid.datafim if colheita.periodoid else None,
             'previsao_fim_colheita': colheita.previsaofimcolheita,
             'isactive': colheita.isactive,
+            'terminado': bool(colheita.periodoid.datafim) if colheita.periodoid else False,
         })
 
     # Renderizar o template
@@ -243,7 +245,19 @@ def harvest(request):
 def create_harvest(request):
     if request.method == 'POST':
         try:
+            # Pegando o ID da vinha
             vinha_id = request.POST.get('vinhaId')
+            if not vinha_id or not vinha_id.isdigit():
+                return JsonResponse({'success': False, 'message': 'ID da vinha deve ser um número válido.'})
+            vinha_id = int(vinha_id)  # Converte para inteiro
+
+            # Verifica se a vinha existe
+            try:
+                vinha = Vinhas.objects.get(vinhaid=vinha_id)
+            except Vinhas.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Vinha não encontrada.'})
+
+            # Pegando os outros campos do formulário
             peso_total = request.POST.get('pesoTotal')
             preco_por_tonelada = request.POST.get('precoPorTonelada')
             data_pesagem = request.POST.get('dataPesagem')
@@ -251,34 +265,126 @@ def create_harvest(request):
             periodo_fim = request.POST.get('periodoFim')
             periodo_ano = int(request.POST.get('periodoAno'))
             previsao_fim_colheita = request.POST.get('previsaoFimColheita')
-            print(f"vinha_id: {vinha_id}")  # Verifique se o ID da vinha está sendo enviado
             print(f"data_pesagem: {data_pesagem}")
-            # Chamar procedimento armazenado para criar a colheita
+            # Validando e processando os campos
+            if not peso_total or not preco_por_tonelada or not periodo_inicio or not periodo_ano:
+                return JsonResponse({'success': False, 'message': 'Preencha todos os campos obrigatórios.'})
+
+            # Se data_pesagem não for fornecida, envia None (NULL)
+            if not data_pesagem:
+                data_pesagem = None
+            else:
+                # Se houver valor, converte para formato de data
+                try:
+                    data_pesagem = datetime.strptime(data_pesagem, '%Y-%m-%d').date()
+                except ValueError:
+                    return JsonResponse({'success': False, 'message': 'Formato de data inválido para Pesagem.'})
+
+            # Convertendo os campos de data para o formato correto ou definindo como None
+            def validate_date(field_value, field_name):
+                if not field_value or field_value.strip() == "":
+                    return None  # Retorna None se vazio
+                try:
+                    return datetime.strptime(field_value, '%Y-%m-%d').date()  # Converte para formato de data
+                except ValueError:
+                    raise ValueError(f'Formato de data inválido para {field_name}.')  # Lança exceção para tratamento
+
+            try:
+                data_pesagem = validate_date(data_pesagem, "Pesagem")
+                periodo_inicio = validate_date(periodo_inicio, "Início do Período")
+                periodo_fim = validate_date(periodo_fim, "Fim do Período")
+                previsao_fim_colheita = validate_date(previsao_fim_colheita, "Previsão de Fim da Colheita")
+            except ValueError as ve:
+                return JsonResponse({'success': False, 'message': str(ve)})
+
+            # Chamando o procedimento armazenado para criar a colheita
             with connection.cursor() as cursor:
                 cursor.execute("""
                     CALL sp_criar_colheita(
                         %s, %s, %s, %s, %s, %s, %s, %s
                     )
                 """, [
-                    vinha_id,
+                    vinha_id,  # Passando o ID da vinha
                     peso_total,
                     preco_por_tonelada,
-                    data_pesagem,
+                    data_pesagem,  # Passando None se não fornecido
                     periodo_inicio,
                     periodo_fim,
-                    periodo_ano,
-                    previsao_fim_colheita
+                    previsao_fim_colheita,
+                    periodo_ano  # Passando o ano
                 ])
 
             return JsonResponse({'success': True, 'message': 'Colheita criada com sucesso!'})
+
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erro ao criar colheita: {e}'})
-
+          
 
 @login_required
+# def edit_harvest(request, colheita_id):
+#     # Buscar a colheita com o ID especificado
+#     harvest = get_object_or_404(Colheitas, id=colheita_id)
+    
+#     # Obter todas as vinhas
+#     vinhas = Vinhas.objects.all()
+    
+#     # Verificando se é uma requisição POST para salvar a edição
+#     if request.method == 'POST':
+#         try:
+#             # Obter os dados do formulário
+#             vinha_id = request.POST.get('vinhaId')
+#             peso_total = float(request.POST.get('pesoTotal'))
+#             preco_por_tonelada = float(request.POST.get('precoPorTonelada'))
+#             data_pesagem = request.POST.get('dataPesagem')
+#             periodo_inicio = request.POST.get('periodoInicio')
+#             periodo_fim = request.POST.get('periodoFim')
+#             periodo_ano = int(request.POST.get('periodoAno'))
+#             previsao_fim_colheita = request.POST.get('previsaoFimColheita')
+
+#             # Chamar o procedimento armazenado para editar a colheita
+#             with connection.cursor() as cursor:
+#                 cursor.execute("""
+#                      CALL sp_editar_colheita(
+#                         %s, %s, %s, %s, %s, %s, %s, %s, %s
+#                     )
+#                 """, [
+#                     colheita_id,
+#                     vinha_id if vinha_id else None,
+#                     peso_total,
+#                     preco_por_tonelada,
+#                     data_pesagem,
+#                     periodo_inicio,
+#                     periodo_fim,
+#                     periodo_ano,
+#                     previsao_fim_colheita
+#                 ])
+
+#             return JsonResponse({'success': True, 'message': 'Colheita editada com sucesso!'})
+
+#         except Exception as e:
+#             return JsonResponse({'success': False, 'message': f'Erro ao editar colheita: {e}'})
+
+#     # Caso não seja uma requisição POST, passamos os dados para o template
+#     context = {
+#         'harvest': harvest,  # A colheita que será editada
+#         'vinhas': vinhas,     # Lista de vinhas para o dropdown
+#     }
+#     return render(request, 'harvest.html', context)
+
 def edit_harvest(request, colheita_id):
+    # Buscar a colheita com o ID especificado
+    harvest = get_object_or_404(Colheitas, id=colheita_id)
+    
+    # Obter todas as vinhas
+    vinhas = Vinhas.objects.all()
+
+    # Obter o período associado à colheita
+    periodo = harvest.periodo  # Supondo que a colheita tem uma relação de ForeignKey com Periodos
+    
+    # Verificando se é uma requisição POST para salvar a edição
     if request.method == 'POST':
         try:
+            # Obter os dados do formulário
             vinha_id = request.POST.get('vinhaId')
             peso_total = float(request.POST.get('pesoTotal'))
             preco_por_tonelada = float(request.POST.get('precoPorTonelada'))
@@ -288,13 +394,14 @@ def edit_harvest(request, colheita_id):
             periodo_ano = int(request.POST.get('periodoAno'))
             previsao_fim_colheita = request.POST.get('previsaoFimColheita')
 
-            # Chamar procedimento armazenado para editar a colheita
+            # Chamar o procedimento armazenado para editar a colheita
             with connection.cursor() as cursor:
                 cursor.execute("""
-                     CALL sp_criar_colheita(
-                        %s, %s, %s, %s, %s, %s, %s, %s
+                    CALL sp_editar_colheita(
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                 """, [
+                    colheita_id,
                     vinha_id if vinha_id else None,
                     peso_total,
                     preco_por_tonelada,
@@ -306,8 +413,24 @@ def edit_harvest(request, colheita_id):
                 ])
 
             return JsonResponse({'success': True, 'message': 'Colheita editada com sucesso!'})
+
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erro ao editar colheita: {e}'})
+
+    # Caso não seja uma requisição POST, passamos os dados para o template
+    context = {
+        'harvest': harvest,  # A colheita que será editada
+        'vinhas': vinhas,     # Lista de vinhas para o dropdown
+        'selected_vinha_id': harvest.vinha.id if harvest.vinha else None,
+        'selected_peso_total': harvest.pesototal,
+        'selected_preco_por_tonelada': harvest.precoportonelada,
+        'selected_periodo_inicio': periodo.datainicio if periodo else '',
+        'selected_periodo_fim': periodo.datafim if periodo else '',
+        'selected_periodo_ano': periodo.ano if periodo else '',
+        'selected_previsao_fim_colheita': harvest.previsaofimcolheita
+    }
+    
+    return render(request, 'harvest.html', context)
 
 
 @login_required
@@ -323,9 +446,11 @@ def inactivate_harvest(request, colheita_id):
             return JsonResponse({'success': True, 'message': 'Colheita inativada com sucesso!'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erro ao inativar colheita: {e}'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+    
 
-
-
+    
 #DETALHE DA COLHEITA
 @login_required
 def harvestdetail(request, colheitaid):
