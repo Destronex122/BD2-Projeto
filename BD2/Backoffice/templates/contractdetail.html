@@ -13,8 +13,51 @@
         color: #616646;
         text-decoration: underline;
     }
- 
+
+    /* Popup overlay to cover the whole screen */
+    .popup-overlay {
+        display: none;  /* Initially hidden */
+        justify-content: center;  /* Center horizontally */
+        align-items: center;  /* Center vertically */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);  /* Optional: dim the background */
+        z-index: 1000;  /* Ensure it's above other content */
+    }
+
+    /* Popup content to center within the overlay */
+    .popup-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 600px; /* Optional: limit the width of the modal */
+        width: 100%;
+        box-sizing: border-box;  /* Ensure padding is included in the width */
+    }
+
+    /* Optional: Styling for buttons and other UI elements */
+    .secondary-button {
+        background-color: #ccc;
+        border: none;
+        padding: 8px 16px;
+        cursor: pointer;
+    }
+
+    .button {
+        border: none;
+        padding: 8px 16px;
+        cursor: pointer;
+    }
+
+    .modal-close {
+        font-size: 1.5em;
+        cursor: pointer;
+    }
 </style>
+
 <nav aria-label="breadcrumb" class="breadcrumb-container">
     <ol class="separadores">
         <li class="breadcrumb-item"><a href="{% url 'contracts' %}">Contratos</a></li>
@@ -105,8 +148,9 @@
     </div>
     {% endfor %}
 </div>
+
 <!-- Modal para adicionar contrato -->
-<div class="popup-overlay" id="addReceiptModal" style="display: none;">
+<div class="popup-overlay" id="addReceiptModal">
     <div class="popup-content">
         <div class="popup-header">
             <h5>Adicionar Recibo:</h5>
@@ -126,7 +170,7 @@
                 <label for="colheitaId">Colheita: </label>
                 <select id="colheitaId" name="colheitaid" class="form-control">
                     {% for colheita in colheita %}
-                        <option value="{{ colheita.colheitaid }}">{{ colheita.colheitaid }} - {{ colheita.datapesagem }} </option>  <!-- Supondo que existe o campo 'nome' -->
+                        <option value="{{ colheita.colheitaid }}">{{ colheita.colheitaid }} - {{ colheita.datapesagem }} </option>
                     {% endfor %}
                 </select>
             </div>
@@ -137,7 +181,7 @@
                         <option value="{{ metodo.idmetodopagamento }}">{{ metodo.nome }}</option>
                     {% endfor %}
                 </select>
-            </div> 
+            </div>
             <div class="form-group">
                 <label for="estadopagamentoid">Estado Pagamento: </label>
                 <select id="estadopagamentoid" name="estadopagamentoid" class="form-control">
@@ -153,6 +197,7 @@
         </form>
     </div>
 </div>
+
 <div style="text-align:right; margin-bottom: 20px;" onclick="openAddContractModal()">
     <button type="button" onclick="openAddContractModal()" title="Adicionar novo utilizador" alt="add" style="height: 25px; width: auto;"> Adicionar
     </button>
@@ -160,7 +205,7 @@
 
 <script>
     function openAddContractModal() {
-        document.getElementById('addReceiptModal').style.display = 'block';
+        document.getElementById('addReceiptModal').style.display = 'flex';  // Use flex to center
     }
 
     function closeAddContractModal() {
@@ -192,37 +237,19 @@
                         <td>${formData.get('dataInicio')}</td>
                         <td>${formData.get('dataFim')}</td>
                         <td>${formData.get('quantidadeEstimada')}</td>
+                        <td>${formData.get('quantidadeFinal')}</td>
                         <td>${formData.get('precoEstimado')}</td>
-                    </tr>
-                `;
-                document.querySelector('#contractTable tbody').insertAdjacentHTML('beforeend', newRow);
+                        <td>${formData.get('precoFinal')}</td>
+                    </tr>`;
 
-                closeAddContractModal(); // Fecha o modal
-                this.reset(); // Reseta o formulário
+                document.querySelector('#recibosContainer').insertAdjacentHTML('beforeend', newRow);
+                closeAddContractModal();  // Fechar o modal
             } else {
-                alert(data.message);
+                alert('Erro ao adicionar o recibo: ' + data.message);
             }
         })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Ocorreu um erro ao criar o contrato.');
-        });
+        .catch(error => console.error('Erro:', error));
     });
-        document.getElementById('contractTable').addEventListener('click', function(event){
-            const targetRow = event.target.closest('tr');
-            if(targetRow && !targetRow.closest('thead')){
-                const contratoid = targetRow.dataset.contratoid;
-                if(contratoid){
-                    console.log(`Redirecionando para userdetail com ID: ${contratoid}`);
-                    window.location.href = `/backoffice/contractdetail/${contratoid}/`;
-                }
-            }
-        });
-    </script>
-
-
-
-
-
+</script>
 
 {% endblock %}
