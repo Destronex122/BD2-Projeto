@@ -1,0 +1,1121 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<style>
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e9e8e2;
+    }
+    .tabs button {
+        padding: 10px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    .tabs button.active {
+        font-weight: bold;
+        border-bottom: 2px solid #616646;
+    }
+  
+    .buttonTab {
+        background-color: #616646;
+        color: black !important;
+        padding: 10px;
+        border: none;
+        border-radius: 0px !important;
+        cursor: pointer;
+    }
+
+</style>
+
+<div>
+    <div class="tabs" style="margin-top:24px">
+        <button class="tab-button active buttonTab" data-url="{% url 'grapevariety' %}" onclick="loadTabContent(this)">Castas</button>
+        <button class="tab-button buttonTab" data-url="{% url 'payment_methods' %}" onclick="loadTabContent(this)">Métodos de pagamento</button>
+        <button class="tab-button buttonTab" data-url="{% url 'approved_status' %}" onclick="loadTabContent(this)">Estados de aprovação</button>
+        <button class="tab-button buttonTab" data-url="{% url 'receipt_status' %}" onclick="loadTabContent(this)">Estados dos recibos</button>
+        <button class="tab-button buttonTab" data-url="{% url 'transport_states' %}" onclick="loadTabContent(this)">Estados do transporte</button>
+    </div>
+    <div id="tab-content">A carregar conteúdo...</div>
+</div>
+
+<script>
+    //MODAL CRIAR E EDITAR CASTAS
+    window.openAddVarietyModal = function (isEdit = false, castaId = null, castaName = '') {
+        const modal = document.getElementById('addVarietyModal');
+        const modalTitle = document.getElementById('addVarietyModalTitle');
+        const varietyNameInput = document.getElementById('varietyName');
+        const addVarietyForm = document.getElementById('addVarietyForm');
+
+        modal.style.display = 'flex';
+        modal.removeAttribute('inert'); // Remove inert para permitir interação
+
+        // Configura o título do modal
+        modalTitle.textContent = isEdit ? 'Editar casta' : 'Adicionar casta';
+
+        if (isEdit) {
+            // Preenche os campos com os dados da linha selecionada
+            varietyNameInput.value = castaName;
+            addVarietyForm.dataset.isEdit = 'true';
+            addVarietyForm.dataset.castaId = castaId;
+        } else {
+            varietyNameInput.value = '';
+            addVarietyForm.dataset.isEdit = 'false';
+            delete addVarietyForm.dataset.castaId;
+        }
+    };  
+
+    //MODAL CRIAR E EDITAR MÉTODOS DE PAGAMENTO
+    window.openAddPaymentMethodModal = function (isEdit = false, methodId = null, methodName = '') {
+        const modal = document.getElementById('addPaymentMethodModal');
+        const modalTitle = document.getElementById('addPaymentMethodModalTitle');
+        const paymentMethodNameInput = document.getElementById('paymentMethodName');
+        const addPaymentMethodForm = document.getElementById('addPaymentMethodForm');
+
+        modal.style.display = 'flex';
+        modal.removeAttribute('inert');
+
+        modalTitle.textContent = isEdit ? 'Editar método de pagamento' : 'Adicionar método de pagamento';
+
+        if (isEdit) {
+            paymentMethodNameInput.value = methodName;
+            addPaymentMethodForm.dataset.isEdit = 'true';
+            addPaymentMethodForm.dataset.methodId = methodId;
+        } else {
+            paymentMethodNameInput.value = '';
+            addPaymentMethodForm.dataset.isEdit = 'false';
+            addPaymentMethodForm.dataset.methodId = '';
+        }
+    };
+
+    //MODAL CRIAR E EDITAR ESTADOS DE APROVAÇÃO
+    window.openAddApprovedStatusModal = function (isEdit = false, approvedId = null, statusName = '') {
+        const modal = document.getElementById('addApprovedStatusModal');
+        const modalTitle = document.getElementById('addApprovedStatusModalTitle');
+        const approvedStatusNameInput = document.getElementById('approvedStatusName');
+        const addApprovedStatusForm = document.getElementById('addApprovedStatusForm');
+
+        modal.style.display = 'flex';
+        modal.removeAttribute('inert'); 
+
+        modalTitle.textContent = isEdit ? 'Editar estado' : 'Adicionar estado';
+
+        if (isEdit) {
+            approvedStatusNameInput.value = statusName;
+            addApprovedStatusForm.dataset.isEdit = 'true';
+            addApprovedStatusForm.dataset.approvedId = approvedId;
+        } else {
+            approvedStatusNameInput.value = '';
+            addApprovedStatusForm.dataset.isEdit = 'false';
+            addApprovedStatusForm.dataset.approvedId = '';
+        }
+    };
+
+    //MODAL CRIAR E EDITAR ESTADOS DE RECIBOS
+    window.openAddReceiptStatusModal = function (isEdit = false, statusId = null, statusName = '') {
+        const modal = document.getElementById('addReceiptStatusModal');
+        const modalTitle = document.getElementById('addReceiptStatusModalTitle');
+        const receiptStatusNameInput = document.getElementById('receiptStatusName');
+        const addReceiptStatusForm = document.getElementById('addReceiptStatusForm');
+
+        modal.style.display = 'flex';
+        modal.removeAttribute('inert'); 
+
+        modalTitle.textContent = isEdit ? 'Editar estado' : 'Adicionar estado';
+
+        if (isEdit) {
+            receiptStatusNameInput.value = statusName;
+            addReceiptStatusForm.dataset.isEdit = 'true';
+            addReceiptStatusForm.dataset.statusId = statusId;
+        } else {
+            receiptStatusNameInput.value = '';
+            addReceiptStatusForm.dataset.isEdit = 'false';
+            addReceiptStatusForm.dataset.statusId = '';
+        }
+    };
+
+    //MODAL CRIAR E EDITAR ESTADOS DE TRANSPORTE
+    window.openAddTransportStateModal = function (isEdit = false, stateId = null, stateName = '') {
+        const modal = document.getElementById('addTransportStateModal');
+        const modalTitle = document.getElementById('addTransportStateModalTitle');
+        const transportStateNameInput = document.getElementById('transportStateName');
+        const addTransportStateForm = document.getElementById('addTransportStateForm');
+
+        modal.style.display = 'flex';
+        modal.removeAttribute('inert'); 
+
+        modalTitle.textContent = isEdit ? 'Editar estado' : 'Adicionar estado';
+
+        if (isEdit) {
+            transportStateNameInput.value = stateName;
+            addTransportStateForm.dataset.isEdit = 'true';
+            addTransportStateForm.dataset.stateId = stateId;
+        } else {
+            transportStateNameInput.value = '';
+            addTransportStateForm.dataset.isEdit = 'false';
+            addTransportStateForm.dataset.stateId = '';
+        }
+    };
+
+
+
+    //FILTROS DAS CASTAS
+    function initializeGrapeVarietyTable() {
+        const tableBody = document.getElementById('grapeVarietyBody');
+        const paginationContainer = document.getElementById('pagination');
+        const searchBar = document.getElementById('searchBar');
+        const statusFilter = document.getElementById('statusFilter');
+        const applyFilterButton = document.getElementById('apply-filter');
+        const clearFilterButton = document.getElementById('clear-filter');
+        const addVarietyForm = document.getElementById('addVarietyForm');
+
+        if (!tableBody || !paginationContainer || !searchBar || !applyFilterButton || !clearFilterButton) {
+            console.error('Elementos necessários para inicializar a tabela não foram encontrados.');
+            return;
+        }
+
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+
+        // Função para aplicar os filtros
+        function applyFilter() {
+            const query = searchBar.value.toLowerCase().trim();
+            const status = statusFilter.value;
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
+                const name = row.dataset.name.toLowerCase();
+                const isActive = row.dataset.isactive === 'true';
+
+                const statusMatch =
+                    (status === 'active' && isActive) ||
+                    (status === 'inactive' && !isActive) ||
+                    (status === 'all');
+
+                return name.includes(query) && statusMatch;
+            });
+
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Função para atualizar a tabela com base na página atual e no filtro aplicado
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            const noResultsRow = document.getElementById('no-results-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+
+            Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+
+            const visibleRows = filteredRows.slice(startIndex, endIndex);
+
+            if (visibleRows.length > 0) {
+                visibleRows.forEach(row => (row.style.display = ''));
+            } else {
+                const emptyRow = document.createElement('tr');
+                emptyRow.setAttribute('id', 'no-results-row');
+                emptyRow.innerHTML = `
+                    <td colspan="2" class="no-data-message">Nenhuma casta corresponde ao filtro aplicado.</td>
+                `;
+                tableBody.appendChild(emptyRow);
+            }
+
+            renderPaginationButtons();
+        }
+
+        // Função para renderizar os botões de paginação
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) button.classList.add('active');
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+        }
+
+        // Função para limpar os filtros
+        function clearFilter() {
+            searchBar.value = '';
+            statusFilter.value = 'all';
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Função para fechar o modal
+        function closeAddGrapeVarietyModal() {
+            const modal = document.getElementById('addVarietyModal');
+            modal.style.display = 'none';
+            modal.setAttribute('inert', '');
+
+            addVarietyForm.reset();
+            delete addVarietyForm.dataset.isEdit;
+            delete addVarietyForm.dataset.castaId;
+        }
+
+        document.getElementById('closeAddVarietyModal').addEventListener('click', closeAddGrapeVarietyModal);
+        document.getElementById('cancelAddVariety').addEventListener('click', closeAddGrapeVarietyModal);
+
+        // Função para adicionar ou editar uma casta
+        addVarietyForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const isEdit = this.dataset.isEdit === 'true';
+            const castaId = this.dataset.castaId || null;
+            const varietyName = document.getElementById('varietyName').value.trim();
+
+            if (!varietyName) {
+                alert('O nome da casta não pode ser vazio.');
+                return;
+            }
+
+            const url = isEdit ? `/editvariety/${castaId}/` : "{% url 'addvariety' %}";
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({ varietyName: varietyName }),
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro ao salvar a casta.');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Casta salva com sucesso!');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Erro ao salvar a casta.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao salvar a casta.');
+                });
+        });
+
+        // Função para inativar uma casta
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.delete-btn')) {
+                const deleteButton = e.target.closest('.delete-btn');
+                const castaId = deleteButton.getAttribute('data-id');
+
+                if (confirm('Tem certeza de que deseja inativar esta casta?')) {
+                    fetch(`/deletevariety/${castaId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                    })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Erro ao inativar a casta.');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Atualiza o botão para refletir que a casta foi inativada
+                                deleteButton.disabled = true;
+                                deleteButton.classList.add('disabled');
+                                const row = deleteButton.closest('tr');
+                                row.setAttribute('data-isactive', 'false'); // Atualiza o atributo de estado da linha
+                                alert('Casta inativada com sucesso!');
+                            } else {
+                                alert(data.message || 'Erro ao inativar a casta.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            alert('Erro ao inativar a casta.');
+                        });
+                }
+            }
+        });
+
+
+        // Eventos de filtro
+        applyFilterButton.addEventListener('click', applyFilter);
+        clearFilterButton.addEventListener('click', clearFilter);
+
+        // Inicializa a tabela ao carregar
+        filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+        updateTable();
+    }
+
+
+
+    //FILTROS DOS MÉTODOS DE PAGAMENTO
+    function initializePaymentMethodPage() {
+        const tableBody = document.getElementById('paymentMethodBody');
+        const paginationContainer = document.getElementById('pagination');
+        const searchBar = document.getElementById('searchBar');
+        const applyFilterButton = document.getElementById('apply-filter');
+        const clearFilterButton = document.getElementById('clear-filter');
+        const addPaymentMethodForm = document.getElementById('addPaymentMethodForm');
+
+        if (!tableBody || !paginationContainer || !searchBar || !applyFilterButton || !clearFilterButton) {
+            console.error('Elementos necessários para inicializar a tabela não foram encontrados.');
+            return;
+        }
+
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+
+        // Função para aplicar os filtros
+        function applyFilter() {
+            const query = searchBar.value.toLowerCase().trim();
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
+                const nameCell = row.querySelector('td:first-child');
+                if (!nameCell) return false;
+
+                const name = nameCell.textContent.toLowerCase().trim();
+                return name.includes(query);
+            });
+
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Função para atualizar a tabela com base na página atual e no filtro aplicado
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            const noResultsRow = document.getElementById('no-results-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+
+            Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+
+            const visibleRows = filteredRows.slice(startIndex, endIndex);
+
+            if (visibleRows.length > 0) {
+                visibleRows.forEach(row => (row.style.display = ''));
+            } else {
+                const emptyRow = document.createElement('tr');
+                emptyRow.setAttribute('id', 'no-results-row');
+                emptyRow.innerHTML = `
+                    <td colspan="2" class="no-data-message">Nenhum método de pagamento corresponde ao filtro aplicado.</td>
+                `;
+                tableBody.appendChild(emptyRow);
+            }
+
+            renderPaginationButtons();
+        }
+
+        // Função para renderizar os botões de paginação
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) button.classList.add('active');
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+        }
+
+        // Função para limpar os filtros
+        function clearFilter() {
+            searchBar.value = '';
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Função para abrir o modal de adicionar/editar
+        window.openAddPaymentMethodModal = function (isEdit = false, methodId = null, methodName = '') {
+            const modal = document.getElementById('addPaymentMethodModal');
+            const modalTitle = document.getElementById('addPaymentMethodModalTitle');
+            const paymentMethodNameInput = document.getElementById('paymentMethodName');
+
+            modal.style.display = 'flex';
+            modal.removeAttribute('inert');
+
+            modalTitle.textContent = isEdit ? 'Editar método de pagamento' : 'Adicionar método de pagamento';
+
+            if (isEdit) {
+                paymentMethodNameInput.value = methodName;
+                addPaymentMethodForm.dataset.isEdit = 'true';
+                addPaymentMethodForm.dataset.methodId = methodId;
+            } else {
+                paymentMethodNameInput.value = '';
+                addPaymentMethodForm.dataset.isEdit = 'false';
+                delete addPaymentMethodForm.dataset.methodId;
+            }
+        };
+
+        // Função para fechar o modal
+        function closeAddPaymentMethodModal() {
+            const modal = document.getElementById('addPaymentMethodModal');
+            modal.style.display = 'none';
+            modal.setAttribute('inert', '');
+
+            addPaymentMethodForm.reset();
+            delete addPaymentMethodForm.dataset.isEdit;
+            delete addPaymentMethodForm.dataset.methodId;
+        }
+
+        document.getElementById('closeAddPaymentMethodModal').addEventListener('click', closeAddPaymentMethodModal);
+        document.getElementById('cancelAddPaymentMethod').addEventListener('click', closeAddPaymentMethodModal);
+
+        // Função para adicionar ou editar um método de pagamento
+        addPaymentMethodForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const isEdit = this.dataset.isEdit === 'true';
+            const methodId = this.dataset.methodId || null;
+            const methodName = document.getElementById('paymentMethodName').value.trim();
+
+            if (!methodName) {
+                alert('O nome do método não pode ser vazio.');
+                return;
+            }
+
+            const url = isEdit ? `/editpaymentmethod/${methodId}/` : "{% url 'addpaymentmethod' %}";
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({ nome: methodName }),
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro ao salvar o método');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Método salvo com sucesso!');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Erro ao salvar o método.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao salvar o método.');
+                });
+        });
+
+        // Função para deletar um método de pagamento
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.delete-btn')) {
+                const deleteButton = e.target.closest('.delete-btn');
+                const methodId = deleteButton.getAttribute('data-id');
+
+                if (confirm('Tem certeza de que deseja eliminar este método de pagamento?')) {
+                    fetch(`/deletepaymentmethod/${methodId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                    })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Erro ao eliminar o método de pagamento.');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                document.querySelector(`tr[data-id="${methodId}"]`).remove();
+                                filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+                                updateTable();
+                            } else {
+                                alert(data.message || 'Erro ao eliminar o método de pagamento.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            alert('Erro ao eliminar o método de pagamento.');
+                        });
+                }
+            }
+        });
+
+        // Eventos de filtro
+        applyFilterButton.addEventListener('click', applyFilter);
+        clearFilterButton.addEventListener('click', clearFilter);
+
+        // Inicializa a tabela ao carregar
+        updateTable();
+    }
+
+
+
+    //FILTROS DOS ESTADOS DE APROVAÇÃO 
+    function initializeApprovedStatusTable() {
+        const searchBar = document.getElementById('searchBar');
+        const applyFilterButton = document.getElementById('apply-filter');
+        const clearFilterButton = document.getElementById('clear-filter');
+        const tableBody = document.getElementById('approvedStatusBody');
+        const paginationContainer = document.getElementById('pagination');
+        const addApprovedStatusForm = document.getElementById('addApprovedStatusForm');
+
+        if (!searchBar || !applyFilterButton || !clearFilterButton || !tableBody || !paginationContainer) {
+            console.error('Elementos da tabela de estados de aprovações não encontrados');
+            return;
+        }
+
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+
+        // Filtros e paginação
+        applyFilterButton.addEventListener('click', applyFilter);
+        clearFilterButton.addEventListener('click', clearFilter);
+
+        function applyFilter() {
+            const query = searchBar.value.toLowerCase().trim();
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
+                const statusName = row.querySelector('td:first-child').textContent.toLowerCase().trim();
+                return statusName.includes(query);
+            });
+
+            currentPage = 1;
+            updateTable();
+        }
+
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            const noResultsRow = document.getElementById('no-results-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+
+            Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+
+            const visibleRows = filteredRows.slice(startIndex, endIndex);
+
+            if (visibleRows.length > 0) {
+                visibleRows.forEach(row => (row.style.display = ''));
+            } else {
+                const emptyRow = document.createElement('tr');
+                emptyRow.setAttribute('id', 'no-results-row');
+                emptyRow.innerHTML = `
+                    <td colspan="2" class="no-data-message">Nenhum estado corresponde ao filtro aplicado.</td>
+                `;
+                tableBody.appendChild(emptyRow);
+            }
+
+            renderPaginationButtons();
+        }
+
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) button.classList.add('active');
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+        }
+
+        function clearFilter() {
+            searchBar.value = '';
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Reanexa eventos para criação, edição e eliminar
+        addApprovedStatusForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const isEdit = this.dataset.isEdit === 'true';
+            const approvedId = this.dataset.approvedId || null;
+            const statusName = document.getElementById('approvedStatusName').value;
+
+            if (!statusName) {
+                alert('O nome do estado não pode ser vazio.');
+                return;
+            }
+
+            const url = isEdit ? `/edit_approved_status/${approvedId}/` : "{% url 'add_approved_status' %}";
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({ nome: statusName }),
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro ao salvar o estado');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Estado salvo com sucesso!');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Erro ao salvar o estado.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao salvar o estado.');
+                });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const approvedId = this.getAttribute('data-id');
+
+                if (confirm('Tem certeza de que deseja eliminar este estado?')) {
+                    fetch(`/delete_approved_status/${approvedId}/`, {
+                        method: 'POST', // Certifique-se de que está usando o método correto
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                    })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Erro ao eliminar o estado');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                alert('Estado eliminado com sucesso!');
+                                document.querySelector(`tr[data-id="${approvedId}"]`).remove(); // Remove a linha da tabela
+                            } else {
+                                alert(data.message || 'Erro ao eliminar o estado.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            alert('Erro ao eliminar o estado.');
+                        });
+                }
+            });
+        });
+
+        updateTable();
+    }
+
+
+
+
+    //FILTROS DOS ESTADOS DOS RECIBO0S
+    function initializeReceiptStatusTable() {
+        const searchBar = document.getElementById('searchBar');
+        const applyFilterButton = document.getElementById('apply-filter');
+        const clearFilterButton = document.getElementById('clear-filter');
+        const tableBody = document.getElementById('receiptStatusBody');
+        const paginationContainer = document.getElementById('pagination');
+        const addReceiptStatusForm = document.getElementById('addReceiptStatusForm');
+
+        if (!searchBar || !applyFilterButton || !clearFilterButton || !tableBody || !paginationContainer) {
+            console.error('Elementos da tabela de estados de recibos não encontrados');
+            return;
+        }
+
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+
+        // Filtros e paginação
+        applyFilterButton.addEventListener('click', applyFilter);
+        clearFilterButton.addEventListener('click', clearFilter);
+
+        function applyFilter() {
+            const query = searchBar.value.toLowerCase().trim();
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
+                const statusName = row.querySelector('td:first-child').textContent.toLowerCase().trim();
+                return statusName.includes(query);
+            });
+
+            currentPage = 1;
+            updateTable();
+        }
+
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            const noResultsRow = document.getElementById('no-results-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+
+            Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+
+            const visibleRows = filteredRows.slice(startIndex, endIndex);
+
+            if (visibleRows.length > 0) {
+                visibleRows.forEach(row => (row.style.display = ''));
+            } else {
+                const emptyRow = document.createElement('tr');
+                emptyRow.setAttribute('id', 'no-results-row');
+                emptyRow.innerHTML = `
+                    <td colspan="2" class="no-data-message">Nenhum estado corresponde ao filtro aplicado.</td>
+                `;
+                tableBody.appendChild(emptyRow);
+            }
+
+            renderPaginationButtons();
+        }
+
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) button.classList.add('active');
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+        }
+
+        function clearFilter() {
+            searchBar.value = '';
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Reanexa eventos para criação, edição e eliminar
+        document.getElementById('addReceiptStatusForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const isEdit = this.dataset.isEdit === 'true';
+            const statusId = this.dataset.statusId || null;
+            const statusName = document.getElementById('receiptStatusName').value;
+
+            if (!statusName) {
+                alert('O nome do estado não pode ser vazio.');
+                return;
+            }
+
+            const url = isEdit ? `/edit_receipt_status/${statusId}/` : "{% url 'add_receipt_status' %}";
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({ nome: statusName }),
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro ao salvar o estado');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Estado salvo com sucesso!');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Erro ao salvar o estado.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao salvar o estado.');
+                });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const statusId = this.getAttribute('data-id');
+
+                if (confirm('Tem certeza de que deseja eliminar este estado?')) {
+                    fetch(`/delete_receipt_status/${statusId}/`, {
+                        method: 'POST', // Certifique-se de que está usando o método correto
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                    })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Erro ao eliminar o estado');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                alert('Estado eliminado com sucesso!');
+                                document.querySelector(`tr[data-id="${statusId}"]`).remove(); // Remove a linha da tabela
+                            } else {
+                                alert(data.message || 'Erro ao eliminar o estado.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            alert('Erro ao eliminar o estado.');
+                        });
+                }
+            });
+        });
+
+        updateTable();
+    }
+
+
+
+
+    //FILTROS DOS ESTADOS DO TRANSPORTE
+    function initializeTransportStateTable() {
+        const searchBar = document.getElementById('searchBar');
+        const applyFilterButton = document.getElementById('apply-filter');
+        const clearFilterButton = document.getElementById('clear-filter');
+        const tableBody = document.getElementById('transportStateBody');
+        const paginationContainer = document.getElementById('pagination');
+        const addTransportStateForm = document.getElementById('addTransportStateForm');
+
+        if (!searchBar || !applyFilterButton || !clearFilterButton || !tableBody || !paginationContainer) {
+            console.error('Elementos da tabela de estados de transporte não encontrados');
+            return;
+        }
+
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+
+        // Filtros e paginação
+        applyFilterButton.addEventListener('click', applyFilter);
+        clearFilterButton.addEventListener('click', clearFilter);
+
+        function applyFilter() {
+            const query = searchBar.value.toLowerCase().trim();
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
+                const stateName = row.querySelector('td:first-child').textContent.toLowerCase().trim();
+                return stateName.includes(query);
+            });
+
+            currentPage = 1;
+            updateTable();
+        }
+
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            const noResultsRow = document.getElementById('no-results-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+
+            Array.from(tableBody.querySelectorAll('tr')).forEach(row => (row.style.display = 'none'));
+
+            const visibleRows = filteredRows.slice(startIndex, endIndex);
+
+            if (visibleRows.length > 0) {
+                visibleRows.forEach(row => (row.style.display = ''));
+            } else {
+                const emptyRow = document.createElement('tr');
+                emptyRow.setAttribute('id', 'no-results-row');
+                emptyRow.innerHTML = `
+                    <td colspan="2" class="no-data-message">Nenhum estado corresponde ao filtro aplicado.</td>
+                `;
+                tableBody.appendChild(emptyRow);
+            }
+
+            renderPaginationButtons();
+        }
+
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.classList.add('pagination-button');
+                    if (i === currentPage) button.classList.add('active');
+                    button.addEventListener('click', () => {
+                        currentPage = i;
+                        updateTable();
+                    });
+                    paginationContainer.appendChild(button);
+                }
+            }
+        }
+
+        function clearFilter() {
+            searchBar.value = '';
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            currentPage = 1;
+            updateTable();
+        }
+
+        // Reanexa eventos para criação, edição e eliminar
+        document.getElementById('addTransportStateForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const isEdit = this.dataset.isEdit === 'true';
+            const stateId = this.dataset.stateId || null;
+            const stateName = document.getElementById('transportStateName').value;
+
+            if (!stateName) {
+                alert('O nome do estado não pode ser vazio.');
+                return;
+            }
+
+            const url = isEdit ? `/edit_transport_state/${stateId}/` : "{% url 'add_transport_state' %}";
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({ nome: stateName }),
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro ao salvar o estado');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Estado salvo com sucesso!');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Erro ao salvar o estado.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao salvar o estado.');
+                });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const stateId = this.getAttribute('data-id');
+
+            if (confirm('Tem certeza de que deseja eliminar este estado?')) {
+                fetch(`/delete_transport_state/${stateId}/`, {
+                    method: 'POST', // Certifique-se de que está usando o método correto
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Erro ao eliminar o estado');
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            alert('Estado eliminado com sucesso!');
+                            document.querySelector(`tr[data-id="${stateId}"]`).remove(); // Remove a linha da tabela
+                        } else {
+                            alert(data.message || 'Erro ao eliminar o estado.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao eliminar o estado.');
+                    });
+            }
+        });
+    });
+    updateTable();
+    }
+
+
+
+
+
+    //RENDERIZA AS PÁGINAS A MOSTRAR    
+    function loadTabContent(button) {
+        // Remove 'active' class from all buttons
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        // Add 'active' class to clicked button
+        button.classList.add('active');
+        // Get URL for the content
+        const url = button.getAttribute('data-url');
+        const contentDiv = document.getElementById('tab-content');
+        contentDiv.innerHTML = 'A carregar conteúdo...';
+
+        // Fetch the content using AJAX
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error('Erro ao carregar o conteúdo');
+                return response.text();
+            })
+            .then(html => {
+                contentDiv.innerHTML = html;
+                
+                // Determina qual função de inicialização vai ser chamada
+                if (url.includes('grapevariety') && typeof initializeGrapeVarietyTable === 'function') {
+                    initializeGrapeVarietyTable();
+                }
+                if (url.includes('payment_methods') && typeof initializePaymentMethodPage === 'function') {
+                    initializePaymentMethodPage();
+                }
+                if (url.includes('approved_status') && typeof initializeApprovedStatusTable === 'function') {
+                    initializeApprovedStatusTable();
+                }
+                if (url.includes('receipt_status') && typeof initializeReceiptStatusTable === 'function') {
+                    initializeReceiptStatusTable();
+                }
+                if (url.includes('transport_states') && typeof initializeTransportStateTable === 'function') {
+                    initializeTransportStateTable();
+                }                
+            })
+            .catch(error => {
+                contentDiv.innerHTML = `<p>Erro ao carregar o conteúdo: ${error.message}</p>`;
+            });
+    }
+
+    // Load the first tab on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelector('.tab-button.active').click();
+    });
+</script>
+{% endblock %}

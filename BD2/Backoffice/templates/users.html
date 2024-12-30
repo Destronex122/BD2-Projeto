@@ -20,7 +20,7 @@
         <h1>Utilizadores</h1>
         <div style="justify-self:right; text-align:center;">
             <button type="button" onclick="openAddUserModal()">
-                <img src="{% static 'add.png' %}" alt="add" style="height: 25px; width: auto;">
+                <img src="{% static 'add.png' %}" title="Adicionar novo utilizador" alt="add" style="height: 25px; width: auto;">
             </button>
         </div>
     </div>
@@ -28,33 +28,50 @@
 
     <!-- Filtros para a tabela de utilizadores -->
     <div class="filters mb-3">
-        <form id="filterForm" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <form method="get" id="filterForm" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
             <!-- Campo Nome -->
             <div class="form-group" style="flex: 1; min-width: 200px;">
                 <label for="filterName" style="display: block;">Nome:</label>
-                <input type="text" id="filterName" class="form-control" style="margin-bottom:0px" placeholder="Nome">
+                <input 
+                    style="padding: 10px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    box-sizing: border-box;"
+                    id="filterName" 
+                    name="filterName" 
+                    class="form-control" 
+                    value="{{ filters.filterName|default:'' }}" 
+                    placeholder="Nome">
             </div>
             
             <!-- Campo Email -->
             <div class="form-group" style="flex: 1; min-width: 200px;">
                 <label for="filterEmail" style="display: block;">Email:</label>
-                <input type="email" id="filterEmail" class="form-control" placeholder="Email">
+                <input 
+                    type="email" 
+                    id="filterEmail" 
+                    name="filterEmail" 
+                    class="form-control" 
+                    value="{{ filters.filterEmail|default:'' }}" 
+                    placeholder="Email">
             </div>
             
             <!-- Dropdown Cargo -->
             <div class="form-group" style="flex: 1; min-width: 200px;">
                 <label for="filterCargo" style="display: block;">Cargo:</label>
-                <select id="filterCargo" class="form-control">
-                    <option value="">Todos</option>
-                    <option value="Administrador">Administrador</option>
-                    <option value="Cliente">Cliente</option>
-                    <option value="Colaborador">Colaborador</option>
+                <select id="filterCargo" name="filterCargo" class="form-control">
+                    <option value="" {% if not filters.filterCargo %}selected{% endif %}>Todos</option>
+                    {% for cargo in cargos %}
+                    <option value="{{ cargo.nome }}" {% if filters.filterCargo == cargo.nome %}selected{% endif %}>
+                        {{ cargo.nome }}
+                    </option>
+                    {% endfor %}
                 </select>
             </div>
             
             <!-- Botão Aplicar -->
             <div class="col-md-2" style="margin-top:8px; width:10%">
-                <button type="button" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
+                <button type="submit" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
             </div>
         </form>
     </div>
@@ -64,25 +81,32 @@
     <table class="table table-bordered" id="userTable">
         <thead>
             <tr>
+                <th>Username</th>
                 <th>Nome</th>
                 <th>Email</th>
                 <th>Telefone</th>
+                <th>Endereço</th>
+                <th>Campo</th>
                 <th>Cargo</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>João Silva</td>
-                <td>joao.silva@example.com</td>
-                <td>+351 912 345 678</td>
-                <td>Administrador</td>
+            {% for user in users %}
+            <tr data-userid="{{ user.userid }}">
+                <td>{{ user.username }}</td>
+                <td>{{ user.nome }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.telefone }}</td>
+                <td>{{ user.endereco }}</td>
+                <td>{% if user.campoid %}{{ user.campoid.morada }}{% else %}-{% endif %}</td>
+                <td>{% if user.cargoid %}{{ user.cargoid.nome }}{% else %}-{% endif %}</td>
+
             </tr>
+            {% empty %}
             <tr>
-                <td>Ana Pereira</td>
-                <td>ana.pereira@example.com</td>
-                <td>+351 934 567 890</td>
-                <td>Cliente</td>
+                <td colspan="5">Nenhum utilizador encontrado.</td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
 
@@ -97,7 +121,11 @@
             
             <form id="addUserForm" onsubmit="addUser(event)">
                 <div class="form-group">
-                    <label for="newUserName">Nome:</label>
+                    <label for="newUserUsername">Username:</label>
+                    <input type="text" id="newUserUsername" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newUserName">Nome Completo:</label>
                     <input type="text" id="newUserName" class="form-control" required>
                 </div>
                 <div class="form-group">
@@ -105,12 +133,32 @@
                     <input type="email" id="newUserEmail" class="form-control" required>
                 </div>
                 <div class="form-group">
+                    <label for="newUserPassword">Senha:</label>
+                    <input type="password" id="newUserPassword" class="form-control" required>
+                </div>
+                <div class="form-group">
                     <label for="newUserPhone">Telefone:</label>
                     <input type="text" id="newUserPhone" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="newUserCity">Cidade:</label>
+                    <label for="newUserCity">Endereço:</label>
                     <input type="text" id="newUserCity" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newUserCampo">Campo:</label>
+                    <select id="newUserCampo" class="form-control" required>
+                        {% for campo in campos %}
+                        <option value="{{ campo.campoid }}">{{ campo.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newUserCargo">Cargo:</label>
+                    <select id="newUserCargo" class="form-control" required>
+                        {% for cargo in cargos %}
+                        <option value="{{ cargo.cargoid }}">{{ cargo.nome }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                     <button type="button" onclick="closeAddUserModal()" class="secondary-button">Cancelar</button>
@@ -121,6 +169,20 @@
     </div>
 
     <script>
+        const csrfToken = '{{ csrf_token }}';
+        
+        // Adiciona o evento de clique na tabela
+        document.getElementById('userTable').addEventListener('click', function(event) {
+            const targetRow = event.target.closest('tr'); // Captura a linha clicada
+            if (targetRow && !targetRow.closest('thead')) { // Garante que não seja o cabeçalho
+                const userId = targetRow.dataset.userid;  // Obtém o atributo data-userid
+                if (userId) {
+                    console.log(`Redirecionando para userdetail com ID: ${userId}`); // Verifica no console
+                    window.location.href = `/backoffice/userdetail/${userId}/`; // Redireciona
+                }
+            }
+        });
+    
         // Função para abrir o modal de adicionar utilizador
         function openAddUserModal() {
             document.getElementById('addUserModal').style.display = 'flex';
@@ -133,66 +195,65 @@
     
         // Função para adicionar um novo utilizador à tabela
         function addUser(event) {
-            event.preventDefault();
-    
-            // Captura os valores dos campos do formulário
-            const newUserName = document.getElementById('newUserName').value;
-            const newUserEmail = document.getElementById('newUserEmail').value;
-            const newUserPhone = document.getElementById('newUserPhone').value;
-            const newUserCity = document.getElementById('newUserCity').value;
-    
-            // Cria uma nova linha na tabela com os valores capturados
-            const newRow = `
-                <tr>
-                    <td>${newUserName}</td>
-                    <td>${newUserEmail}</td>
-                    <td>${newUserPhone}</td>
-                    <td>${newUserCity}</td>
-                </tr>
-            `;
-    
-            // Adiciona a nova linha ao corpo da tabela
-            document.querySelector('#userTable tbody').insertAdjacentHTML('beforeend', newRow);
-    
-            // Fecha o modal e reseta o formulário
-            closeAddUserModal();
-            document.getElementById('addUserForm').reset();
-        }
+           event.preventDefault();
 
-        document.getElementById('userTable').addEventListener('click', function(event) {
-            const targetRow = event.target.closest('tr');
-            if (targetRow && !targetRow.closest('thead')) {
-                window.location.href = `/backoffice/userdetail/`; // Ajuste com a lógica apropriada para o detalhe do utilizador
-            }
-        });
+           const formData = new FormData();
+           formData.append('username', document.getElementById('newUserName').value);
+           formData.append('nome', document.getElementById('newUserName').value);
+           formData.append('email', document.getElementById('newUserEmail').value);
+           formData.append('password', document.getElementById('newUserPassword').value);
+           formData.append('telefone', document.getElementById('newUserPhone').value);
+           formData.append('endereco', document.getElementById('newUserCity').value);
+           formData.append('campoid', document.getElementById('newUserCampo').value);
+           formData.append('cargoid', document.getElementById('newUserCargo').value);
 
-
+           fetch('/users/', {
+               method: 'POST',
+               headers: {
+                   'X-CSRFToken': csrfToken  // Inclua o token CSRF
+               },
+               body: formData
+           })
+           .then(response => response.json())
+           .then(data => {
+               if (data.message) {
+                   alert(data.message);
+                   location.reload(); // Atualiza a página para refletir as mudanças
+               } else if (data.error) {
+                   alert('Erro: ' + data.error);
+               }
+           })
+           .catch(error => console.error('Error:', error));
+}
+    
+        // Filtragem na tabela de utilizadores
         document.getElementById('applyFilters').addEventListener('click', function() {
-    const nameFilter = document.getElementById('filterName').value.toLowerCase();
-    const emailFilter = document.getElementById('filterEmail').value.toLowerCase();
-    const cargoFilter = document.getElementById('filterCargo').value;
-
-    const rows = document.querySelectorAll('#userTable tbody tr');
-
-    rows.forEach(row => {
-        const name = row.cells[0].textContent.toLowerCase();
-        const email = row.cells[1].textContent.toLowerCase();
-        const cargo = row.cells[3].textContent;
-
-        // Verifica se a linha corresponde aos filtros
-        const matchesName = name.includes(nameFilter);
-        const matchesEmail = email.includes(emailFilter);
-        const matchesCargo = cargoFilter === "" || cargo === cargoFilter;
-
-        // Mostra ou esconde a linha baseado nos filtros
-        if (matchesName && matchesEmail && matchesCargo) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
-});
+            const nameFilter = document.getElementById('filterName').value.toLowerCase();
+            const emailFilter = document.getElementById('filterEmail').value.toLowerCase();
+            const cargoFilter = document.getElementById('filterCargo').value;
+    
+            const rows = document.querySelectorAll('#userTable tbody tr');
+    
+            rows.forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                const email = row.cells[1].textContent.toLowerCase();
+                const cargo = row.cells[3].textContent;
+    
+                // Verifica se a linha corresponde aos filtros
+                const matchesName = name.includes(nameFilter);
+                const matchesEmail = email.includes(emailFilter);
+                const matchesCargo = cargoFilter === "" || cargo === cargoFilter;
+    
+                // Mostra ou esconde a linha baseado nos filtros
+                if (matchesName && matchesEmail && matchesCargo) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
     </script>
+    
 </div>
 
 {% endblock %}

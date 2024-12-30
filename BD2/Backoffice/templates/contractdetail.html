@@ -22,7 +22,7 @@
 </nav>
 
 <div class="editable-area; padding:0px 0px 20px 0px;">
-    <h1>Contrato: QWE22</h1>
+    <h1>Contrato: {{contrato.contratoid}}</h1>
     <br>
     <div class="dashboard">
         <div class="info-sections">
@@ -31,19 +31,19 @@
                 <h2>Cliente</h2>
                 <div class="info-item">
                     <span class="label">Nome:</span>
-                    <span class="value">Jose Carlos</span>
+                    <span class="value">Jogo</span>
                 </div>
                 <div class="info-item">
                     <span class="label">NIF:</span>
-                    <span class="value">255433234</span>
+                    <span class="value">{{cliente.nif}}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Contacto:</span>
-                    <span class="value">961627384</span>
+                    <span class="value">{{cliente.contacto}}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Morada:</span>
-                    <span class="value">Rua Santo Cristo,78</span>
+                    <span class="value">{{cliente.morada}}</span>
                 </div>
             </div>
 
@@ -52,11 +52,11 @@
                 <h2>Valores</h2>
                 <div class="info-item">
                     <span class="label">Quantidade estimada:</span>
-                    <span class="value">5460€ TON</span>
+                    <span class="value">{{contrato.qtdeestimada}}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Preço estimado:</span>
-                    <span class="value">1245€ por TON</span>
+                    <span class="value">{{contrato.precoestimado}}</span>
                 </div>
             </div>
 
@@ -65,14 +65,28 @@
                 <h2>Datas</h2>
                 <div class="info-item">
                     <span class="label">Data de início:</span>
-                    <span class="value">10/07/2024</span>
+                    <span class="value">{{contrato.datainicio|date:'Y-m-d'}}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Data de fim:</span>
-                    <span class="value">10/07/2025</span>
+                    <span class="value">{{contrato.datafim|date:'Y-m-d'}}</span>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
+    <h2 class="pesagens-title">Recibos</h2>
+</div>
+<div class="pesagens-container" id="pesagensContainer">
+    <!-- Pesagens da Vinha A -->
+    <div class="pesagem-card">
+        <p><strong>Recibo nº:</strong> 23421</p>
+        <p><strong>Data:</strong> 2024-10-01</p>
+        <p><strong>Preço final:</strong> 1000.00€</p>
+        <p><strong>Método de pagamento:</strong> MB WAY</p>
+        <p><strong>Estado do pagamento:</strong> Ativo</p>
     </div>
 </div>
 

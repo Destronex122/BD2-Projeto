@@ -30,11 +30,6 @@
                     <li class="nav-item active">
                         <a class="nav-link" href="/backoffice/home">Início</a>
                     </li>
-                    {% if is_admin %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="/backoffice/fields">Campo</a>
-                        </li>
-                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="/backoffice/vineyards">Vinhas</a>
                     </li>
@@ -52,29 +47,22 @@
                     </li>
                 </ul>
                 <div class="ml-auto d-flex align-items-center"> <!-- Alinhamento à direita com ícone de logout -->
-                    <select class="custom-select mr-3" name="vineyard" required>
-                        {% comment %}
-                        {% for quinta in quintas %}
-                            <option value="{{ quinta.id }}">{{ quinta.nome }}</option>
-                        {% endfor %}
-                        {% endcomment %}
-                        <option>Quinta do Douro</option>
-                        <option>Quinta do Dão</option>
-                        <option>Quinta do Alentejo</option>
-                        <option>Quinta de Mirandela</option>
-                        <option>Quinta de Lagos</option>
-                    </select>
-
                     <!-- Dropdown do utilizador -->
                     <div class="dropdown">
                         <div class="dropdown-toggle" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <img src="{% static 'userIcon.png' %}" alt="Utilizador" style="height: 40px; width: auto; cursor: pointer;">
                         </div>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-                            <a class="dropdown-item" href="{% url 'userdetail' %}">Perfil</a>
+                           <!-- <a class="dropdown-item" href="{% url 'userdetail' request.user.id %}">Perfil</a>-->
                             {% if is_admin %}
                             <a class="dropdown-item" href="{% url 'users' %}">Utilizadores</a>
                             <a class="dropdown-item" href="{% url 'fields' %}">Gerir campos</a>
+                            <a class="dropdown-item" href="{% url 'settings' %}">Configurações</a>
+                            <!-- <a class="dropdown-item" href="{% url 'grapevariety' %}">Gerir castas</a>
+                            <a class="dropdown-item" href="{% url 'payment_methods' %}">Gerir métodos de pagamento</a>
+                            <a class="dropdown-item" href="{% url 'transport_states' %}">Gerir estado do transporte</a>
+                            <a class="dropdown-item" href="{% url 'receipt_status' %}">Gerir estado dos recibos</a>
+                            <a class="dropdown-item" href="{% url 'approved_status' %}">Gerir estado das aprovações</a> -->
                             {% endif %}
                             <div class="dropdown-divider"></div>
                             <form action="{% url 'logout' %}" method="post" style="display: inline;">

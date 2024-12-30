@@ -1,0 +1,323 @@
+{% block content %}
+
+{% load static %}
+
+<style>
+    #transportStateTable tbody tr:hover {
+        background-color: #f1f1f1;
+        cursor: pointer;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination button {
+        margin: 0 5px;
+        padding: 5px 10px;
+        border: 1px solid #e9e8e2;
+        background-color: #e9e8e2;
+        cursor: pointer;
+    }
+
+    .pagination button.active {
+        font-weight: bold;
+        background-color: #616646;
+    }
+
+    .pagination button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    .delete-btn:disabled {
+        background-color: #e9e8e2;
+        color: #a0a0a0;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+</style>
+
+<div class="editable-area newPadding">
+    <div style="display:flex; justify-content: space-between; margin-bottom: 20px;">
+        <h1>Estados de transporte</h1>
+        <div>
+            <button type="button" onclick="openAddTransportStateModal(false)">
+                <img src="{% static 'add.png' %}" title="Adicionar novo estado" alt="add" style="height: 25px; width: auto;">
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtro de Estados de Transporte -->
+    <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+        <div class="form-group" style="flex: 1; min-width: 200px; margin-top:16px">
+            <label for="searchBar" style="display: block;">Estados:</label>
+            <input type="text" id="searchBar" class="form-control" placeholder="Pesquisar por estado">
+        </div>
+        <button id="apply-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; margin-top:24px">Aplicar</button>
+        <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2; margin-top:24px">Limpar</button>
+    </div>
+    
+    <table id="transportStateTable" class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Estado</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="transportStateBody">
+            {% for estado in estados %}
+            <tr 
+                data-id="{{ estado.idestado }}" 
+                data-name="{{ estado.nome }}">
+                <td>{{ estado.nome }}</td>
+                <td>
+                    <button 
+                        title="Editar estado" 
+                        onclick="openAddTransportStateModal(true, '{{ estado.idestado }}', '{{ estado.nome }}')" 
+                        type="button">
+                        <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
+                    </button>
+                    <button 
+                        title="Excluir estado" 
+                        type="button" 
+                        class="delete-btn" 
+                        data-id="{{ estado.idestado }}">
+                        <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2" class="no-data-message">Ainda não há estados de transporte adicionados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="pagination" id="pagination"></div>
+
+    <!-- Modal para adicionar/editar um estado -->
+    <div class="popup-overlay" id="addTransportStateModal" style="display: none;" inert>
+        <div class="popup-content">
+            <div class="popup-header">
+                <h5 id="addTransportStateModalTitle">Adicionar estado</h5>
+                <div style="display:flex; justify-content: flex-end;">
+                    <span class="close" id="closeAddTransportStateModal">&times;</span>
+                </div>
+            </div>
+            <br>
+            <div>
+                <form id="addTransportStateForm" method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="transportStateName">Nome do estado</label>
+                        <input type="text" id="transportStateName" name="transportStateName" class="form-control" required>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                        <button type="button" class="secondary-button" id="cancelAddTransportState">Cancelar</button>
+                        <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('apply-filter').addEventListener('click', function () {
+        const searchValue = document.getElementById('searchBar').value.toLowerCase().trim();
+        const rows = Array.from(document.querySelectorAll('#transportStateTable tbody tr'));
+
+        rows.forEach(row => {
+            const stateName = row.querySelector('td').textContent.toLowerCase();
+            if (stateName.includes(searchValue)) {
+                row.style.display = ''; 
+            } else {
+                row.style.display = 'none'; 
+            }
+        });
+
+        checkEmptySearchResult();
+    });
+
+    document.getElementById('clear-filter').addEventListener('click', function () {
+        document.getElementById('searchBar').value = ''; 
+        const rows = Array.from(document.querySelectorAll('#transportStateTable tbody tr'));
+
+        rows.forEach(row => {
+            row.style.display = ''; 
+        });
+
+        clearEmptySearchMessage();
+    });
+
+    function checkEmptySearchResult() {
+        const rows = Array.from(document.querySelectorAll('#transportStateTable tbody tr'));
+        const visibleRows = rows.filter(row => row.style.display !== 'none');
+
+        if (visibleRows.length === 0) {
+            const tbody = document.querySelector('#transportStateTable tbody');
+            const emptyRow = document.createElement('tr');
+            emptyRow.setAttribute('id', 'no-results-row');
+            emptyRow.innerHTML = `
+                <td colspan="2" class="no-data-message">Nenhum estado corresponde ao filtro aplicado.</td>
+            `;
+            tbody.appendChild(emptyRow);
+        }
+    }
+
+    function clearEmptySearchMessage() {
+        const noResultsRow = document.getElementById('no-results-row');
+        if (noResultsRow) {
+            noResultsRow.remove();
+        }
+    }
+    
+    function openAddTransportStateModal(isEdit = false, stateId = null, stateName = '') {
+        const modal = document.getElementById('addTransportStateModal');
+        const modalTitle = document.getElementById('addTransportStateModalTitle');
+        const transportStateNameInput = document.getElementById('transportStateName');
+        const addTransportStateForm = document.getElementById('addTransportStateForm');
+
+        modal.style.display = 'flex';
+        modal.removeAttribute('inert'); 
+
+        modalTitle.textContent = isEdit ? 'Editar estado' : 'Adicionar estado';
+
+        if (isEdit) {
+            transportStateNameInput.value = stateName;
+            addTransportStateForm.dataset.isEdit = 'true';
+            addTransportStateForm.dataset.stateId = stateId;
+        } else {
+            transportStateNameInput.value = '';
+            addTransportStateForm.dataset.isEdit = 'false';
+            addTransportStateForm.dataset.stateId = '';
+        }
+    }
+
+    function closeAddTransportStateModal() {
+        const modal = document.getElementById('addTransportStateModal');
+        modal.style.display = 'none';
+        modal.setAttribute('inert', ''); 
+
+        const form = document.getElementById('addTransportStateForm');
+        form.reset(); 
+        delete form.dataset.isEdit;
+        delete form.dataset.stateId;
+    }
+
+    document.getElementById('closeAddTransportStateModal').addEventListener('click', closeAddTransportStateModal);
+    document.getElementById('cancelAddTransportState').addEventListener('click', closeAddTransportStateModal);
+
+    document.getElementById('addTransportStateForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const isEdit = this.dataset.isEdit === 'true';
+        const stateId = this.dataset.stateId || null;
+        const stateName = document.getElementById('transportStateName').value;
+
+        if (!stateName) {
+            alert('O nome do estado não pode ser vazio.');
+            return;
+        }
+
+        const url = isEdit ? `/edit_transport_state/${stateId}/` : "{% url 'add_transport_state' %}";
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ nome: stateName })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Erro ao salvar o estado.');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao salvar o estado.');
+            });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableBody = document.getElementById('transportStateBody');
+        const paginationContainer = document.getElementById('pagination');
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            filteredRows.forEach(row => row.style.display = 'none');
+            filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+            renderPaginationButtons();
+        }
+
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.add('pagination-button');
+                if (i === currentPage) button.classList.add('active');
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    updateTable();
+                });
+                paginationContainer.appendChild(button);
+            }
+        }
+
+        function removeRow(id) {
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            if (row) row.remove();
+
+            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+            updateTable();
+        }
+
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.delete-btn')) {
+                const deleteButton = e.target.closest('.delete-btn');
+                const stateId = deleteButton.getAttribute('data-id');
+
+                if (confirm('Tem certeza de que deseja eliminar este estado?')) {
+                    fetch(`/delete_transport_state/${stateId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                removeRow(stateId);
+                            } else {
+                                alert(data.message || 'Erro ao eliminar o estado.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            alert('Erro ao excluir o estado.');
+                        });
+                }
+            }
+        });
+
+        updateTable();
+    });
+</script>
+
+{% endblock %}

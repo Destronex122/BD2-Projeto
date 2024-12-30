@@ -13,6 +13,9 @@
     .leaflet-draw-draw-polyline,
     .leaflet-draw-draw-circlemarker,
     .leaflet-draw-draw-rectangle,
+    .leaflet-draw-draw-marker,
+    .leaflet-draw-edit-edit,
+    .leaflet-draw-edit-remove,
     .leaflet-draw-draw-circle {
         display: none !important;
     }
@@ -24,14 +27,26 @@
     <div style="display:flex; justify-content: space-between;">
         <h1>Vinhas</h1>
         <div style="justify-self:right; text-align:center; display:none;">
-            <button id="addFieldButton" type="button"><img src="{% static 'add.png' %}" alt="edit" style="height: 25px; width: auto; "></button>
+            <button id="addFieldButton" type="button">
+                <img src="{% static 'add.png' %}" title="Adicionar nova vinha" alt="edit" style="height: 25px; width: auto; ">
+            </button>
         </div>
     </div>
     <br>
-    
+    <div style="margin-bottom:30px">
+        {% if is_admin %}
+        <select class="custom-select mr-3" name="vineyard" id="dropdown_vineyard" required>
+            {% for quinta in quintas %}
+                <option value={{ quinta.campoid }}>{{ quinta.nome }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+    </div>
+
     <div style="display:flex; justify-content: space-between;">
         <div id="map" style="width: 650px; height: 450px; margin-right:24px"></div>
         <div style="width:50%;">
+            <!-- vineyard_list.html -->
             <table>
                 <thead>
                     <tr>
@@ -42,46 +57,37 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Merlot Blanc</td>
-                        <td>01/11/2024</td>
-                        <td>35</td>
-                        <td>
-                            <div style="display:flex">
-                                <form method="GET" style="display:inline; margin-right:8px">
-                                    <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                                </form>
-                                <form method="POST" style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Touriga Nacional</td>
-                        <td>01/11/2024</td>
-                        <td>45</td>
-                        <td>
-                            <div style="display:flex">
-                                <form method="GET" style="display:inline; margin-right:8px">
-                                    <button type="submit"><img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;"></button>
-                                </form>
-                                <form method="POST" style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit"><img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;"></button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
+                    {% for vinha in Vinhas %}
+                        <tr>
+                            <td>{{ vinha.castaid.nome }}</td>  <!-- Assume-se que 'Castas' tem um campo 'nome' -->
+                            <td>{{ vinha.dataplantacao|date:"d/m/Y" }}</td>
+                            <td>{{ vinha.hectares }}</td>
+                            {% comment %} <td>
+                                <div style="display:flex">
+                                    <form method="GET" style="display:inline; margin-right:8px" action="{% url 'edit_vinha' vinha.vinhaid %}">
+                                        <button type="submit">ç
+                                            <img src="{% static 'edit.png' %}" title="Editar vinha" alt="edit" style="height: 25px; width: auto;">
+                                        </button>
+                                    </form>
+                                    <form method="POST" style="display:inline;" action="{% url 'delete_vinha' vinha.vinhaid %}">
+                                        {% csrf_token %}
+                                        <button type="submit">
+                                            <img src="{% static 'delete.png' %}" title="Eliminar vinha" alt="delete" style="height: 25px; width: auto;">
+                                        </button>
+                                    </form>
+                                </div>
+                            </td> {% endcomment %}
+                        </tr>
+                    {% endfor %}
                 </tbody>
-            </table> 
+            </table>
+ 
         </div>
     </div>
 
     <script>
         var terrainCoordinates = [41.230704, -7.646158];
-        var map = L.map('map').setView(terrainCoordinates, 17);
+        var map = L.map('map').setView(terrainCoordinates, 5);
 
         map.removeControl(map.attributionControl);
 
@@ -100,21 +106,69 @@
 
         var vineyardMarkers = L.layerGroup().addTo(map);
 
-        fetch('/backoffice/load_vineyards/', { method: 'GET' })
-            .then(response => response.json())
-            .then(data => addVineyards(data))
-            .catch(error => console.error('Error loading vineyards:', error));
+        document.getElementById('dropdown_vineyard').addEventListener('change', function() {
+            const vineyardId = this.value; // Obtém o valor selecionado do dropdown
+            loadVineyards(vineyardId);
+        });
 
-        function addVineyards(vineyards) {
-            let jsonArray = JSON.parse(vineyards);
-            jsonArray.forEach(item => {
-                const coordinates = item.coordinates;
-                const vineyard = L.polygon(coordinates).bindPopup(item.description);
+        function updateVineyardList(data) {
+            const tableBody = document.querySelector('table tbody');
+            tableBody.innerHTML = ''; // Limpa a tabela antes de adicionar novos dados
+        
+            if (data.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="4">Nenhuma vinha encontrada.</td>`;
+                tableBody.appendChild(row);
+                return;
+            }
+        
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.Nome}</td>
+                    <td>${item.DataPlantacao || 'N/A'}</td>
+                    <td>${item.Hectares || 'N/A'}</td>
+                    <td>
+                        <button><img src="{% static 'edit.png' %}" title="Editar vinha" alt="edit" style="height: 25px; width: auto;"></button>
+                        <button><img src="{% static 'delete.png' %}" title="Eliminar vinha" alt="delete" style="height: 25px; width: auto;"></button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        
+        
+        // Função para carregar as vinhas com base no ID da quinta selecionada
+        function loadVineyards(vineyardId) {
+            const url = `/backoffice/load_vineyards/?vineyard=${vineyardId}`;
+        
+            fetch(url, { method: 'GET' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    vineyardMarkers.clearLayers(); // Limpa os marcadores existentes
+                    addVineyards(data); // Adiciona os novos marcadores no mapa
+                    updateVineyardList(data); // Atualiza a lista de vinhas na tabela
+                })
+                .catch(error => console.error('Error loading vineyards:', error));
+        }
+        
+        // Chamada inicial para carregar as vinhas ao abrir a página
+        const initialVineyardId = document.getElementById('dropdown_vineyard').value;
+        loadVineyards(initialVineyardId);
+
+        function addVineyards(data) {
+            data.forEach(item => {
+                const coordinates = item.Coordenadas.coordinates[0].map(coord => [coord.lat, coord.lng]);
+                const vineyard = L.polygon(coordinates).bindPopup(
+                    `<b>${item.Nome}</b><br>Hectares: ${item.Hectares}<br>Data de Plantação: ${item.DataPlantacao}`
+                );
                 vineyardMarkers.addLayer(vineyard);
-                vineyard.on('click', function() {
-                    document.getElementById('vineyardInfo').innerHTML = item.description; 
-                    openModal(); 
-                });
             });
         }
 
