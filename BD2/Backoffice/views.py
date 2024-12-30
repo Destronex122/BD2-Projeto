@@ -904,6 +904,7 @@ def contractdetail(request, contratoid):
     metodospagamento = Metodospagamento.objects.all()
     colheita = Colheitas.objects.all()
     estadosrecibos = Estadosrecibo.objects.all()
+    users = Users.objects.all()
 
     return render(request, 'contractdetail.html', {
         'contrato': contrato,
@@ -911,7 +912,8 @@ def contractdetail(request, contratoid):
         'recibos': recibos,
         'metodospagamento': metodospagamento,
         'colheita': colheita,
-        'estadosrecibos': estadosrecibos  # Make sure the variable name is consistent here
+        'estadosrecibos': estadosrecibos,
+        'users': users
     })
 
 
