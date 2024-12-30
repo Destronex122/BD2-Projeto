@@ -60,7 +60,6 @@ def load_markers(request):
     
     # Convert the cursor to a list and then to JSON in one step
     json_data = dumps([marker for marker in markers], indent=2)
-    print(json_data)
     
     return json_data
 
@@ -73,10 +72,8 @@ def load_vineyards(request):
     """
     vineyards_collection = db[dbcollection]
     vineyards = vineyards_collection.find({"coordinates": {"$exists": True}})
-    print(vineyards)
     # Convert the cursor to a list and then to JSON in one step
     json_data = dumps([vineyard for vineyard in vineyards], indent=2)
-    print(json_data)
     
     return json_data
 
