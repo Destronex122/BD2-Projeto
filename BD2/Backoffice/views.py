@@ -14,13 +14,14 @@ from django.db import connection
 from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
-from django.db.models import Max
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes, Periodos
 from django.utils import timezone
 from django.db.models.functions import Coalesce
-from django.db.models import Value, BooleanField, Case, When, F
+from django.db.models import Value, BooleanField, Case, When, F, Q, Max
 import logging
 from django.contrib.auth.hashers import make_password
+from django.shortcuts import render
+
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
@@ -172,64 +173,160 @@ def deliverydetail(request,transposteid):
     transporte = get_object_or_404 (Transportes, idtransposte = transposteid ) 
     return render(request, 'deliverydetail.html', {'Transportes' : transporte })
 
+
+#COLHEITA
 @login_required
 def harvest(request):
-    # Filtros
-    filter_hectares = request.GET.get('filterHectares', '').strip()
-    filter_casta = request.GET.get('filterCasta', '').strip()
-    filter_data_inicio = request.GET.get('filterDataInicio', None)
+    # Obter filtros
+    filter_vinha = request.GET.get('filterVinha', '').strip()
+    filter_periodo_inicio = request.GET.get('filterPeriodoInicio', None)
+    filter_periodo_fim = request.GET.get('filterPeriodoFim', None)
+    filter_estado = request.GET.get('filterIsActive', '').strip()
 
-    # Filtrando as colheitas com base nos filtros fornecidos
-    colheitas = Colheitas.objects.select_related('vinhaid', 'vinhaid__castaid', 'periodoid').all()
-    
-    if filter_hectares:
-        colheitas = colheitas.filter(vinhaid__hectares__exact=filter_hectares)
-    if filter_casta:
-        colheitas = colheitas.filter(vinhaid__castaid__nome__icontains=filter_casta)
-    if filter_data_inicio:
-        colheitas = colheitas.filter(datapesagem__gte=filter_data_inicio)
+    # Queryset de colheitas
+    colheitas = Colheitas.objects.select_related('vinhaid', 'periodoid').all()
 
-    # Paginação
-    rows_per_page = 5
-    page_number = int(request.GET.get('page', 1))  # Obtém o número da página da URL, padrão é 1
-    total_items = colheitas.count()  # Conta o total de colheitas
-    total_pages = (total_items + rows_per_page - 1) // rows_per_page  # Calcula o total de páginas
+    # Aplicar filtros
+    if filter_vinha:
+        colheitas = colheitas.filter(vinhaid__nome__icontains=filter_vinha)
+    if filter_periodo_inicio:
+        colheitas = colheitas.filter(periodoid__datainicio__gte=filter_periodo_inicio)
+    if filter_periodo_fim:
+        colheitas = colheitas.filter(periodoid__datafim__lte=filter_periodo_fim)
+    if filter_estado:
+        if filter_estado == 'active':
+            colheitas = colheitas.filter(isactive=True)
+        elif filter_estado == 'inactive':
+            colheitas = colheitas.filter(isactive=False)
 
-    # Adicionando a paginação à consulta
-    start_index = (page_number - 1) * rows_per_page
-    end_index = start_index + rows_per_page
-    paginated_colheitas = colheitas[start_index:end_index]
+    # Queryset de vinhas para o dropdown
+    vinhas = Vinhas.objects.filter(isactive=True)
 
-    # Cria o contexto para as colheitas, que será enviado para o template
+    # Adicionar informações para exibição
     colheitas_context = []
-    for colheita in paginated_colheitas:
-        if colheita.terminada:
-            ultima_pesagem = Pesagens.objects.filter(colheitaid=colheita).aggregate(ultima_data=Max('datadepesagem'))['ultima_data']
-            data_termino = ultima_pesagem
-        else:
-            data_termino = "Não terminada"
+    for colheita in colheitas:
+        # Buscar as pesagens associadas a essa colheita específica
+        pesagens_colheita = Pesagens.objects.filter(colheitaid=colheita).order_by('-datadepesagem')
+        
+        # Obter a última pesagem (se houver)
+        ultima_pesagem = pesagens_colheita.first()
+
+        colheita.data_ultima_pesagem = ultima_pesagem.datadepesagem if ultima_pesagem else None
 
         colheitas_context.append({
-            'colheitaid': colheita.colheitaid, 
-            'vinha_hectares': colheita.vinhaid.hectares if colheita.vinhaid else None,
-            'casta_nome': colheita.vinhaid.castaid.nome if colheita.vinhaid and colheita.vinhaid.castaid else None,
+            'colheitaid': colheita.colheitaid,
+            'vinha_nome': colheita.vinhaid.nome if colheita.vinhaid else "Sem Vinha",
+            'vinha_id': colheita.vinhaid.id if colheita.vinhaid and hasattr(colheita.vinhaid, 'id') else None,
             'peso_total': colheita.pesototal,
             'preco_por_tonelada': colheita.precoportonelada,
-            'data_ultima_pesagem': colheita.datapesagem,
-            'periodo': f"{colheita.periodoid.datainicio} a {colheita.periodoid.datafim}" if colheita.periodoid else None,
+            'data_ultima_pesagem': colheita.data_ultima_pesagem,
+            'periodo_inicio': colheita.periodoid.datainicio if colheita.periodoid else None,
+            'periodo_fim': colheita.periodoid.datafim if colheita.periodoid else None,
             'previsao_fim_colheita': colheita.previsaofimcolheita,
-            'terminada': "Sim" if colheita.terminada else "Não",
-            'data_termino': data_termino if data_termino else "Não terminada",
+            'isactive': colheita.isactive,
         })
 
-    # Retorna o render com a paginação
+    # Renderizar o template
     return render(request, 'harvest.html', {
         'colheitas': colheitas_context,
-        'total_pages': total_pages,  # Passa o total de páginas
-        'current_page': page_number,  # Passa a página atual
-        'pages': range(1, total_pages + 1),  # Passa a lista de páginas para o template
+        'vinhas': vinhas,  # Passa as vinhas para o template,
+        'filters': {
+            'filterVinha': filter_vinha,
+            'filterPeriodoInicio': filter_periodo_inicio,
+            'filterPeriodoFim': filter_periodo_fim,
+            'filterIsActive': filter_estado,
+        },
     })
 
+
+@login_required
+def create_harvest(request):
+    if request.method == 'POST':
+        try:
+            vinha_id = request.POST.get('vinhaId')
+            peso_total = request.POST.get('pesoTotal')
+            preco_por_tonelada = request.POST.get('precoPorTonelada')
+            data_pesagem = request.POST.get('dataPesagem')
+            periodo_inicio = request.POST.get('periodoInicio')
+            periodo_fim = request.POST.get('periodoFim')
+            periodo_ano = int(request.POST.get('periodoAno'))
+            previsao_fim_colheita = request.POST.get('previsaoFimColheita')
+            print(f"vinha_id: {vinha_id}")  # Verifique se o ID da vinha está sendo enviado
+            print(f"data_pesagem: {data_pesagem}")
+            # Chamar procedimento armazenado para criar a colheita
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    CALL sp_criar_colheita(
+                        %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                """, [
+                    vinha_id,
+                    peso_total,
+                    preco_por_tonelada,
+                    data_pesagem,
+                    periodo_inicio,
+                    periodo_fim,
+                    periodo_ano,
+                    previsao_fim_colheita
+                ])
+
+            return JsonResponse({'success': True, 'message': 'Colheita criada com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao criar colheita: {e}'})
+
+
+@login_required
+def edit_harvest(request, colheita_id):
+    if request.method == 'POST':
+        try:
+            vinha_id = request.POST.get('vinhaId')
+            peso_total = float(request.POST.get('pesoTotal'))
+            preco_por_tonelada = float(request.POST.get('precoPorTonelada'))
+            data_pesagem = request.POST.get('dataPesagem')
+            periodo_inicio = request.POST.get('periodoInicio')
+            periodo_fim = request.POST.get('periodoFim')
+            periodo_ano = int(request.POST.get('periodoAno'))
+            previsao_fim_colheita = request.POST.get('previsaoFimColheita')
+
+            # Chamar procedimento armazenado para editar a colheita
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                     CALL sp_criar_colheita(
+                        %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                """, [
+                    vinha_id if vinha_id else None,
+                    peso_total,
+                    preco_por_tonelada,
+                    data_pesagem,
+                    periodo_inicio,
+                    periodo_fim,
+                    periodo_ano,
+                    previsao_fim_colheita
+                ])
+
+            return JsonResponse({'success': True, 'message': 'Colheita editada com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao editar colheita: {e}'})
+
+
+@login_required
+def inactivate_harvest(request, colheita_id):
+    if request.method == 'POST':
+        try:
+            # Chamar procedimento armazenado para inativar a colheita
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    CALL sp_inativar_colheita(%s)
+                """, [colheita_id])
+
+            return JsonResponse({'success': True, 'message': 'Colheita inativada com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao inativar colheita: {e}'})
+
+
+
+#DETALHE DA COLHEITA
 @login_required
 def harvestdetail(request, colheitaid):
     colheita = get_object_or_404(Colheitas, colheitaid=colheitaid)

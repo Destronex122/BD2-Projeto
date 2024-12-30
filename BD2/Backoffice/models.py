@@ -420,7 +420,7 @@ class Pesagens(models.Model):
     pesobruto = models.DecimalField(max_digits=10, decimal_places=2)
     pesoliquido = models.DecimalField(max_digits=10, decimal_places=2)
     datadepesagem = models.DateField()
-    colheitaid = models.ForeignKey(Colheitas, models.DO_NOTHING, db_column='colheitaid', blank=True, null=True)
+    colheitaid = models.ForeignKey(Colheitas, on_delete=models.DO_NOTHING, db_column='colheitaid', blank=True, null=True)
 
     class Meta:
         managed = False
