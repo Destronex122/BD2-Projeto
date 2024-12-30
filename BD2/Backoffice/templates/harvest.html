@@ -166,20 +166,42 @@
         <tbody id="harvestBody">
             {% for colheita in colheitas %}
             <tr data-id="{{ colheita.colheitaid }}" 
-                data-vinha-id="{{ colheita.vinha_id|default_if_none:'' }}" 
+                data-vinha-id="{{ colheita.vinha_id }}" 
                 data-peso-total="{{ colheita.peso_total }}" 
                 data-preco-por-tonelada="{{ colheita.preco_por_tonelada }}" 
                 data-periodo-inicio="{{ colheita.periodo_inicio|date:'Y-m-d' }}" 
                 data-periodo-fim="{{ colheita.periodo_fim|date:'Y-m-d' }}" 
-                data-previsao-fim="{{ colheita.previsao_fim_colheita|date:'Y-m-d' }}"
-                data-periodo-ano="{{ colheita.periodo_ano|default:'' }}">
+                data-periodo-ano="{{ colheita.periodo_ano }}"
+                data-previsao-fim="{{ colheita.previsao_fim_colheita|date:'Y-m-d' }}">
+            <!-- <tr data-id="{{ colheita.id }}" 
+                data-vinha-id="{{ colheita.vinha.id }}" 
+                data-peso-total="{{ colheita.peso_total }}" 
+                data-preco-por-tonelada="{{ colheita.preco_por_tonelada }}" 
+                data-periodo-inicio="{{ colheita.periodo_inicio }}" 
+                data-periodo-fim="{{ colheita.periodo_fim }}" 
+                data-periodo-ano="{{ colheita.periodo_ano }}" 
+                data-previsao-fim="{{ colheita.previsao_fim }}"> -->
                 <td>{{ colheita.vinha_nome }}</td>
                 <td>{{ colheita.peso_total }}</td>
                 <td>{{ colheita.preco_por_tonelada }}</td>
-                <td>{{ colheita.data_ultima_pesagem|date:"Y-m-d" }}</td>
-                <td>{{ colheita.periodo_inicio|date:"Y-m-d" }} a {{ colheita.periodo_fim|date:"Y-m-d" }}</td>
+                <td>
+                    {% if colheita.data_ultima_pesagem %}
+                        {{ colheita.data_ultima_pesagem|date:"Y-m-d" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <!-- <td>{{ colheita.periodo_inicio|date:"Y-m-d" }} a {{ colheita.periodo_fim|default:"-"|date:"Y-m-d" }}</td> -->
+                <td>
+                    {{ colheita.periodo_inicio|date:"Y-m-d" }} a 
+                    {% if colheita.periodo_fim %}
+                        {{ colheita.periodo_fim|date:"Y-m-d" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
                 <td>{{ colheita.previsao_fim_colheita|date:"Y-m-d" }}</td>
-                <td>{{ colheita.terminada }}</td>
+                <td>{{ colheita.terminado|yesno:"Sim,Não" }}</td>
                 <td>
                     <button title="Editar colheita" 
                             onclick="openAddHarvestModal(true, '{{ colheita.colheitaid }}')" 
@@ -210,246 +232,318 @@
 <div id="addHarvestModal" class="popup-overlay" style="display: none;">
     <div class="popup-content">
         <span class="modal-close" onclick="closeAddHarvestModal()">&times;</span>
-        <h2 id="addHarvestModalTitle">Adicionar Colheita</h2>
-        <form id="addHarvestForm" onsubmit="submitHarvest(event)">
+        <h2 id="addHarvestModalTitle">Adicionar colheita</h2>
+        <form id="addHarvestForm" method="post" onsubmit="submitHarvest(event)">
             {% csrf_token %}
-            <input type="hidden" id="harvestId" name="harvestId" value="">
+            <input type="hidden" id="harvestId" name="harvestId" value="{{ harvest.id }}">
+        
+            <!-- Campo para a vinha -->
             <div class="form-group">
-                <label for="harvestId">Vinha:</label>
-                <select name="vinhaId" id="vinhaId" class="form-control" required>
+                <label for="vinhaId">Vinha</label>
+                <select name="vinhaId" id="vinhaId">
                     <option value="">Selecione uma vinha</option>
                     {% for vinha in vinhas %}
-                        <option value="{{ vinha.id }}">{{ vinha.nome }}</option>
+                        <option value="{{ vinha.id }}" {% if vinha.id == selected_vinha_id %}selected{% endif %}>
+                            {{ vinha.nome }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
+        
+            <!-- Campo para o peso total -->
             <div class="form-group">
-                <label for="harvestPesoTotal">Peso Total (kg):</label>
-                <input type="number" id="harvestPesoTotal" class="form-control" required>
+                <label for="harvestPesoTotal">Peso total (kg):</label>
+                <input type="number" id="harvestPesoTotal" name="pesoTotal" class="form-control" value="{{ selected_peso_total }}" required>
             </div>
+        
+            <!-- Campo para o preço por tonelada -->
             <div class="form-group">
-                <label for="harvestPrecoPorTonelada">Preço por Tonelada (€):</label>
-                <input type="number" id="harvestPrecoPorTonelada" class="form-control" required>
+                <label for="harvestPrecoPorTonelada">Preço por tonelada (€):</label>
+                <input type="number" id="harvestPrecoPorTonelada" name="precoPorTonelada" class="form-control" value="{{ selected_preco_por_tonelada }}" required>
             </div>
+        
+            <!-- Campo para a data de início do período -->
             <div class="form-group">
                 <label for="harvestPeriodoInicio">Período - Início:</label>
-                <input type="date" id="harvestPeriodoInicio" class="form-control" required>
+                <input type="date" id="harvestPeriodoInicio" name="periodoInicio" class="form-control" value="{{ selected_periodo_inicio }}" required>
             </div>
+        
+            <!-- Campo para a data de fim do período -->
             <div class="form-group">
                 <label for="harvestPeriodoFim">Período - Fim:</label>
-                <input type="date" id="harvestPeriodoFim" class="form-control" required>
+                <input type="date" id="harvestPeriodoFim" name="periodoFim" class="form-control" value="{{ selected_periodo_fim }}">
             </div>
+        
+            <!-- Campo para o ano do período -->
             <div class="form-group">
-                <label for="harvestPeriodoAno">Ano do Período:</label>
-                <input type="number" id="harvestPeriodoAno" class="form-control" required>
+                <label for="periodoAno">Ano do período:</label>
+                <input type="number" name="periodoAno" id="periodoAno" value="{{ selected_periodo_ano }}" min="2020" max="2100" step="1" class="form-control">
             </div>
+        
+            <!-- Campo para a previsão do fim da colheita -->
             <div class="form-group">
-                <label for="harvestPrevisaoFim">Previsão do Fim:</label>
-                <input type="date" id="harvestPrevisaoFim" class="form-control" required>
+                <label for="harvestPrevisaoFim">Previsão do fim:</label>
+                <input type="date" id="harvestPrevisaoFim" name="previsaoFimColheita" class="form-control" value="{{ selected_previsao_fim_colheita }}" required>
             </div>
+        
             <button type="submit" class="button">Salvar</button>
         </form>
+        
     </div>
 </div>
 
 
 <script>
-const harvestTable = document.getElementById('harvestTable');
+    const harvestTable = document.getElementById('harvestTable');
 
-// Redireciona para os detalhes da colheita ao clicar em uma linha
-harvestTable.addEventListener('click', function (event) {
-    const targetRow = event.target.closest('tr'); // Obtém a linha clicada
-    const isHeader = event.target.closest('thead'); // Ignora cliques no cabeçalho
-    
-    if (targetRow && !isHeader) { 
-        const colheitaid = targetRow.getAttribute('data-id'); // Obtém o atributo "data-colheitaid"
-        if (colheitaid) {
-            // Redireciona para a URL correspondente
-            window.location.href = `/backoffice/harvestdetail/${colheitaid}/`;
-        }
-    }
-});
+    // Redireciona para os detalhes da colheita ao clicar em uma linha
+    harvestTable.addEventListener('click', function (event) {
+        const targetRow = event.target.closest('tr'); // Obtém a linha clicada
+        const isHeader = event.target.closest('thead'); // Ignora cliques no cabeçalho
+        
+        // Verifica se o clique foi em um botão ou dentro de um botão
+        const isButton = event.target.closest('button');
 
-//FILTERS
-document.getElementById('applyFilters').addEventListener('click', function() {
-    const filterVinha = document.getElementById('filterVinha').value.toLowerCase();
-    const filterCasta = document.getElementById('filterCasta').value.toLowerCase();
-    const filterDataInicio = document.getElementById('filterDataInicio').value;
-    const filterDataFim = document.getElementById('filterDataFim').value;
-    const filterEstado = document.getElementById('filterEstado').value; // Obtemos o valor do filtro de estado
-
-    const rows = document.querySelectorAll('#harvestTable tbody tr');
-
-    rows.forEach(row => {
-        const vinha = row.getAttribute('data-vinha').toLowerCase();
-        const casta = row.getAttribute('data-casta').toLowerCase();
-        const dataPesagem = row.getAttribute('data-data-pesagem');
-        const isActive = row.getAttribute('data-isactive') === 'true'; // Pegamos o estado ativo/inativo da linha
-
-        const matchesVinha = !filterVinha || vinha.includes(filterVinha);
-        const matchesCasta = !filterCasta || casta.includes(filterCasta);
-        const matchesDataInicio = !filterDataInicio || dataPesagem >= filterDataInicio;
-        const matchesDataFim = !filterDataFim || dataPesagem <= filterDataFim;
-
-        // Verifica o estado
-        const matchesEstado =
-            filterEstado === '' || // Se o filtro de estado não foi selecionado, corresponde a tudo
-            (filterEstado === 'active' && isActive) || // Se o filtro é "ativo" e a linha é ativa
-            (filterEstado === 'inactive' && !isActive); // Se o filtro é "inativo" e a linha é inativa
-
-        if (matchesVinha && matchesCasta && matchesDataInicio && matchesDataFim && matchesEstado) {
-            row.style.display = ''; // Mostra a linha
-        } else {
-            row.style.display = 'none'; // Oculta a linha
+        if (targetRow && !isHeader && !isButton) { 
+            const colheitaid = targetRow.getAttribute('data-id'); // Obtém o atributo "data-colheitaid"
+            if (colheitaid) {
+                // Redireciona para a URL correspondente
+                window.location.href = `/backoffice/harvestdetail/${colheitaid}/`;
+            }
         }
     });
-});
 
-// Limpa os filtros e recarrega a página sem parâmetros
-document.getElementById('clear-filter').addEventListener('click', function (event) {
-    event.preventDefault(); // Evita o comportamento padrão do botão
+    //FILTERS
+    document.getElementById('applyFilters').addEventListener('click', function() {
+        const filterVinha = document.getElementById('filterVinha').value.toLowerCase();
+        const filterCasta = document.getElementById('filterCasta').value.toLowerCase();
+        const filterDataInicio = document.getElementById('filterDataInicio').value;
+        const filterDataFim = document.getElementById('filterDataFim').value;
+        const filterEstado = document.getElementById('filterEstado').value; // Obtemos o valor do filtro de estado
 
-    // Remove todos os parâmetros da URL
-    const baseUrl = window.location.origin + window.location.pathname; // URL base sem parâmetros
-    window.location.href = baseUrl; // Redireciona para a URL base
-});
+        const rows = document.querySelectorAll('#harvestTable tbody tr');
 
-function openAddHarvestModal(isEdit = false, colheitaid = null) {
-    const modal = document.getElementById('addHarvestModal');
-    const modalTitle = document.getElementById('addHarvestModalTitle');
-    const harvestForm = document.getElementById('addHarvestForm');
-    const harvestVinha = document.getElementById('harvestVinha');
+        rows.forEach(row => {
+            const vinha = row.getAttribute('data-vinha').toLowerCase();
+            const casta = row.getAttribute('data-casta').toLowerCase();
+            const dataPesagem = row.getAttribute('data-pesagem');
+            const isActive = row.getAttribute('data-isactive') === 'true'; // Pegamos o estado ativo/inativo da linha
 
-    modal.style.display = 'flex';
+            const matchesVinha = !filterVinha || vinha.includes(filterVinha);
+            const matchesCasta = !filterCasta || casta.includes(filterCasta);
+            const matchesDataInicio = !filterDataInicio || dataPesagem >= filterDataInicio;
+            const matchesDataFim = !filterDataFim || dataPesagem <= filterDataFim;
 
-    if (isEdit) {
-        modalTitle.textContent = 'Editar colheita';
-        // Adicione o ID da colheita no campo oculto
-        document.getElementById('harvestId').value = colheitaid;
+            // Verifica o estado
+            const matchesEstado =
+                filterEstado === '' || // Se o filtro de estado não foi selecionado, corresponde a tudo
+                (filterEstado === 'active' && isActive) || // Se o filtro é "ativo" e a linha é ativa
+                (filterEstado === 'inactive' && !isActive); // Se o filtro é "inativo" e a linha é inativa
 
-        // Encontre a linha correspondente na tabela
-        const row = document.querySelector(`tr[data-id="${colheitaid}"]`);
-        if (row) {
-            document.getElementById('harvestVinha').value = row.getAttribute('data-vinha-id');  // Preenche o dropdown com o ID correto
-            document.getElementById('harvestPesoTotal').value = row.getAttribute('data-peso-total');
-            document.getElementById('harvestPrecoPorTonelada').value = row.getAttribute('data-preco-por-tonelada');
-            document.getElementById('harvestPeriodoInicio').value = row.getAttribute('data-periodo-inicio');
-            document.getElementById('harvestPeriodoFim').value = row.getAttribute('data-periodo-fim');
-            document.getElementById('harvestPrevisaoFim').value = row.getAttribute('data-previsao-fim');
-            document.getElementById('harvestPeriodoAno').value = row.getAttribute('data-periodo-ano');  // Corrected
-        }
-    } else {
-        modalTitle.textContent = 'Adicionar colheita';
-        document.getElementById('harvestId').value = '';
-        document.getElementById('harvestVinha').value = '';
-        document.getElementById('harvestPesoTotal').value = '';
-        document.getElementById('harvestPrecoPorTonelada').value = '';
-        document.getElementById('harvestPeriodoInicio').value = '';
-        document.getElementById('harvestPeriodoFim').value = '';
-        document.getElementById('harvestPrevisaoFim').value = '';
-        document.getElementById('harvestPeriodoAno').value = '';  // Clear the field
-    }
-}
-
-function closeAddHarvestModal() {
-    document.getElementById('addHarvestModal').style.display = 'none';
-}
-
-function getCSRFToken() {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'csrftoken') {
-            return value;
-        }
-    }
-    return null;
-}
-
-function submitHarvest(event) {
-    event.preventDefault();
-    
-    const vinhaId = document.getElementById('harvestId').value;
-    const isEdit = document.getElementById('addHarvestModalTitle').textContent === 'Editar colheita';
-    const url = isEdit ? '/edit-harvest/' : '/create-harvest/';
-    const harvestData = new FormData();
-    harvestData.append("colheitaid", isEdit ? document.getElementById('harvestId').value : "");
-    harvestData.append("vinhaId", vinhaId);
-    harvestData.append("pesoTotal", document.getElementById('harvestPesoTotal').value);
-    harvestData.append("precoPorTonelada", document.getElementById('harvestPrecoPorTonelada').value);
-    harvestData.append("periodoInicio", document.getElementById('harvestPeriodoInicio').value);
-    harvestData.append("periodoFim", document.getElementById('harvestPeriodoFim').value);
-    harvestData.append("previsaoFimColheita", document.getElementById('harvestPrevisaoFim').value);
-    harvestData.append("periodoAno", document.getElementById('harvestPeriodoAno').value);
-
-    fetch('/create-harvest/', {
-        method: 'POST',
-        headers: {
-            "X-CSRFToken": getCSRFToken(),
-        },
-        body: harvestData,
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            location.reload();
-        } else {
-            alert("Erro: " + data.message);
-        }
-    })
-    .catch(error => {
-        alert("Erro ao salvar: " + error);
+            if (matchesVinha && matchesCasta && matchesDataInicio && matchesDataFim && matchesEstado) {
+                row.style.display = ''; // Mostra a linha
+            } else {
+                row.style.display = 'none'; // Oculta a linha
+            }
+        });
     });
-}
+
+    // Limpa os filtros e recarrega a página sem parâmetros
+    document.getElementById('clear-filter').addEventListener('click', function (event) {
+        event.preventDefault(); // Evita o comportamento padrão do botão
+
+        // Remove todos os parâmetros da URL
+        const baseUrl = window.location.origin + window.location.pathname; // URL base sem parâmetros
+        window.location.href = baseUrl; // Redireciona para a URL base
+    });
+
+    function openAddHarvestModal(isEdit = false, colheitaid = null) {
+        const modal = document.getElementById('addHarvestModal');
+        const modalTitle = document.getElementById('addHarvestModalTitle');
+
+        modal.style.display = 'flex';
+
+        if (isEdit) {
+            modalTitle.textContent = 'Editar colheita';
+            document.getElementById('harvestId').value = colheitaid; // Define o ID da colheita
+
+            // Encontre a linha correspondente na tabela
+            const row = document.querySelector(`tr[data-id="${colheitaid}"]`);
+            if (row) {
+                // Preenche os campos do formulário com os dados da linha
+                document.getElementById('vinhaId').value = row.getAttribute('data-vinha-id');
+                document.getElementById('harvestPesoTotal').value = row.getAttribute('data-peso-total');
+                document.getElementById('harvestPrecoPorTonelada').value = row.getAttribute('data-preco-por-tonelada');
+                document.getElementById('harvestPeriodoInicio').value = row.getAttribute('data-periodo-inicio');
+                document.getElementById('harvestPeriodoFim').value = row.getAttribute('data-periodo-fim');
+                document.getElementById('harvestPeriodoAno').value = row.getAttribute('data-periodo-ano');
+                document.getElementById('harvestPrevisaoFim').value = row.getAttribute('data-previsao-fim');
+            }
+        } else {
+            modalTitle.textContent = 'Adicionar colheita';
+            // Limpa os campos do formulário para adicionar um novo registro
+            document.getElementById('harvestId').value = '';
+            document.getElementById('vinhaId').value = '';
+            document.getElementById('harvestPesoTotal').value = '';
+            document.getElementById('harvestPrecoPorTonelada').value = '';
+            document.getElementById('harvestPeriodoInicio').value = '';
+            document.getElementById('harvestPeriodoFim').value = '';
+            document.getElementById('harvestPeriodoAno').value = '';
+            document.getElementById('harvestPrevisaoFim').value = '';
+        }
+    }
+
+    function closeAddHarvestModal() {
+        document.getElementById('addHarvestModal').style.display = 'none';
+    }
+
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    function submitHarvest(event) {
+        event.preventDefault();
+        const harvestId = document.getElementById('harvestId').value;
+        const vinhaId = document.getElementById('vinhaId').value;
+        const isEdit = harvestId !== '';
+
+        const url = isEdit ? `/edit-harvest/${harvestId}/` : '/create-harvest/';
+        const harvestData = new FormData();
+        harvestData.append("colheitaid", isEdit ? document.getElementById('harvestId').value : "");
+        harvestData.append("vinhaId", vinhaId);
+        harvestData.append("pesoTotal", document.getElementById('harvestPesoTotal').value);
+        harvestData.append("precoPorTonelada", document.getElementById('harvestPrecoPorTonelada').value);
+        harvestData.append("periodoInicio", document.getElementById('harvestPeriodoInicio').value);
+        harvestData.append("periodoFim", document.getElementById('harvestPeriodoFim').value);
+        harvestData.append("previsaoFimColheita", document.getElementById('harvestPrevisaoFim').value);
+        harvestData.append("periodoAno", document.getElementById('harvestPeriodoAno').value);
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                "X-CSRFToken": getCSRFToken(),
+            },
+            body: harvestData,
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+
+            // Verificar o cabeçalho da resposta
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                return response.json();
+            } else {
+                throw new Error("Resposta do servidor não é JSON.");
+            }
+        })
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Erro: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Erro na requisição:", error);
+            alert("Erro ao salvar: " + error.message);
+        });
+    }
 
 
-document.addEventListener('click', function (e) {
+    // document.addEventListener('click', function (e) {
+    //         if (e.target.closest('.delete-btn')) {
+    //             const deleteButton = e.target.closest('.delete-btn');
+    //             const harvestid = deleteButton.getAttribute('data-id');
+
+    //             if (confirm('Tem certeza de que deseja inativar esta colheita?')) {
+    //                 fetch(`/inactivate_harvest/${harvestid}/`, {
+    //                     method: 'POST',
+    //                     headers: {
+    //                         'Content-Type': 'application/json',  // Assegura que o corpo da requisição será JSON
+    //                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+    //                     },
+    //                     body: JSON.stringify({})
+    //                 })
+    //                     .then(response => response.json())
+    //                     .then(data => {
+    //                         if (data.success) {
+    //                             const row = deleteButton.closest('tr');
+    //                             row.dataset.isactive = 'false'; // Atualiza o atributo de estado
+    //                             // Atualiza o botão para refletir o estado inativo
+    //                             deleteButton.disabled = true;
+    //                             deleteButton.classList.add('disabled');
+
+    //                             const tableBody = document.getElementById('harvestBody');
+    //                             filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+    //                             if (filteredRows.length === 0) {
+    //                                 const emptyRow = document.createElement('tr');
+    //                                 emptyRow.innerHTML = `
+    //                                     <td colspan="2" class="no-data-message">Ainda não há colheitas adicionadas.</td>
+    //                                 `;
+    //                                 tableBody.appendChild(emptyRow);
+    //                             } else {
+    //                                 // if (typeof updateTable === 'function') {
+    //                                 //     updateTable();
+    //                                 // }
+    //                             }
+    //                         } else {
+    //                             alert(data.message || 'Erro ao inativar a colheita.');
+    //                         }
+    //                     })
+    //                     .catch(error => {
+    //                         console.error('Erro:', error);
+    //                         alert('Erro ao excluir a colheita.');
+    //                     });
+    //             }
+    //         }
+    //     });
+    document.addEventListener('click', function (e) {
         if (e.target.closest('.delete-btn')) {
             const deleteButton = e.target.closest('.delete-btn');
             const harvestid = deleteButton.getAttribute('data-id');
 
             if (confirm('Tem certeza de que deseja inativar esta colheita?')) {
+
                 fetch(`/inactivate_harvest/${harvestid}/`, {
                     method: 'POST',
                     headers: {
-                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
                     },
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const row = deleteButton.closest('tr');
-                            row.dataset.isactive = 'false'; // Atualiza o atributo de estado
-                            // Atualiza o botão para refletir o estado inativo
-                            deleteButton.disabled = true;
-                            deleteButton.classList.add('disabled');
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Se a colheita foi inativada com sucesso, desabilite o botão
+                        const row = deleteButton.closest('tr');
+                        row.dataset.isactive = 'false'; // Marca como inativo
 
-                            const tableBody = document.getElementById('harvestBody');
-                            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
-                            if (filteredRows.length === 0) {
-                                const emptyRow = document.createElement('tr');
-                                emptyRow.innerHTML = `
-                                    <td colspan="2" class="no-data-message">Ainda não há colheitas adicionadas.</td>
-                                `;
-                                tableBody.appendChild(emptyRow);
-                            } else {
-                                // if (typeof updateTable === 'function') {
-                                //     updateTable();
-                                // }
-                            }
-                        } else {
-                            alert(data.message || 'Erro ao inativar a colheita.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro:', error);
-                        alert('Erro ao excluir a colheita.');
-                    });
+                        // Desabilita o botão de delete
+                        deleteButton.disabled = true;
+                        deleteButton.classList.add('disabled');
+
+                        // Pode atualizar a interface ou mostrar uma mensagem de sucesso
+                        alert(data.message || 'Colheita inativada com sucesso!');
+                    } else {
+                        alert(data.message || 'Erro ao inativar a colheita.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao excluir a colheita.');
+                });
             }
         }
     });
-
 </script>
 
 {% endblock %}

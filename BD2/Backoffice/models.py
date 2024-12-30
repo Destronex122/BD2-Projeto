@@ -241,13 +241,26 @@ class Clientes(models.Model):
         managed = False
         db_table = 'clientes'
 
+class Vinhas(models.Model):
+    vinhaid = models.AutoField(primary_key=True)
+    nome = models.TextField()
+    castaid = models.ForeignKey(Castas, models.DO_NOTHING, db_column='castaid', blank=True, null=True)
+    campoid = models.ForeignKey(Campos, models.DO_NOTHING, db_column='campoid', blank=True, null=True)
+    coordenadas = models.TextField()
+    dataplantacao = models.DateField(blank=True, null=True)
+    hectares = models.DecimalField(max_digits=65535, decimal_places=65535)
+    isactive = models.BooleanField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'vinhas'
 
 class Colheitas(models.Model):
     colheitaid = models.AutoField(primary_key=True)
-    vinhaid = models.ForeignKey('Vinhas', models.DO_NOTHING, db_column='vinhaid', blank=True, null=True)
+    vinhaid = models.ForeignKey(Vinhas, on_delete=models.CASCADE, db_column='vinhaid')
     pesototal = models.DecimalField(max_digits=65535, decimal_places=65535)
     precoportonelada = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
-    datapesagem = models.DateField(blank=True, null=True)
+    # datapesagem = models.DateField(blank=True, null=True)
     periodoid = models.ForeignKey('Periodos', models.DO_NOTHING, db_column='periodoid', blank=True, null=True)
     previsaofimcolheita = models.DateField(blank=True, null=True)
     terminada = models.BooleanField()
@@ -257,6 +270,16 @@ class Colheitas(models.Model):
         managed = False
         db_table = 'colheitas'
 
+    def ultima_data_pesagem(self):
+        """
+        Retorna a última data de pesagem associada a essa colheita.
+        Se não houver pesagens, retorna None.
+        """
+        # Obtém a última pesagem associada a essa colheita
+        ultima_pesagem = self.pesagens.order_by('-datadepesagem').first()
+        if ultima_pesagem:
+            return ultima_pesagem.datadepesagem
+        return None
 
 class Contratos(models.Model):
     contratoid = models.AutoField(primary_key=True)
@@ -420,7 +443,14 @@ class Pesagens(models.Model):
     pesobruto = models.DecimalField(max_digits=10, decimal_places=2)
     pesoliquido = models.DecimalField(max_digits=10, decimal_places=2)
     datadepesagem = models.DateField()
-    colheitaid = models.ForeignKey(Colheitas, on_delete=models.DO_NOTHING, db_column='colheitaid', blank=True, null=True)
+    colheitaid = models.ForeignKey(
+        Colheitas, 
+        related_name='pesagens',  # Adicione o related_name para permitir o acesso reverso
+        on_delete=models.CASCADE,
+        db_column='colheitaid', 
+        blank=True, 
+        null=True
+    )
 
     class Meta:
         managed = False
@@ -474,17 +504,4 @@ class Users(models.Model):
         db_table = 'users'
 
 
-class Vinhas(models.Model):
-    vinhaid = models.AutoField(primary_key=True)
-    nome = models.TextField()
-    castaid = models.ForeignKey(Castas, models.DO_NOTHING, db_column='castaid', blank=True, null=True)
-    campoid = models.ForeignKey(Campos, models.DO_NOTHING, db_column='campoid', blank=True, null=True)
-    coordenadas = models.TextField()
-    dataplantacao = models.DateField(blank=True, null=True)
-    hectares = models.DecimalField(max_digits=65535, decimal_places=65535)
-    isactive = models.BooleanField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'vinhas'
 
