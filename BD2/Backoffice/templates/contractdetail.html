@@ -141,12 +141,11 @@
             <div class="form-group">
                 <label for="estadopagamentoid">Estado Pagamento: </label>
                 <select id="estadopagamentoid" name="estadopagamentoid" class="form-control">
-                    {% for metodo in metodospagamento %} 
-                        <option value="{{ metodo.idmetodopagamento }}">{{ metodo.nome }}</option>
+                    {% for estado in estadosrecibos %} 
+                        <option value="{{ estado.idestado }}">{{ estado.nome }}</option>
                     {% endfor %}
                 </select>
-            </div> 
-
+            </div>                    
             <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                 <button type="button" onclick="closeAddContractModal()" class="secondary-button">Cancelar</button>
                 <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>

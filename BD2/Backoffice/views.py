@@ -900,20 +900,20 @@ def contractdetail(request, contratoid):
     contrato = get_object_or_404(Contratos, contratoid=contratoid)
     cliente = contrato.clienteid
     recibos = Recibos.objects.filter(idcontrato=contrato.contratoid).select_related('metodopagamento', 'estadoid')  
-    # select_related para otimizar a busca, incluindo 'metodopagamento' e 'estadoid'
-    metodospagamento = Metodospagamento.objects.filter()
-    colheita = Colheitas.objects.filter()
-    estadosrecibo = Estadosrecibo.objects.filter()
+    # select_related to optimize the query, including 'metodopagamento' and 'estadoid'
+    metodospagamento = Metodospagamento.objects.all()
+    colheita = Colheitas.objects.all()
+    estadosrecibos = Estadosrecibo.objects.all()
 
     return render(request, 'contractdetail.html', {
         'contrato': contrato,
         'cliente': cliente,
         'recibos': recibos,
         'metodospagamento': metodospagamento,
-        'colheita':colheita,
-        'estadorecibo':estadosrecibo
-
+        'colheita': colheita,
+        'estadosrecibos': estadosrecibos  # Make sure the variable name is consistent here
     })
+
 
 
 
