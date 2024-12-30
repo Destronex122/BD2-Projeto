@@ -404,6 +404,51 @@ function submitHarvest(event) {
 }
 
 
+document.addEventListener('click', function (e) {
+        if (e.target.closest('.delete-btn')) {
+            const deleteButton = e.target.closest('.delete-btn');
+            const harvestid = deleteButton.getAttribute('data-id');
+
+            if (confirm('Tem certeza de que deseja inativar esta colheita?')) {
+                fetch(`/inactivate_harvest/${harvestid}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const row = deleteButton.closest('tr');
+                            row.dataset.isactive = 'false'; // Atualiza o atributo de estado
+                            // Atualiza o botão para refletir o estado inativo
+                            deleteButton.disabled = true;
+                            deleteButton.classList.add('disabled');
+
+                            const tableBody = document.getElementById('harvestBody');
+                            filteredRows = Array.from(tableBody.querySelectorAll('tr'));
+                            if (filteredRows.length === 0) {
+                                const emptyRow = document.createElement('tr');
+                                emptyRow.innerHTML = `
+                                    <td colspan="2" class="no-data-message">Ainda não há colheitas adicionadas.</td>
+                                `;
+                                tableBody.appendChild(emptyRow);
+                            } else {
+                                // if (typeof updateTable === 'function') {
+                                //     updateTable();
+                                // }
+                            }
+                        } else {
+                            alert(data.message || 'Erro ao inativar a colheita.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao excluir a colheita.');
+                    });
+            }
+        }
+    });
 
 </script>
 
