@@ -10,7 +10,11 @@ urlpatterns = [
     path('users/',  views.users, name='users'),
     path('user/<int:userid>/', views.userdetail, name='user-detail'),
     path('fields/', views.fields, name='fields'),
+<<<<<<< HEAD
     # path('save_field/', views.save_field, name='save_field'),
+=======
+    #path('save_field/', views.save_field, name='save_field'),
+>>>>>>> 2a4d9e93db191fdf086e51276e4c6e642e7c2007
     path('save_polygon/', views.save_polygon_view, name="save_polygon"),
     path('load_vineyards/', views.load_vineyards, name='load_vineyards'),
     path('home/', views.backofficeIndex, name='backofficeIndex'),
@@ -64,4 +68,6 @@ urlpatterns = [
     path('edit_approved_status/<int:approvedId>/', views.edit_approved_status, name='edit_approved_status'),
     path('delete_approved_status/<int:approvedId>/', views.delete_approved_status, name='delete_approved_status'), 
     path('settings/', views.settings, name='settings'),
+    path('add-receipt/', views.add_receipt, name='add_receipt')
+    
 ]
