@@ -13,9 +13,17 @@ from pathlib import Path
 from .ssh_db_tunnel import create_ssh_tunnel
 from pathlib import Path
 import atexit
+from pymongo import MongoClient
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+DBNAME='Interaction_Database'
+COLLECTION_COORDINATES="coordinates"
+
+CLIENT = MongoClient('mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/')
+DB = CLIENT[DBNAME]
 
 # Iniciar o túnel SSH
 tunnel = create_ssh_tunnel()
@@ -104,7 +112,14 @@ DATABASES = {
     }
 }
 
-# Garanta que o túnel seja fechado ao terminar
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_AGE = 86400 # sec
+SESSION_COOKIE_DOMAIN = None
+SESSION_COOKIE_NAME = 'DSESSIONID'
+SESSION_COOKIE_SECURE = False
+
+# Garanta que o túnel seja fechado ao termina
 atexit.register(tunnel.stop)
 
 
