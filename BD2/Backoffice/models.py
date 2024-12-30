@@ -260,7 +260,7 @@ class Colheitas(models.Model):
     vinhaid = models.ForeignKey(Vinhas, on_delete=models.CASCADE, db_column='vinhaid')
     pesototal = models.DecimalField(max_digits=65535, decimal_places=65535)
     precoportonelada = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
-    # datapesagem = models.DateField(blank=True, null=True)
+    datapesagem = models.DateField(blank=True, null=True)
     periodoid = models.ForeignKey('Periodos', models.DO_NOTHING, db_column='periodoid', blank=True, null=True)
     previsaofimcolheita = models.DateField(blank=True, null=True)
     terminada = models.BooleanField()
