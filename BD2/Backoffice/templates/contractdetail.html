@@ -13,6 +13,7 @@
         color: #616646;
         text-decoration: underline;
     }
+ 
 </style>
 <nav aria-label="breadcrumb" class="breadcrumb-container">
     <ol class="separadores">
@@ -46,17 +47,23 @@
                     <span class="value">{{cliente.morada}}</span>
                 </div>
             </div>
-
-            <!-- Secção de estado da colheita -->
             <div class="info-card">
                 <h2>Valores</h2>
                 <div class="info-item">
-                    <span class="label">Quantidade estimada:</span>
+                    <span class="label">Quantidade Estimada:</span>
                     <span class="value">{{contrato.qtdeestimada}}</span>
                 </div>
                 <div class="info-item">
-                    <span class="label">Preço estimado:</span>
+                    <span class="label">Quantidade Final:</span>
+                    <span class="value">{{contrato.qtdefinal}}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Preço Estimado:</span>
                     <span class="value">{{contrato.precoestimado}}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Preço Final:</span>
+                    <span class="value">{{contrato.precofinal}}</span>
                 </div>
             </div>
 
@@ -79,16 +86,142 @@
 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
     <h2 class="pesagens-title">Recibos</h2>
 </div>
-<div class="pesagens-container" id="pesagensContainer">
-    <!-- Pesagens da Vinha A -->
-    <div class="pesagem-card">
-        <p><strong>Recibo nº:</strong> 23421</p>
-        <p><strong>Data:</strong> 2024-10-01</p>
-        <p><strong>Preço final:</strong> 1000.00€</p>
-        <p><strong>Método de pagamento:</strong> MB WAY</p>
-        <p><strong>Estado do pagamento:</strong> Ativo</p>
+<div class="pesagens-container" id="pesagensContainer" style="display: flex; flex-wrap: wrap; gap: 16px;">
+    <!-- Iterar sobre uma lista de recibos -->
+    {% for recibo in recibos %}
+    <div class="pesagem-card" style="border: 1px solid #ccc; border-radius: 8px; padding: 16px; width: 250px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+        <p><strong>Recibo nº:</strong> {{ recibo.reciboid }}</p>
+        <p><strong>Data:</strong> {{ recibo.datainicio }}</p>
+        <p><strong>Preço final:</strong> €{{ recibo.precofinal }}</p>
+        <p><strong>Método de Pagamento:</strong> {{ recibo.metodopagamento.nome }}</p>
+        <p><strong>Estado do Recibo:</strong> {{ recibo.estadoid.nome}}</p>
+        <p><strong>Ativo:</strong>
+            {% if recibo.isactive %}
+                <span style="color: green;">✓</span>
+            {% else %}
+                <span style="color: red;">✗</span>
+            {% endif %}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+<!-- Modal para adicionar contrato -->
+<div class="popup-overlay" id="addReceiptModal" style="display: none;">
+    <div class="popup-content">
+        <div class="popup-header">
+            <h5>Adicionar Recibo:</h5>
+            <span class="modal-close" onclick="closeAddContractModal()">&times;</span>
+        </div>
+        <form id="addReceiptForm" method="post" action="."> <!-- Mesma URL -->
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="dataInicio">Data de Início:</label>
+                <input type="date" id="dataInicio" name="datainicio" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="precofinal">Preço Final:</label>
+                <input type="number" id="precofinal" name="precofinal" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="colheitaId">Colheita: </label>
+                <select id="colheitaId" name="colheitaid" class="form-control">
+                    {% for colheita in colheita %}
+                        <option value="{{ colheita.colheitaid }}">{{ colheita.colheitaid }} - {{ colheita.datapesagem }} </option>  <!-- Supondo que existe o campo 'nome' -->
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="metodoid">Métodos de Pagamento: </label>
+                <select id="metodoid" name="metodoid" class="form-control">
+                    {% for metodo in metodospagamento %} 
+                        <option value="{{ metodo.idmetodopagamento }}">{{ metodo.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div> 
+            <div class="form-group">
+                <label for="estadopagamentoid">Estado Pagamento: </label>
+                <select id="estadopagamentoid" name="estadopagamentoid" class="form-control">
+                    {% for metodo in metodospagamento %} 
+                        <option value="{{ metodo.idmetodopagamento }}">{{ metodo.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div> 
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                <button type="button" onclick="closeAddContractModal()" class="secondary-button">Cancelar</button>
+                <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
+            </div>
+        </form>
     </div>
 </div>
+<div style="text-align:right; margin-bottom: 20px;" onclick="openAddContractModal()">
+    <button type="button" onclick="openAddContractModal()" title="Adicionar novo utilizador" alt="add" style="height: 25px; width: auto;"> Adicionar
+    </button>
+</div>
+
+<script>
+    function openAddContractModal() {
+        document.getElementById('addReceiptModal').style.display = 'block';
+    }
+
+    function closeAddContractModal() {
+        document.getElementById('addReceiptModal').style.display = 'none';
+    }
+
+    document.getElementById('addReceiptForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Impede o envio normal do formulário
+
+        const formData = new FormData(this);
+
+        fetch('.', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+
+                // Adicionar dinamicamente à tabela
+                const newRow = `
+                    <tr>
+                        <td>${formData.get('clienteId')}</td>
+                        <td>${formData.get('pedidoId')}</td>
+                        <td>${formData.get('dataInicio')}</td>
+                        <td>${formData.get('dataFim')}</td>
+                        <td>${formData.get('quantidadeEstimada')}</td>
+                        <td>${formData.get('precoEstimado')}</td>
+                    </tr>
+                `;
+                document.querySelector('#contractTable tbody').insertAdjacentHTML('beforeend', newRow);
+
+                closeAddContractModal(); // Fecha o modal
+                this.reset(); // Reseta o formulário
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Ocorreu um erro ao criar o contrato.');
+        });
+    });
+        document.getElementById('contractTable').addEventListener('click', function(event){
+            const targetRow = event.target.closest('tr');
+            if(targetRow && !targetRow.closest('thead')){
+                const contratoid = targetRow.dataset.contratoid;
+                if(contratoid){
+                    console.log(`Redirecionando para userdetail com ID: ${contratoid}`);
+                    window.location.href = `/backoffice/contractdetail/${contratoid}/`;
+                }
+            }
+        });
+    </script>
+
+
 
 
 

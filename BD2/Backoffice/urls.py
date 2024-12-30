@@ -64,4 +64,6 @@ urlpatterns = [
     path('edit_approved_status/<int:approvedId>/', views.edit_approved_status, name='edit_approved_status'),
     path('delete_approved_status/<int:approvedId>/', views.delete_approved_status, name='delete_approved_status'), 
     path('settings/', views.settings, name='settings'),
+    path('add-receipt/', views.add_receipt, name='add_receipt')
+    
 ]

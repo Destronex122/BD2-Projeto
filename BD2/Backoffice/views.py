@@ -14,7 +14,7 @@ from django.db import connection
 from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes, Periodos
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes, Periodos, Recibos
 from django.utils import timezone
 from django.db.models.functions import Coalesce
 from django.db.models import Value, BooleanField, Case, When, F, Q, Max
@@ -773,8 +773,24 @@ def delete_note_request(request, notaid):
 @login_required
 def contractdetail(request, contratoid):
     contrato = get_object_or_404(Contratos, contratoid=contratoid)
-    cliente = contrato.clienteid  
-    return render(request, 'contractdetail.html', {'contrato': contrato, 'cliente': cliente})
+    cliente = contrato.clienteid
+    recibos = Recibos.objects.filter(idcontrato=contrato.contratoid).select_related('metodopagamento', 'estadoid')  
+    # select_related para otimizar a busca, incluindo 'metodopagamento' e 'estadoid'
+    metodospagamento = Metodospagamento.objects.filter()
+    colheita = Colheitas.objects.filter()
+    estadosrecibo = Estadosrecibo.objects.filter()
+
+    return render(request, 'contractdetail.html', {
+        'contrato': contrato,
+        'cliente': cliente,
+        'recibos': recibos,
+        'metodospagamento': metodospagamento,
+        'colheita':colheita,
+        'estadorecibo':estadosrecibo
+
+    })
+
+
 
 
 @login_required
@@ -1595,3 +1611,28 @@ def delete_approved_status(request, approvedId):
             return JsonResponse({'success': False, 'message': f'Erro ao eliminar o estado: {str(e)}'})
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+
+@login_required
+def add_receipt(request):
+    if request.method == 'POST':
+        contrato_id = request.POST.get('contratoId')
+        metodopagamento_id = request.POST.get('metodopagamentoId')
+        valor = request.POST.get('valor')
+        data = request.POST.get('data')
+
+        contrato = Contratos.objects.get(contratoid=contrato_id)
+        metodopagamento = Metodospagamento.objects.get(id=metodopagamento_id)
+
+        # Criar o novo recibo
+        recibo = Recibos.objects.create(
+            idcontrato=contrato,
+            metodopagamento=metodopagamento,
+            valor=valor,
+            data=data
+        )
+
+        # Redirecionar para o contrato ou retornar uma resposta JSON de sucesso
+        return JsonResponse({'status': 'success', 'message': 'Recibo adicionado com sucesso!'})
+
+    return JsonResponse({'status': 'error', 'message': 'Método inválido!'})
