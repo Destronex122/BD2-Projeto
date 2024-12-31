@@ -246,17 +246,12 @@ def harvest(request):
 def create_harvest(request):
     if request.method == 'POST':
         try:
-            # Pegando o ID da vinha
             vinha_id = request.POST.get('vinhaId')
-            if not vinha_id or not vinha_id.isdigit():
-                return JsonResponse({'success': False, 'message': 'ID da vinha deve ser um número válido.'})
-            vinha_id = int(vinha_id) 
+            print(f"Valor recebido para vinhaId: {vinha_id}")  # Debug
+            if not vinha_id or not vinha_id.isdigit() or int(vinha_id) == -1:
+                return JsonResponse({'success': False, 'message': 'Por favor, selecione uma vinha válida.'})
 
-            # Verifica se a vinha existe
-            try:
-                vinha = Vinhas.objects.get(vinhaid=vinha_id)
-            except Vinhas.DoesNotExist:
-                return JsonResponse({'success': False, 'message': 'Vinha não encontrada.'})
+            vinha_id = int(vinha_id)
 
             # Pegando os outros campos do formulário
             peso_total = request.POST.get('pesoTotal')
@@ -305,14 +300,14 @@ def create_harvest(request):
                         %s, %s, %s, %s, %s, %s, %s, %s
                     )
                 """, [
-                    vinha_id,  # Passando o ID da vinha
+                    vinha_id,
                     peso_total,
                     preco_por_tonelada,
                     data_pesagem,  # Passando None se não fornecido
                     periodo_inicio,
                     periodo_fim,
                     previsao_fim_colheita,
-                    periodo_ano  # Passando o ano
+                    periodo_ano
                 ])
 
             return JsonResponse({'success': True, 'message': 'Colheita criada com sucesso!'})

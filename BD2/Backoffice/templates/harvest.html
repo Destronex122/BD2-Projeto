@@ -236,10 +236,12 @@
             <!-- Campo para a vinha -->
             <div class="form-group">
                 <label for="vinhaId">Vinha</label>
-                <select name="vinhaId" id="vinhaId">
-                    <option value="">Selecione uma vinha</option>
+                <select name="vinhaId" id="vinhaId" required>
+                    <option value="-1" disabled {% if not selected_vinha_id %}selected{% endif %}>
+                        Selecione uma vinha
+                    </option>
                     {% for vinha in vinhas %}
-                        <option value="{{ vinha.id }}" {% if vinha.id == selected_vinha_id %}selected{% endif %}>
+                        <option value="{{ vinha.vinhaid }}" {% if vinha.vinhaid == selected_vinha_id %}selected{% endif %}>
                             {{ vinha.nome }}
                         </option>
                     {% endfor %}
@@ -251,13 +253,13 @@
                 <label for="harvestPesoTotal">Peso total (kg):</label>
                 <input type="number" id="harvestPesoTotal" name="pesoTotal" class="form-control" value="{{ selected_peso_total }}" required>
             </div>
-        
+                    
             <!-- Campo para o preço por tonelada -->
             <div class="form-group">
                 <label for="harvestPrecoPorTonelada">Preço por tonelada (€):</label>
                 <input type="number" id="harvestPrecoPorTonelada" name="precoPorTonelada" class="form-control" value="{{ selected_preco_por_tonelada }}" required>
             </div>
-        
+            
             <!-- Campo para a data de início do período -->
             <div class="form-group">
                 <label for="harvestPeriodoInicio">Período - Início:</label>
@@ -415,16 +417,26 @@
     //Ação de submeter dados na BD das colheitas (e períodos)
     function submitHarvest(event) {
         event.preventDefault();
+
         const harvestId = document.getElementById('harvestId').value;
         const vinhaId = document.getElementById('vinhaId').value;
         const isEdit = harvestId !== '';
 
+        // Validação do campo vinhaId
+        if (vinhaId === "-1") {
+            alert("Por favor, selecione uma vinha.");
+            return;
+        }
+
+        console.log("Vinha ID selecionada:", vinhaId); // Debug para verificar o valor coletado
+        console.log("Elemento 'vinhaId':", document.getElementById('vinhaId'));
+
         const url = isEdit ? `/edit-harvest/${harvestId}/` : '/create-harvest/';
         const harvestData = new FormData();
+
         if (isEdit) {
-            harvestData.append("colheitaid", harvestId);  // Append the harvestId for editing
+            harvestData.append("colheitaid", harvestId);
         }
-        //harvestData.append("colheitaid", isEdit ? document.getElementById('harvestId').value : "");
         harvestData.append("vinhaId", vinhaId);
         harvestData.append("pesoTotal", document.getElementById('harvestPesoTotal').value);
         harvestData.append("precoPorTonelada", document.getElementById('harvestPrecoPorTonelada').value);
@@ -432,6 +444,7 @@
         harvestData.append("periodoFim", document.getElementById('harvestPeriodoFim').value);
         harvestData.append("previsaoFimColheita", document.getElementById('harvestPrevisaoFim').value);
         harvestData.append("periodoAno", document.getElementById('harvestPeriodoAno').value);
+
         fetch(url, {
             method: 'POST',
             headers: {
@@ -443,7 +456,6 @@
             if (!response.ok) {
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
-            // Verificar o cabeçalho da resposta
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes("application/json")) {
                 return response.json();
