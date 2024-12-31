@@ -1697,26 +1697,68 @@ def delete_approved_status(request, approvedId):
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 
-@login_required
-def add_receipt(request):
+@csrf_exempt
+def create_recibo(request):
     if request.method == 'POST':
-        contrato_id = request.POST.get('contratoId')
-        metodopagamento_id = request.POST.get('metodopagamentoId')
-        valor = request.POST.get('valor')
-        data = request.POST.get('data')
+        try:
+            # Parse JSON do corpo do pedido
+            data = json.loads(request.body)
 
-        contrato = Contratos.objects.get(contratoid=contrato_id)
-        metodopagamento = Metodospagamento.objects.get(id=metodopagamento_id)
+            # Extrai e valida dados
+            idcontrato = int(data.get('idcontrato', 0)) or None
+            datainicio = data.get('datainicio')
+            precofinal = float(data.get('precofinal', 0)) or None
+            colheitaid = int(data.get('colheitaid', 0)) or None
+            metodopagamentoid = int(data.get('metodopagamentoid', 0)) or None
+            estadopagamentoid = int(data.get('estadopagamentoid', 0)) or None
+            isactive = bool(data.get('isactive', True))
 
-        # Criar o novo recibo
-        recibo = Recibos.objects.create(
-            idcontrato=contrato,
-            metodopagamento=metodopagamento,
-            valor=valor,
-            data=data
-        )
+            # Executa a procedure no banco de dados
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL sp_Recibo_Create(%s, %s, %s, %s, %s, %s, %s)",
+                    [idcontrato, datainicio, precofinal, colheitaid, metodopagamentoid, estadopagamentoid, isactive]
+                )
 
-        # Redirecionar para o contrato ou retornar uma resposta JSON de sucesso
-        return JsonResponse({'status': 'success', 'message': 'Recibo adicionado com sucesso!'})
+            return JsonResponse({'success': True, 'message': 'Recibo criado com sucesso!'})
 
-    return JsonResponse({'status': 'error', 'message': 'Método inválido!'})
+        except Exception as e:
+            # Retorna mensagem de erro
+            return JsonResponse({'success': False, 'message': f'Erro ao criar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+@csrf_exempt
+def deactivate_recibo(request, recibo_id):
+    if request.method == 'POST':
+        try:
+            # Atualiza o recibo para isactive = false
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE recibos SET isactive = false WHERE reciboid = %s AND isactive = true",
+                    [recibo_id]
+                )
+                
+            return JsonResponse({'success': True, 'message': 'Recibo desativado com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao desativar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+
+
+def update_recibo_status(request, recibo_id):
+    # Verificar se a requisição é POST
+    if request.method == "POST":
+        recibo = get_object_or_404(Recibos, pk=recibo_id)
+
+        # Verificar se o recibo está atualmente 'Não Pago' antes de alterar para 'Pago'
+        if recibo.estadoid.nome == 'Não Pago':
+            recibo.estadoid = get_object_or_404(Estadosrecibo, nome='Pago')
+            recibo.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
+    return JsonResponse({'success': False, 'message': 'Método inválido.'})
+
+
