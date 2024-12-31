@@ -641,8 +641,8 @@ def contracts(request):
                 # Captura os valores enviados pelo formulário
                 cliente_id = int(request.POST.get('clienteId'))
                 pedido_id = int(request.POST.get('pedidoId')) if request.POST.get('pedidoId') else None
-                data_inicio = request.POST.get('dataInicio')
-                data_fim = request.POST.get('dataFim')
+                data_inicio = datetime.strptime(request.POST.get('dataInicio'), '%Y-%m-%d').date() if request.POST.get('dataInicio') else None
+                data_fim = datetime.strptime(request.POST.get('dataFim'), '%Y-%m-%d').date() if request.POST.get('dataFim') else None
                 quantidade_estimada = float(request.POST.get('quantidadeEstimada'))
                 preco_estimado = float(request.POST.get('precoEstimado'))
                 quantidade_final = float(request.POST.get('quantidadeFinal'))
@@ -653,19 +653,18 @@ def contracts(request):
                     raise ValueError("A quantidade final deve ser maior ou igual à quantidade estimada.")
 
                 # Valores padrão para campos opcionais
-                preco_final = 0
                 is_active = True
 
                 # Chamar o procedimento armazenado
                 with connection.cursor() as cursor:
                     cursor.execute("""
-                        CALL sp_criarcontrato(
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        CALL inserircontrato(
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
                     """, [
-                        cliente_id, pedido_id, data_inicio, data_fim,
+                         nome,cliente_id, pedido_id, data_inicio, data_fim,
                         quantidade_estimada, preco_estimado,
-                        quantidade_final, preco_final, nome, is_active
+                        quantidade_final, is_active
                     ])
                 return JsonResponse({'status': 'success', 'message': 'Contrato criado com sucesso!'})
 
