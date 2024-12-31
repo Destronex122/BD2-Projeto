@@ -241,6 +241,13 @@ def harvest(request):
         },
     })
 
+def validate_date(field_value, field_name):
+                if not field_value or field_value.strip() == "":
+                    return None  # Retorna None se vazio
+                try:
+                    return datetime.strptime(field_value, '%Y-%m-%d').date()  # Converte para formato de data
+                except ValueError:
+                    raise ValueError(f'Formato de data inválido para {field_name}.')  # Lança exceção para tratamento
 
 @login_required
 def create_harvest(request):
@@ -277,14 +284,7 @@ def create_harvest(request):
                     return JsonResponse({'success': False, 'message': 'Formato de data inválido para Pesagem.'})
 
             # Convertendo os campos de data para o formato correto ou definindo como None
-            def validate_date(field_value, field_name):
-                if not field_value or field_value.strip() == "":
-                    return None  # Retorna None se vazio
-                try:
-                    return datetime.strptime(field_value, '%Y-%m-%d').date()  # Converte para formato de data
-                except ValueError:
-                    raise ValueError(f'Formato de data inválido para {field_name}.')  # Lança exceção para tratamento
-
+            
             try:
                 data_pesagem = validate_date(data_pesagem, "Pesagem")
                 periodo_inicio = validate_date(periodo_inicio, "Início do Período")
@@ -319,14 +319,13 @@ def create_harvest(request):
 @login_required
 def edit_harvest(request, colheita_id):
     # Buscar a colheita com o ID especificado
-    #harvest = get_object_or_404(Colheitas, id=colheita_id)
     harvest = get_object_or_404(Colheitas, pk=colheita_id)
     
     # Obter todas as vinhas
     vinhas = Vinhas.objects.all()
 
     # Obter o período associado à colheita
-    periodo = harvest.periodo  # Supondo que a colheita tem uma relação de ForeignKey com Periodos
+    periodo = harvest.periodoid  # Supondo que a colheita tem uma relação de ForeignKey com Periodos
 
     # Verificando se é uma requisição POST para salvar a edição
     if request.method == 'POST':
@@ -338,8 +337,18 @@ def edit_harvest(request, colheita_id):
             data_pesagem = request.POST.get('dataPesagem')
             periodo_inicio = request.POST.get('periodoInicio')
             periodo_fim = request.POST.get('periodoFim')
-            periodo_ano = request.POST.get('periodoAno')
+            periodo_ano = int(request.POST.get('periodoAno'))
             previsao_fim_colheita = request.POST.get('previsaoFimColheita')
+
+            # Validando e processando os campos
+            if not peso_total or not preco_por_tonelada or not periodo_inicio or not periodo_ano:
+                return JsonResponse({'success': False, 'message': 'Preencha todos os campos obrigatórios.'})
+
+            # Se data_pesagem não for fornecida, envia None (NULL)
+            data_pesagem = validate_date(data_pesagem, "Pesagem")
+            periodo_inicio = validate_date(periodo_inicio, "Início do Período")
+            periodo_fim = validate_date(periodo_fim, "Fim do Período")
+            previsao_fim_colheita = validate_date(previsao_fim_colheita, "Previsão de Fim da Colheita")
 
             # Chamar o procedimento armazenado para editar a colheita
             with connection.cursor() as cursor:
@@ -368,7 +377,7 @@ def edit_harvest(request, colheita_id):
     context = {
         'harvest': harvest,  
         'vinhas': vinhas,   
-        'selected_vinha_id': harvest.vinha.id if harvest.vinha else None,
+        'selected_vinha_id': harvest.vinha.vinhaid if harvest.vinha else None,
         'selected_peso_total': harvest.pesototal,
         'selected_preco_por_tonelada': harvest.precoportonelada,
         'selected_periodo_inicio': periodo.datainicio if periodo else '',
