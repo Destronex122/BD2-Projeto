@@ -1789,4 +1789,19 @@ def update_recibo_status(request, recibo_id):
             return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
     return JsonResponse({'success': False, 'message': 'Método inválido.'})
 
+def update_contrato_qtdefinal(idcontrato):
+    try:
+        # Obtém o contrato pelo id
+        contrato = Contratos.objects.get(contratoid=idcontrato)
+        
+        # Soma as quantidades de todos os recibos ativos associados ao contrato
+        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
+        
+        # Atualiza o campo qtdefinal do contrato
+        contrato.qtdefinal = total_quantidade
+        contrato.save()
+
+        return True
+    except Exception as e:
+        return False
 
