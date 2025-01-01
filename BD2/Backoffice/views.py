@@ -327,6 +327,8 @@ def edit_harvest(request, colheita_id):
     # Obter o período associado à colheita
     periodo = harvest.periodoid  # Supondo que a colheita tem uma relação de ForeignKey com Periodos
 
+    selected_vinha_id = harvest.vinhaid if harvest.vinha else None
+
     # Verificando se é uma requisição POST para salvar a edição
     if request.method == 'POST':
         try:
@@ -377,7 +379,7 @@ def edit_harvest(request, colheita_id):
     context = {
         'harvest': harvest,  
         'vinhas': vinhas,   
-        'selected_vinha_id': harvest.vinha.vinhaid if harvest.vinha else None,
+        'selected_vinha_id': selected_vinha_id,
         'selected_peso_total': harvest.pesototal,
         'selected_preco_por_tonelada': harvest.precoportonelada,
         'selected_periodo_inicio': periodo.datainicio if periodo else '',
