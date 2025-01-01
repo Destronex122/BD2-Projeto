@@ -146,9 +146,11 @@
             <div class="info-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h2>Notas</h2>
-                    <button onclick="openNoteModal()">
-                        <img src="{% static 'add.png' %}" title="Adicionar nova nota" alt="edit" style="height: 25px; width: 25px;">
-                    </button>
+                    {% if colheita.isactive %}
+                        <button onclick="openNoteModal()">
+                            <img src="{% static 'add.png' %}" title="Adicionar nova nota" alt="edit" style="height: 25px; width: 25px;">
+                        </button>
+                    {% endif %}
                 </div>
                 <!-- Secção de notas -->
                 <div id="notesCarousel" class="carousel">
@@ -190,9 +192,11 @@
     <!-- Pesagens da colheita -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
         <h2 class="pesagens-title">Pesagens da colheita</h2>
-        <button onclick="openPesagemModal(false)">
-            <img src="{% static 'add.png' %}" title="Adicionar nova pesagem" alt="Adicionar Pesagem" style="height: 25px; width: 25px;">
-        </button>
+        {% if colheita.isactive %}
+            <button onclick="openPesagemModal(false)">
+                <img src="{% static 'add.png' %}" title="Adicionar nova pesagem" alt="Adicionar Pesagem" style="height: 25px; width: 25px;">
+            </button>
+        {% endif %}    
     </div>
     <div class="pesagens-container" id="pesagensContainer">
         {% for pesagem in pesagens %}

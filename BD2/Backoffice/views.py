@@ -14,7 +14,7 @@ from django.db import connection
 from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes, Periodos
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes, Periodos, Recibos, Estadostransporte
 from django.utils import timezone
 from django.db.models.functions import Coalesce
 from django.db.models import Value, BooleanField, Case, When, F, Q, Max
@@ -22,6 +22,7 @@ import logging
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_protect
+from datetime import datetime
 
 
 # Conectar ao MongoDB
@@ -145,8 +146,7 @@ def users(request):
 
 @login_required
 def delivery(request):
-
-    #Filtros
+    # Filtros
     filter_number = request.GET.get('filterNumber', '').strip()
     filter_date = request.GET.get('filterDate', None)
     filter_state = request.GET.get('filterState', '').strip()
@@ -160,19 +160,49 @@ def delivery(request):
     if filter_state:
         transporte = transporte.filter(estadoid__nome__icontains=filter_state)
 
+    # Adição de Transporte
+    if request.method == 'POST' and request.POST.get('action') == 'add_transport':
+        # Captura os dados do formulário
+        nome = request.POST['nome']
+        morada = request.POST['morada']
+        data = request.POST['data']
+        preco_transporte = request.POST['precoTransporte']
+        estado_id = request.POST['estadoId']
+        recibo_id = request.POST['reciboId']
+        print(f"--------------------------------------------------------Estado ID: {estado_id}, Recibo ID: {recibo_id}--------------------------------------------------------------------")
+
+        # Chamada ao procedimento armazenado
+        
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                CALL sp_inserir_transport(%s, %s, %s, %s, %s, %s)
+                """,
+                [morada, data, preco_transporte, estado_id, recibo_id, nome]
+            )
+        
+        # Redireciona para evitar resubmissão do formulário
+        return redirect('delivery')
+
+    # Obter estados para o formulário de adição
+    estados = Estadostransporte.objects.all()
+    recibos = Recibos.objects.all()
+
     return render(request, 'delivery.html', {
-        'Transportes': transporte,
+        'transportes': transporte,
+        'recibos': recibos,
         'filters': {
             'filterNumber': filter_number,
             'filterDate': filter_date,
             'filterState': filter_state,
         },
-    })
+        'estados': estados, 
+})
 
 @login_required
-def deliverydetail(request,transposteid):
-    transporte = get_object_or_404 (Transportes, idtransposte = transposteid ) 
-    return render(request, 'deliverydetail.html', {'Transportes' : transporte })
+def deliverydetail(request, idtransporte):
+    transporte = get_object_or_404(Transportes, idtransporte=idtransporte)  # Corrigido para idtransporte
+    return render(request, 'deliverydetail.html', {'transporte': transporte})  # Variável 'transporte' para o template
 
 
 #COLHEITA
@@ -220,11 +250,13 @@ def harvest(request):
             'vinha_id': colheita.vinhaid.id if colheita.vinhaid and hasattr(colheita.vinhaid, 'id') else None,
             'peso_total': colheita.pesototal,
             'preco_por_tonelada': colheita.precoportonelada,
-            'data_ultima_pesagem': colheita.data_ultima_pesagem,
+            'data_ultima_pesagem': colheita.data_ultima_pesagem or '-',
             'periodo_inicio': colheita.periodoid.datainicio if colheita.periodoid else None,
             'periodo_fim': colheita.periodoid.datafim if colheita.periodoid else None,
+            'periodo_ano': colheita.periodoid.ano if colheita.periodoid else None,
             'previsao_fim_colheita': colheita.previsaofimcolheita,
             'isactive': colheita.isactive,
+            'terminado': bool(colheita.periodoid.datafim) if colheita.periodoid else False,
         })
 
     # Renderizar o template
@@ -239,12 +271,26 @@ def harvest(request):
         },
     })
 
+def validate_date(field_value, field_name):
+                if not field_value or field_value.strip() == "":
+                    return None  # Retorna None se vazio
+                try:
+                    return datetime.strptime(field_value, '%Y-%m-%d').date()  # Converte para formato de data
+                except ValueError:
+                    raise ValueError(f'Formato de data inválido para {field_name}.')  # Lança exceção para tratamento
 
 @login_required
 def create_harvest(request):
     if request.method == 'POST':
         try:
             vinha_id = request.POST.get('vinhaId')
+            print(f"Valor recebido para vinhaId: {vinha_id}")  # Debug
+            if not vinha_id or not vinha_id.isdigit() or int(vinha_id) == -1:
+                return JsonResponse({'success': False, 'message': 'Por favor, selecione uma vinha válida.'})
+
+            vinha_id = int(vinha_id)
+
+            # Pegando os outros campos do formulário
             peso_total = request.POST.get('pesoTotal')
             preco_por_tonelada = request.POST.get('precoPorTonelada')
             data_pesagem = request.POST.get('dataPesagem')
@@ -252,9 +298,32 @@ def create_harvest(request):
             periodo_fim = request.POST.get('periodoFim')
             periodo_ano = int(request.POST.get('periodoAno'))
             previsao_fim_colheita = request.POST.get('previsaoFimColheita')
-            print(f"vinha_id: {vinha_id}")  # Verifique se o ID da vinha está sendo enviado
-            print(f"data_pesagem: {data_pesagem}")
-            # Chamar procedimento armazenado para criar a colheita
+
+            # Validando e processando os campos
+            if not peso_total or not preco_por_tonelada or not periodo_inicio or not periodo_ano:
+                return JsonResponse({'success': False, 'message': 'Preencha todos os campos obrigatórios.'})
+
+            # Se data_pesagem não for fornecida, envia None (NULL)
+            if not data_pesagem:
+                data_pesagem = None
+            else:
+                # Se houver valor, converte para formato de data
+                try:
+                    data_pesagem = datetime.strptime(data_pesagem, '%Y-%m-%d').date()
+                except ValueError:
+                    return JsonResponse({'success': False, 'message': 'Formato de data inválido para Pesagem.'})
+
+            # Convertendo os campos de data para o formato correto ou definindo como None
+            
+            try:
+                data_pesagem = validate_date(data_pesagem, "Pesagem")
+                periodo_inicio = validate_date(periodo_inicio, "Início do Período")
+                periodo_fim = validate_date(periodo_fim, "Fim do Período")
+                previsao_fim_colheita = validate_date(previsao_fim_colheita, "Previsão de Fim da Colheita")
+            except ValueError as ve:
+                return JsonResponse({'success': False, 'message': str(ve)})
+
+            # Chamando o procedimento armazenado para criar a colheita
             with connection.cursor() as cursor:
                 cursor.execute("""
                     CALL sp_criar_colheita(
@@ -264,22 +333,36 @@ def create_harvest(request):
                     vinha_id,
                     peso_total,
                     preco_por_tonelada,
-                    data_pesagem,
+                    data_pesagem,  # Passando None se não fornecido
                     periodo_inicio,
                     periodo_fim,
-                    periodo_ano,
-                    previsao_fim_colheita
+                    previsao_fim_colheita,
+                    periodo_ano
                 ])
 
             return JsonResponse({'success': True, 'message': 'Colheita criada com sucesso!'})
+
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erro ao criar colheita: {e}'})
-
+          
 
 @login_required
 def edit_harvest(request, colheita_id):
+    # Buscar a colheita com o ID especificado
+    harvest = get_object_or_404(Colheitas, pk=colheita_id)
+    
+    # Obter todas as vinhas
+    vinhas = Vinhas.objects.all()
+
+    # Obter o período associado à colheita
+    periodo = harvest.periodoid  # Supondo que a colheita tem uma relação de ForeignKey com Periodos
+
+    selected_vinha_id = harvest.vinhaid if harvest.vinha else None
+
+    # Verificando se é uma requisição POST para salvar a edição
     if request.method == 'POST':
         try:
+            # Obter os dados do formulário
             vinha_id = request.POST.get('vinhaId')
             peso_total = float(request.POST.get('pesoTotal'))
             preco_por_tonelada = float(request.POST.get('precoPorTonelada'))
@@ -289,13 +372,24 @@ def edit_harvest(request, colheita_id):
             periodo_ano = int(request.POST.get('periodoAno'))
             previsao_fim_colheita = request.POST.get('previsaoFimColheita')
 
-            # Chamar procedimento armazenado para editar a colheita
+            # Validando e processando os campos
+            if not peso_total or not preco_por_tonelada or not periodo_inicio or not periodo_ano:
+                return JsonResponse({'success': False, 'message': 'Preencha todos os campos obrigatórios.'})
+
+            # Se data_pesagem não for fornecida, envia None (NULL)
+            data_pesagem = validate_date(data_pesagem, "Pesagem")
+            periodo_inicio = validate_date(periodo_inicio, "Início do Período")
+            periodo_fim = validate_date(periodo_fim, "Fim do Período")
+            previsao_fim_colheita = validate_date(previsao_fim_colheita, "Previsão de Fim da Colheita")
+
+            # Chamar o procedimento armazenado para editar a colheita
             with connection.cursor() as cursor:
                 cursor.execute("""
-                     CALL sp_criar_colheita(
-                        %s, %s, %s, %s, %s, %s, %s, %s
+                    CALL sp_editar_colheita(
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                 """, [
+                    colheita_id,
                     vinha_id if vinha_id else None,
                     peso_total,
                     preco_por_tonelada,
@@ -307,8 +401,24 @@ def edit_harvest(request, colheita_id):
                 ])
 
             return JsonResponse({'success': True, 'message': 'Colheita editada com sucesso!'})
+
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erro ao editar colheita: {e}'})
+
+    # Caso não seja uma requisição POST, passamos os dados para o template
+    context = {
+        'harvest': harvest,  
+        'vinhas': vinhas,   
+        'selected_vinha_id': selected_vinha_id,
+        'selected_peso_total': harvest.pesototal,
+        'selected_preco_por_tonelada': harvest.precoportonelada,
+        'selected_periodo_inicio': periodo.datainicio if periodo else '',
+        'selected_periodo_fim': periodo.datafim if periodo else '',
+        'selected_periodo_ano': periodo.ano if periodo else '',
+        'selected_previsao_fim_colheita': harvest.previsaofimcolheita
+    }
+    
+    return render(request, 'harvest.html', context)
 
 
 @login_required
@@ -324,7 +434,9 @@ def inactivate_harvest(request, colheita_id):
             return JsonResponse({'success': True, 'message': 'Colheita inativada com sucesso!'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erro ao inativar colheita: {e}'})
-
+    else:
+        return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+    
 
 
 #DETALHE DA COLHEITA
@@ -361,6 +473,7 @@ def harvestdetail(request, colheitaid):
         'previsao_fim_colheita': colheita.previsaofimcolheita,
         'terminada': "Sim" if colheita.terminada else "Não",
         'data_termino': colheita.datapesagem if colheita.terminada else "Não terminada",
+        'isactive': colheita.isactive,
     }
 
     return render(
@@ -560,8 +673,8 @@ def contracts(request):
                 # Captura os valores enviados pelo formulário
                 cliente_id = int(request.POST.get('clienteId'))
                 pedido_id = int(request.POST.get('pedidoId')) if request.POST.get('pedidoId') else None
-                data_inicio = request.POST.get('dataInicio')
-                data_fim = request.POST.get('dataFim')
+                data_inicio = datetime.strptime(request.POST.get('dataInicio'), '%Y-%m-%d').date() if request.POST.get('dataInicio') else None
+                data_fim = datetime.strptime(request.POST.get('dataFim'), '%Y-%m-%d').date() if request.POST.get('dataFim') else None
                 quantidade_estimada = float(request.POST.get('quantidadeEstimada'))
                 preco_estimado = float(request.POST.get('precoEstimado'))
                 quantidade_final = float(request.POST.get('quantidadeFinal'))
@@ -572,19 +685,18 @@ def contracts(request):
                     raise ValueError("A quantidade final deve ser maior ou igual à quantidade estimada.")
 
                 # Valores padrão para campos opcionais
-                preco_final = 0
                 is_active = True
 
                 # Chamar o procedimento armazenado
                 with connection.cursor() as cursor:
                     cursor.execute("""
-                        CALL sp_criarcontrato(
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        CALL inserircontrato(
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
                     """, [
-                        cliente_id, pedido_id, data_inicio, data_fim,
+                         nome,cliente_id, pedido_id, data_inicio, data_fim,
                         quantidade_estimada, preco_estimado,
-                        quantidade_final, preco_final, nome, is_active
+                        quantidade_final, is_active
                     ])
                 return JsonResponse({'status': 'success', 'message': 'Contrato criado com sucesso!'})
 
@@ -774,8 +886,26 @@ def delete_note_request(request, notaid):
 @login_required
 def contractdetail(request, contratoid):
     contrato = get_object_or_404(Contratos, contratoid=contratoid)
-    cliente = contrato.clienteid  
-    return render(request, 'contractdetail.html', {'contrato': contrato, 'cliente': cliente})
+    cliente = contrato.clienteid
+    recibos = Recibos.objects.filter(idcontrato=contrato.contratoid).select_related('metodopagamento', 'estadoid')  
+    # select_related to optimize the query, including 'metodopagamento' and 'estadoid'
+    metodospagamento = Metodospagamento.objects.all()
+    colheita = Colheitas.objects.all()
+    estadosrecibos = Estadosrecibo.objects.all()
+    users = Users.objects.all()
+
+    return render(request, 'contractdetail.html', {
+        'contrato': contrato,
+        'cliente': cliente,
+        'recibos': recibos,
+        'metodospagamento': metodospagamento,
+        'colheita': colheita,
+        'estadosrecibos': estadosrecibos,
+        'users': users
+    })
+
+
+
 
 
 @login_required
@@ -1658,3 +1788,85 @@ def update_vineyard(request, vinha_id):
         return JsonResponse({'status': 'error', 'message': 'Casta não encontrada'}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+def create_recibo(request):
+    if request.method == 'POST':
+        try:
+            # Parse JSON do corpo do pedido
+            data = json.loads(request.body)
+
+            # Extrai e valida dados
+            idcontrato = int(data.get('idcontrato', 0)) or None
+            datainicio = data.get('datainicio')
+            precofinal = float(data.get('precofinal', 0)) or None
+            colheitaid = int(data.get('colheitaid', 0)) or None
+            metodopagamentoid = int(data.get('metodopagamentoid', 0)) or None
+            estadopagamentoid = int(data.get('estadopagamentoid', 0)) or None
+            isactive = bool(data.get('isactive', True))
+
+            # Executa a procedure no banco de dados
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL sp_Recibo_Create(%s, %s, %s, %s, %s, %s, %s)",
+                    [idcontrato, datainicio, precofinal, colheitaid, metodopagamentoid, estadopagamentoid, isactive]
+                )
+
+            return JsonResponse({'success': True, 'message': 'Recibo criado com sucesso!'})
+
+        except Exception as e:
+            # Retorna mensagem de erro
+            return JsonResponse({'success': False, 'message': f'Erro ao criar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+@csrf_exempt
+def deactivate_recibo(request, recibo_id):
+    if request.method == 'POST':
+        try:
+            # Atualiza o recibo para isactive = false
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE recibos SET isactive = false WHERE reciboid = %s AND isactive = true",
+                    [recibo_id]
+                )
+                
+            return JsonResponse({'success': True, 'message': 'Recibo desativado com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao desativar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+
+
+def update_recibo_status(request, recibo_id):
+    # Verificar se a requisição é POST
+    if request.method == "POST":
+        recibo = get_object_or_404(Recibos, pk=recibo_id)
+
+        # Verificar se o recibo está atualmente 'Não Pago' antes de alterar para 'Pago'
+        if recibo.estadoid.nome == 'Não Pago':
+            recibo.estadoid = get_object_or_404(Estadosrecibo, nome='Pago')
+            recibo.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
+    return JsonResponse({'success': False, 'message': 'Método inválido.'})
+
+def update_contrato_qtdefinal(idcontrato):
+    try:
+        # Obtém o contrato pelo id
+        contrato = Contratos.objects.get(contratoid=idcontrato)
+        
+        # Soma as quantidades de todos os recibos ativos associados ao contrato
+        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
+        
+        # Atualiza o campo qtdefinal do contrato
+        contrato.qtdefinal = total_quantidade
+        contrato.save()
+
+        return True
+    except Exception as e:
+        return False
+

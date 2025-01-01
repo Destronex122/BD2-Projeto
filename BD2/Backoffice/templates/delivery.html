@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Envios{% endblock %}
+{% block title %}Transportes{% endblock %}
 
 {% block content %}
 
 {% load static %}
 
 <style>
-    #deliveryTable tbody tr:hover {
+    #transportTable tbody tr:hover {
         background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
         cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
     }
@@ -15,31 +15,27 @@
 
 <div class="editable-area newPadding">    
     <div style="display:flex; justify-content: space-between;">
-        <h1>Encomendas</h1>
-        <div style="justify-self:right; text-align:center;">
-            <button type="button" onclick="openAddDeliveryModal()">
-                <img src="{% static 'add.png' %}" title="Adicionar nova encomenda" alt="add" style="height: 25px; width: auto;">
-            </button>
-        </div>
+        <h1>Transportes</h1>
+        <button class="button" onclick="openAddTransportModal()"><img src="{% static 'add.png' %}" title="Adicionar novo transporte" alt="add" style="height: 25px; width: auto;"></button>
     </div>
-    <p>Selecione uma encomenda para visualizar o detalhe da mesma.</p> 
+    <p>Selecione um transporte para visualizar o detalhe do mesmo.</p> 
 
     <!-- Filtros para a tabela -->
     <div class="filters" style="margin-bottom: 20px;">
         <form method="get" id="filterForm">
             <div style="display: flex; gap: 10px;">
                 <div class="form-group">
-                    <label for="filterNumber">Nº da encomenda:</label>
+                    <label for="filterNumber">Nº do transporte:</label>
                     <input 
                         type="text" 
                         id="filterNumber" 
                         name="filterNumber" 
                         class="form-control" 
-                        placeholder="Ex: E123123" 
+                        placeholder="Ex: T123123" 
                         value="{{ filters.filterNumber|default:'' }}">
                 </div>
                 <div class="form-group">
-                    <label for="filterDate">Data da entrega:</label>
+                    <label for="filterDate">Data:</label>
                     <input 
                         type="date" 
                         id="filterDate" 
@@ -54,111 +50,113 @@
         </form>
     </div>
 
-    <!-- Tabela de entregas -->
-    <table class="table table-bordered" id="deliveryTable">
-        <thead>
-            <tr>
-                <th>Nº da encomenda</th>
-                <th>Endereço</th>
-                <th>Data</th>
-                <th>Preço transporte</th>
-                <th>Estado </th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for transporte in Transportes %}
-            <tr data-idtransporte = "{{ transporte.idtransporte}}">
-                <td> {{transporte.idtransporte}}</td>
-                <td> {{transporte.morada}}</td>
-                <td>{{transporte.data}}</td>
-                <td>{{transporte.precotransporte}}</td>
-                <td>{{transporte.estadoid.nome}}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">Nenhuma encomenda encontrada.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Popup para adicionar nova encomenda -->
-    <div class="popup-overlay" id="addDeliveryModal">
+    <!-- Modal para adicionar transporte -->
+    <div class="popup-overlay" id="addTransportModal" style="display: none;">
         <div class="popup-content">
             <div class="popup-header">
-                <h5>Adicionar encomenda</h5>
-                <span class="modal-close" onclick="closeAddDeliveryModal()">&times;</span>
+                <h5>Adicionar Transporte</h5>
+                <span class="modal-close" onclick="closeAddTransportModal()">&times;</span>
             </div>
-            <br>
-            <form id="addDeliveryForm" onsubmit="addDelivery(event)">
+            <form method="post"> 
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_transport"> <!-- Define a ação -->
                 <div class="form-group">
-                    <label for="newOrderNumber">Nº da encomenda:</label>
-                    <input type="text" id="newOrderNumber" class="form-control" required>
+                    <label for="nome">Nome:</label>
+                    <input type="text" id="nome" name="nome" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="newAddress">Endereço:</label>
-                    <input type="text" id="newAddress" class="form-control" required>
+                    <label for="morada">Morada:</label>
+                    <input type="text" id="morada" name="morada" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="newPostalCode">Código postal:</label>
-                    <input type="text" id="newPostalCode" class="form-control" required>
+                    <label for="data">Data:</label>
+                    <input type="date" id="data" name="data" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="newCity">Cidade:</label>
-                    <input type="text" id="newCity" class="form-control" required>
+                    <label for="precoTransporte">Preço do Transporte:</label>
+                    <input type="number" id="precoTransporte" name="precoTransporte" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="estadoId">Estado:</label>
+                    <select id="estadoId" name="estadoId" class="form-control" required>
+                        {% for estado in estados %}
+                        <option value="{{ estado.idestado }}">{{ estado.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reciboId">Recibo:</label>
+                    <select id="reciboId" name="reciboId" class="form-control" required>
+                        {% for recibo in recibos %}
+                            <option value="{{ recibo.reciboid }}">{{ recibo.reciboid }} - {{ recibo.idcontrato.nome }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-                    <button type="button" onclick="closeAddDeliveryModal()" class="secondary-button">Cancelar</button>
+                    <button type="button" onclick="closeAddTransportModal()" class="secondary-button">Cancelar</button>
                     <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Tabela de transportes -->
+    <table class="table table-bordered" id="transportTable">
+        <thead>
+            <tr>
+                <th>Nº do Transporte</th>
+                <th>Morada</th>
+                <th>Data</th>
+                <th>Preço Transporte</th>
+                <th>Estado</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transporte in transportes %}
+            <tr data-idtransporte="{{ transporte.idtransporte }}">
+                <td>{{ transporte.idtransporte }}</td>
+                <td>{{ transporte.morada }}</td>
+                <td>{{ transporte.data|date:'Y-m-d' }}</td>
+                <td>{{ transporte.precotransporte }}</td>
+                <td>{{ transporte.estadoid.nome }}</td>
+                <td>
+                    <form method="post" class="delete-form" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="deleteTransport" value="{{ transporte.idtransporte }}">
+                        <button type="submit" class="delete-btn">
+                            <img src="{% static 'delete.png' %}" title="Eliminar transporte" alt="delete" style="height: 25px; width: auto;">
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">Nenhum transporte encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
     <script>
-        // Função para abrir o modal de adicionar encomenda
-        function openAddDeliveryModal() {
-            document.getElementById('addDeliveryModal').style.display = 'flex';
+        // Modal handlers
+        function openAddTransportModal() {
+            document.getElementById('addTransportModal').style.display = 'block';
         }
 
-        // Função para fechar o modal de adicionar encomenda
-        function closeAddDeliveryModal() {
-            document.getElementById('addDeliveryModal').style.display = 'none';
+        function closeAddTransportModal() {
+            document.getElementById('addTransportModal').style.display = 'none';
         }
 
-        // Função para adicionar uma nova encomenda à tabela
-        function addDelivery(event) {
-            event.preventDefault();
-
-            // Captura os valores dos campos do formulário
-            const newOrderNumber = document.getElementById('newOrderNumber').value;
-            const newAddress = document.getElementById('newAddress').value;
-            const newPostalCode = document.getElementById('newPostalCode').value;
-            const newCity = document.getElementById('newCity').value;
-
-            // Cria uma nova linha na tabela com os valores capturados
-            const newRow = `
-                <tr>
-                    <td>${newOrderNumber}</td>
-                    <td>${newAddress}</td>
-                    <td>${newPostalCode}</td>
-                    <td>${newCity}</td>
-                </tr>
-            `;
-
-            // Adiciona a nova linha ao corpo da tabela
-            document.querySelector('#deliveryTable tbody').insertAdjacentHTML('beforeend', newRow);
-
-            // Fecha o modal e reseta o formulário
-            closeAddDeliveryModal();
-            document.getElementById('addDeliveryForm').reset();
-        }
-
-        // Tabela clicável
-        document.getElementById('deliveryTable').addEventListener('click', function(event) {
+        // Redirecionar ao clicar na linha
+        document.getElementById('transportTable').addEventListener('click', function(event) {
             const targetRow = event.target.closest('tr');
             if (targetRow && !targetRow.closest('thead')) {
-                window.location.href = `/backoffice/deliverydetail/`; // Adjust with appropriate URL logic
+                const idTransporte = targetRow.dataset.idtransporte;
+                if (idTransporte) {
+                    console.log(`Redirecionando para detalhe do transporte com ID: ${idTransporte}`);
+                    window.location.href = `/backoffice/deliverydetail/${idTransporte}/`;
+                }
             }
         });
     </script>
