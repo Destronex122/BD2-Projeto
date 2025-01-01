@@ -21,6 +21,7 @@ from django.db.models import Value, BooleanField, Case, When, F, Q, Max
 import logging
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_protect
 from datetime import datetime
 
 
@@ -1725,6 +1726,68 @@ def delete_approved_status(request, approvedId):
             return JsonResponse({'success': False, 'message': f'Erro ao eliminar o estado: {str(e)}'})
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
+
+def load_castas(request):
+    castas = Castas.objects.all().values('castaid', 'nome')
+    return JsonResponse(list(castas), safe=False)
+
+@login_required
+def create_vineyard(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Obter a instância da Casta
+            casta = Castas.objects.get(pk=data.get('casta'))
+
+            # Obter a instância do Campo (Quinta) - você precisará passar o campoId de alguma forma
+            campo = Campos.objects.get(pk=data.get('campoid'))  # Substitua 'campoid' pelo nome correto do campo
+
+            # Criar a nova vinha
+            vinha = Vinhas.objects.create(
+                nome=data.get('nome'),
+                castaid=casta,
+                campoid=campo,
+                coordenadas=data.get('coordinates'), # Ajuste conforme a estrutura do seu modelo para coordenadas
+                dataplantacao=data.get('dataplantacao'),
+                hectares=data.get('hectares'),
+                isactive=True  # Ou defina como você preferir
+            )
+
+            return JsonResponse({'status': 'success', 'vinhaid': vinha.vinhaid})
+        except Castas.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Casta não encontrada'}, status=400)
+        except Campos.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Campo (Quinta) não encontrado'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Método inválido'}, status=405)
+    
+@require_http_methods(["PUT"])
+@csrf_protect
+def update_vineyard(request, vinha_id):
+    try:
+        vinha = Vinhas.objects.get(pk=vinha_id)
+        data = json.loads(request.body)
+
+        vinha.nome = data.get('nome')
+        vinha.dataplantacao = data.get('dataplantacao')
+        vinha.hectares = data.get('hectares')
+
+        # Obter a instância da Casta, se fornecida
+        if 'casta' in data:
+            casta = Castas.objects.get(pk=data.get('casta'))
+            vinha.castaid = casta
+
+        vinha.save()
+        return JsonResponse({'status': 'success'})
+    except Vinhas.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Vinha não encontrada'}, status=404)
+    except Castas.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Casta não encontrada'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 @csrf_exempt
