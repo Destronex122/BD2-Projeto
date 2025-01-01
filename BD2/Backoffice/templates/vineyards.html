@@ -189,34 +189,188 @@
         map.on('draw:created', function(e) {
             var type = e.layerType,
                 layer = e.layer;
-
-            var csrfToken = '{{ csrf_token }}'; 
+        
             if (type === 'polygon') {
-                fetch('/backoffice/save_polygon/', {
-                    method: 'POST',
+                var latlngs = layer.getLatLngs()[0]; // Obter as coordenadas do polígono
+                var coordinates = latlngs.map(latlng => ({
+                    lat: latlng.lat,
+                    lng: latlng.lng
+                }));
+        
+                // Calcular a área em hectares
+                var areaInSquareMeters = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                var areaInHectares = areaInSquareMeters / 10000;
+        
+                // Preencher os campos de coordenadas e hectares no modal
+                preencherModalComNovoPoligono(coordinates, areaInHectares);
+        
+                // Adicionar o polígono ao mapa
+                vineyardMarkers.addLayer(layer);
+                const vineyardForm = document.getElementById('vineyardForm');
+
+        vineyardForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Evita o envio padrão do formulário
+            alert("oi")
+            // Identifica se é edição ou criação
+            const isEdit = document.getElementById('saveButton').dataset.isEdit === 'true';
+
+            // Obtém os valores do formulário
+            const nome = document.getElementById('name').value.trim();
+            const casta = document.getElementById('castasDropdown').value;
+            const dataplantacao = document.getElementById('date').value;
+            const hectares = document.getElementById('size').value;
+            const coordinates = document.getElementById('coordinates').value; 
+            // Obtém o ID da vinha se for edição
+            const vinhaId = isEdit ? document.querySelector('#saveButton').dataset.vinhaid : null;
+
+            // Valida campos obrigatórios (adapte conforme necessário)
+            if (!nome || !casta || !hectares) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+
+            // URL e método HTTP para a operação
+            const url = isEdit ? `/backoffice/update_vineyard/${vinhaId}/` : '/backoffice/create_vineyard/';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            // Preparar os dados para envio
+            const data = {
+                nome,
+                casta,
+                dataplantacao,
+                hectares,
+            };
+            
+            // Se for uma nova vinha, adicionar as coordenadas
+            if (!isEdit) {
+            data.coordinates = JSON.parse(coordinates); 
+            }
+
+            // Faz a solicitação ao backend
+            try {
+                const response = await fetch(url, {
+                    method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken 
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                     },
-                    body: JSON.stringify({
-                        coordinates: layer.getLatLngs(),
-                        title: "Nova Vinha",
-                        description: ""
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        alert(data.message);
-                        vineyardMarkers.addLayer(layer);
-                        openModal();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => console.error('Error saving polygon:', error));
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    loadVineyards(vineyardId);
+                } else {
+                    alert(result.message || 'Erro ao salvar a vinha.');
+                }
+            } catch (error) {
+                console.error("Erro:", error);
+                alert('Erro ao salvar a vinha.');
             }
         });
+        
+                // Abrir o modal
+                openModal();
+        
+                // Armazenar a camada no botão "Guardar" para uso posterior
+                //document.querySelector('#myModal button[type="submit"]').dataset.layerId = L.Util.stamp(layer);
+            }
+        });
+
+        function preencherModalComNovoPoligono(coordinates, areaInHectares) {
+            // Limpar os campos do formulário
+            document.getElementById('name').value = '';
+            document.getElementById('date').value = '';
+        
+            // Preencher o campo de hectares
+            document.getElementById('size').value = areaInHectares.toFixed(2); // Arredondar para 2 casas decimais
+        
+            // Preencher o campo oculto de coordenadas (se existir)
+            // Se você estiver usando um campo de texto para exibir as coordenadas (não recomendado para edição manual)
+             document.getElementById('coordinates').value = JSON.stringify(coordinates);
+             document.getElementById('saveButton').dataset.isEdit = 'false';
+        
+            // Se você quiser armazenar as coordenadas como um campo JSON no backend, é melhor não exibi-las diretamente no formulário.
+        
+            // Carregar as castas no dropdown
+            carregarCastas();
+        }
+        function carregarCastas() {
+            fetch('/backoffice/load_castas/', { // Rota para obter a lista de castas
+                method: 'GET'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar castas.');
+                }
+                return response.json();
+            })
+            .then(castas => {
+                const castasDropdown = document.getElementById('castasDropdown');
+                castasDropdown.innerHTML = ''; // Limpar opções existentes
+        
+                castas.forEach(casta => {
+                    const option = document.createElement('option');
+                    option.value = casta.castaid;
+                    option.text = casta.nome;
+                    castasDropdown.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao carregar castas.');
+            });
+        }
+        function atualizarVinha(updatedData) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const layerId = document.querySelector('#myModal button[type="submit"]').dataset.layerId;
+            const layer = vineyardMarkers.getLayer(layerId);
+        
+            // Obter as coordenadas do layer
+            const latlngs = layer.getLatLngs()[0];
+            const coordinates = latlngs.map(latlng => ({
+                lat: latlng.lat,
+                lng: latlng.lng
+            }));
+        
+            // Adicionar as coordenadas aos dados atualizados
+            updatedData.coordinates = coordinates;
+        
+            fetch(`/backoffice/create_vineyard/`, { // Alterar a rota para uma rota de criação
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(updatedData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao criar vinha.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Vinha criada com sucesso:', data);
+                alert('Vinha criada com sucesso!');
+        
+                // Atualizar o popup do polígono, se necessário
+                layer.bindPopup(`<b>${updatedData.nome}</b><br>Hectares: ${updatedData.hectares}<br>Data de Plantação: ${updatedData.dataplantacao || 'N/A'}`);
+        
+                // Fechar o modal
+                modal.classList.remove('open');
+        
+                // Recarregar as vinhas
+                const vineyardId = document.getElementById('dropdown_vineyard').value;
+                loadVineyards(vineyardId);
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao criar vinha.');
+            });
+        }
+        
     </script>
 
     <div id="myModal" class="sidebar">
@@ -225,24 +379,25 @@
                 <span class="close">&times;</span>
             </div>
             <h2>Informação da vinha</h2>
-            <div id="vineyardInfo" style="margin-top: 15px;">
-                <!-- Informações sobre a vinha serão exibidas aqui ao clicar em um polígono de vinha -->
-            </div>
+            <div id="vineyardInfo" style="margin-top: 15px;"></div>
             <div id="formContainer" style="display: block; margin-top: 15px;">
-                <form method="POST">
-                    {% csrf_token %}
-                    <label for="name">Casta:</label>
-                    <input style="width: 50%;" type="text" id="name" name="name" required>
-
+                <form id="vineyardForm"> <label for="name">Nome:</label>
+                    <input style="width: 50%;" type="text" id="name" name="name">
+    
+                    <label for="castasDropdown">Casta:</label>
+                    <select style="width: 50%;" id="castasDropdown" name="casta"></select>
+    
                     <label for="date">Data de plantação:</label>
-                    <input style="width: 50%;" type="text" id="date" name="date" required>
-
+                    <input style="width: 50%;" type="date" id="date" name="date">
+    
                     <label for="size">Hectares:</label>
-                    <input style="width: 50%;" type="text" id="size" name="size" required>
-                    
+                    <input style="width: 50%;" type="number" id="size" name="size" readonly>
+    
+                    <input type="hidden" id="coordinates" name="coordinates">
+    
                     <br>
-
-                    <button type="submit">Guardar</button> 
+    
+                    <button id="saveButton" data-is-edit="false" type="submit">Guardar</button>
                 </form>
             </div>
         </div>
