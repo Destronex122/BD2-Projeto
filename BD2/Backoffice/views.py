@@ -14,7 +14,7 @@ from django.db import connection
 from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes, Periodos, Recibos
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes, Periodos, Recibos, Estadostransporte
 from django.utils import timezone
 from django.db.models.functions import Coalesce
 from django.db.models import Value, BooleanField, Case, When, F, Q, Max
@@ -145,8 +145,7 @@ def users(request):
 
 @login_required
 def delivery(request):
-
-    #Filtros
+    # Filtros
     filter_number = request.GET.get('filterNumber', '').strip()
     filter_date = request.GET.get('filterDate', None)
     filter_state = request.GET.get('filterState', '').strip()
@@ -160,14 +159,44 @@ def delivery(request):
     if filter_state:
         transporte = transporte.filter(estadoid__nome__icontains=filter_state)
 
+    # Adição de Transporte
+    if request.method == 'POST' and request.POST.get('action') == 'add_transport':
+        # Captura os dados do formulário
+        nome = request.POST['nome']
+        morada = request.POST['morada']
+        data = request.POST['data']
+        preco_transporte = request.POST['precoTransporte']
+        estado_id = request.POST['estadoId']
+        recibo_id = request.POST['reciboId']
+        print(f"--------------------------------------------------------Estado ID: {estado_id}, Recibo ID: {recibo_id}--------------------------------------------------------------------")
+
+        # Chamada ao procedimento armazenado
+        
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                CALL sp_inserir_transport(%s, %s, %s, %s, %s, %s)
+                """,
+                [morada, data, preco_transporte, estado_id, recibo_id, nome]
+            )
+        
+        # Redireciona para evitar resubmissão do formulário
+        return redirect('delivery')
+
+    # Obter estados para o formulário de adição
+    estados = Estadostransporte.objects.all()
+    recibos = Recibos.objects.all()
+
     return render(request, 'delivery.html', {
-        'Transportes': transporte,
+        'transportes': transporte,
+        'recibos': recibos,
         'filters': {
             'filterNumber': filter_number,
             'filterDate': filter_date,
             'filterState': filter_state,
         },
-    })
+        'estados': estados, 
+})
 
 @login_required
 def deliverydetail(request,transposteid):
