@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Detalhes do Envio{% endblock %}
+{% block title %}Detalhes do Transporte{% endblock %}
 
 {% block content %}
 
@@ -22,13 +22,13 @@
 </style>
 <nav aria-label="breadcrumb" class="breadcrumb-container">
     <ol class="separadores">
-        <li class="breadcrumb-item"><a href="{% url 'delivery' %}">Encomendas</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Detalhe da encomenda</li>
+        <li class="breadcrumb-item"><a href="{% url 'delivery' %}">Transportes</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Detalhe do transporte</li>
     </ol>
 </nav>
 
 <div class="editable-area; padding:0px 0px 20px 0px;">
-    <h1>Detalhe da encomenda</h1>
+    <h1>Detalhe do transporte</h1>
     <br>
     <div class="dashboard">
         <div class="info-sections">
@@ -58,99 +58,106 @@
                 </div>
             </div>
 
-            <!-- Secção de notas -->
+            
             <div class="info-card">
-                <h2>Veículo</h2>
-                <div class="info-item">
-                    <span class="label">Veículo:</span>
-                    <span class="value">Camião</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">Matrícula:</span>
-                    <span class="value">12-AB-34</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">Condutor:</span>
-                    <span class="value">João Simões</span>
-                </div>
+                <h2>Recibo </h2>
+                {% if transporte.reciboid %}
+                    <div class="info-item">
+                        <span class="label">ID do Recibo:</span>
+                        <span class="value">{{ transporte.reciboid.reciboid }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Contrato:</span>
+                        <span class="value">{{ transporte.reciboid.idcontrato.nome }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Data do Recibo:</span>
+                        <span class="value">{{ transporte.reciboid.datainicio|date:"d/m/Y" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Estado do Recibo:</span>
+                        <span class="value">{{ transporte.reciboid.estadoid.nome }}</span>
+                    </div>
+                {% else %}
+                    <p>Este transporte não possui um recibo associado.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTI6TEnnZbJlgzAqvkiYA0yxcMErcFyPg&language=pt"></script>
 
-    <br>
-    <h2>Trajeto</h2>
-    <div id="map" style="margin-bottom: 50px"></div>
-    <div id="sidebar"></div>
-    <script>
-        let map;
+<!--
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTI6TEnnZbJlgzAqvkiYA0yxcMErcFyPg&language=pt"></script>
 
-        function initMap() {
-            // Inicializar o mapa com um ponto central genérico
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: 41.14961, lng: -8.61099 }, // Coordenadas do Porto
-                zoom: 12
+<br>
+<h2>Trajeto</h2>
+<div id="map" style="margin-bottom: 50px"></div>
+<div id="sidebar"></div>
+<script>
+    let map;
+
+    function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: { lat: 41.14961, lng: -8.61099 },
+            zoom: 12
+        });
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer();
+        directionsRenderer.setMap(map);
+
+        directionsRenderer.setPanel(document.getElementById("sidebar"))
+
+        calcularRota();
+        calculateAndDisplayRoute(directionsService, directionsRenderer);
+
+        function calculateAndDisplayRoute(directionsService, directionsRenderer) {
+            alert("oi");
+            const start = "Cabaços";
+            const end = "Viseu";
+          
+            directionsService
+              .route({
+                origin: start,
+                destination: end,
+                travelMode: google.maps.TravelMode.DRIVING,
+              })
+              .then((response) => {
+                directionsRenderer.setDirections(response);
+              })
+              .catch((e) => window.alert("Directions request failed due to " + status));
+          }
+          
+          window.initMap = initMap;
+        
+    }
+
+    function calcularRota() {
+        const origem = "Vinha da Encomenda, Vila Real";
+        const destino = document.getElementById("destino").textContent;
+
+        if (origem && destino) {
+            const request = {
+                origin: "Cabaços",
+                destination: "Viseu",
+                travelMode: 'DRIVING'
+            };
+
+            directionsService.route(request, function(result, status) {
+                if (status == 'OK') {
+                    directionsRenderer.setDirections(result);
+                    const route = result.routes[0].legs[0];
+                } else {
+                    alert('Não foi possível encontrar o trajeto: ' + status);
+                }
             });
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
-            directionsRenderer.setMap(map);
-
-            directionsRenderer.setPanel(document.getElementById("sidebar"))
-
-            // Definir o ponto de origem e destino para calcular a rota
-            calcularRota();
-            calculateAndDisplayRoute(directionsService, directionsRenderer);
-
-            function calculateAndDisplayRoute(directionsService, directionsRenderer) {
-                alert("oi");
-                const start = "Cabaços";
-                const end = "Viseu";
-              
-                directionsService
-                  .route({
-                    origin: start,
-                    destination: end,
-                    travelMode: google.maps.TravelMode.DRIVING,
-                  })
-                  .then((response) => {
-                    directionsRenderer.setDirections(response);
-                  })
-                  .catch((e) => window.alert("Directions request failed due to " + status));
-              }
-              
-              window.initMap = initMap;
-            
+        } else {
+            alert("Por favor, insira os endereços de partida e destino.");
         }
+    }
 
-        function calcularRota() {
-            const origem = "Vinha da Encomenda, Vila Real"; // Endereço fixo da vinha
-            const destino = document.getElementById("destino").textContent; // Destino da encomenda
-
-            if (origem && destino) {
-                const request = {
-                    origin: "Cabaços",
-                    destination: "Viseu",
-                    travelMode: 'DRIVING' // Modo de transporte (DRIVING, BICYCLING, TRANSIT, WALKING)
-                };
-
-                directionsService.route(request, function(result, status) {
-                    if (status == 'OK') {
-                        directionsRenderer.setDirections(result);
-                        // Adicionar a distância ao resultado
-                        const route = result.routes[0].legs[0];
-                    } else {
-                        alert('Não foi possível encontrar o trajeto: ' + status);
-                    }
-                });
-            } else {
-                alert("Por favor, insira os endereços de partida e destino.");
-            }
-        }
-
-        // Inicializar o mapa quando a página carregar
-        window.onload = initMap;
-    </script>
+    window.onload = initMap;
+</script>
+-->
 </div>
 
 {% endblock %}
