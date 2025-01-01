@@ -128,16 +128,21 @@
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
     <h2 class="pesagens-title">Recibos</h2>
+    <button type="button" onclick="openAddContractModal()" title="Adicionar novo recibo" class="button">
+        Adicionar
+    </button>
 </div>
+
 <div class="pesagens-container" id="pesagensContainer" style="display: flex; flex-wrap: wrap; gap: 16px;">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!-- Iterar sobre uma lista de recibos -->
     {% for recibo in recibos %}
-    <div class="pesagem-card" style="border: 1px solid #ccc; border-radius: 8px; padding: 16px; width: 250px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+    <div class="pesagem-card" style="border: 1px solid #ccc; border-radius: 8px; padding: 16px; width: 250px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: relative;">
         <p><strong>Recibo nº:</strong> {{ recibo.reciboid }}</p>
         <p><strong>Data:</strong> {{ recibo.datainicio }}</p>
         <p><strong>Preço final:</strong> €{{ recibo.precofinal }}</p>
         <p><strong>Método de Pagamento:</strong> {{ recibo.metodopagamento.nome }}</p>
-        <p><strong>Estado do Recibo:</strong> {{ recibo.estadoid.nome}}</p>
+        <p><strong>Estado do Recibo:</strong> {{ recibo.estadoid.nome }}</p>
         <p><strong>Ativo:</strong>
             {% if recibo.isactive %}
                 <span style="color: green;">✓</span>
@@ -145,52 +150,94 @@
                 <span style="color: red;">✗</span>
             {% endif %}
         </p>
+
+        <!-- Caixote do lixo (apenas visível para recibos ativos) -->
+        {% if recibo.isactive %}
+            <button type="button" onclick="deactivateRecibo({{ recibo.reciboid }})" class="delete-icon" style="position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; font-size: 20px;">
+                <i class="fa fa-trash" style="color: #ff6b6b;"></i>
+            </button>
+        {% endif %}
+
+        <!-- Botão de edição (aparece apenas para recibos não pagos) -->
+        {% if recibo.estadoid.nome == 'Não Pago' %}
+            <button type="button" onclick="editRecibo({{ recibo.reciboid }})" class="secondary-button" style="background-color: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                <i class="fa fa-edit"></i> Pagar
+            </button>
+        {% endif %}
     </div>
     {% endfor %}
 </div>
 
-<!-- Modal para adicionar contrato -->
+
+
+
+
+<!-- Modal para adicionar recibo -->
+<!-- Modal para adicionar recibo -->
 <div class="popup-overlay" id="addReceiptModal">
     <div class="popup-content">
         <div class="popup-header">
             <h5>Adicionar Recibo:</h5>
             <span class="modal-close" onclick="closeAddContractModal()">&times;</span>
         </div>
-        <form id="addReceiptForm" method="post" action="."> <!-- Mesma URL -->
+        <form id="addReceiptForm" onsubmit="calculatePrecoFinal(event)"> 
             {% csrf_token %}
+            <input type="hidden" name="idcontrato" value="{{ contrato.contratoid }}">
+            
+            <!-- Data de Início -->
             <div class="form-group">
-                <label for="dataInicio">Data de Início:</label>
-                <input type="date" id="dataInicio" name="datainicio" class="form-control" required>
+                <label for="datainicio">Data de Início:</label>
+                <input type="date" id="datainicio" name="datainicio" class="form-control" required>
             </div>
+            
+            
             <div class="form-group">
-                <label for="precofinal">Preço Final:</label>
-                <input type="number" id="precofinal" name="precofinal" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="colheitaId">Colheita: </label>
-                <select id="colheitaId" name="colheitaid" class="form-control">
+                <label for="colheitaId">Colheita:</label>
+                <select id="colheitaId" name="colheitaid" class="form-control" onchange="updatePrecoPorTonelada()">
                     {% for colheita in colheita %}
-                        <option value="{{ colheita.colheitaid }}">{{ colheita.colheitaid }} - {{ colheita.datapesagem }} </option>
+                        {% with vinha=colheita.vinhaid %}
+                            <option value="{{ colheita.colheitaid }}" data-preco="{{ colheita.precoportonelada }}">
+                                {{ vinha.nome }} - Preço por Tonelada: €{{ colheita.precoportonelada }}
+                            </option>
+                        {% endwith %}
                     {% endfor %}
                 </select>
             </div>
+            
+            <!-- Quantidade -->
             <div class="form-group">
-                <label for="metodoid">Métodos de Pagamento: </label>
-                <select id="metodoid" name="metodoid" class="form-control">
-                    {% for metodo in metodospagamento %} 
+                <label for="quantidade">Quantidade (toneladas):</label>
+                <input type="number" step="any" id="quantidade" name="quantidade" class="form-control" required onchange="updatePrecoFinal()">
+            </div>
+
+            <!-- Preço Final -->
+            <div class="form-group">
+                <label for="precofinal">Preço Final (€):</label>
+                <input type="number" step="0.01" id="precofinal" name="precofinal" class="form-control" readonly>
+            </div>
+            
+            <!-- Método de Pagamento -->
+            <div class="form-group">
+                <label for="metodopagamentoid">Método de Pagamento:</label>
+                <select id="metodopagamentoid" name="metodopagamentoid" class="form-control">
+                    {% for metodo in metodospagamento %}
                         <option value="{{ metodo.idmetodopagamento }}">{{ metodo.nome }}</option>
                     {% endfor %}
                 </select>
             </div>
+            
+            <!-- Estado do Pagamento -->
             <div class="form-group">
-                <label for="estadopagamentoid">Estado Pagamento: </label>
+                <label for="estadopagamentoid">Estado do Pagamento:</label>
                 <select id="estadopagamentoid" name="estadopagamentoid" class="form-control">
-                    {% for estado in estadosrecibos %} 
+                    {% for estado in estadosrecibos %}
                         <option value="{{ estado.idestado }}">{{ estado.nome }}</option>
                     {% endfor %}
                 </select>
-            </div>                    
-            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+            </div>
+            
+            <!-- Botões -->
+            <div class="form-group" style="text-align: right; margin-top: 15px;">
                 <button type="button" onclick="closeAddContractModal()" class="secondary-button">Cancelar</button>
                 <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
             </div>
@@ -198,14 +245,10 @@
     </div>
 </div>
 
-<div style="text-align:right; margin-bottom: 20px;" onclick="openAddContractModal()">
-    <button type="button" onclick="openAddContractModal()" title="Adicionar novo utilizador" alt="add" style="height: 25px; width: auto;"> Adicionar
-    </button>
-</div>
 
 <script>
     function openAddContractModal() {
-        document.getElementById('addReceiptModal').style.display = 'flex';  // Use flex to center
+        document.getElementById('addReceiptModal').style.display = 'flex'; // Usar flex para centralizar
     }
 
     function closeAddContractModal() {
@@ -213,43 +256,125 @@
     }
 
     document.getElementById('addReceiptForm').addEventListener('submit', function (event) {
-        event.preventDefault(); // Impede o envio normal do formulário
+    event.preventDefault(); // Impede envio tradicional do formulário
 
-        const formData = new FormData(this);
+    const formData = Object.fromEntries(new FormData(this).entries()); // Converte FormData em objeto
+    formData.isactive = true; // Adiciona campo isactive por padrão
 
-        fetch('.', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert(data.message);
+    fetch('/create_recibo/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: JSON.stringify(formData),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
 
-                // Adicionar dinamicamente à tabela
-                const newRow = `
-                    <tr>
-                        <td>${formData.get('clienteId')}</td>
-                        <td>${formData.get('pedidoId')}</td>
-                        <td>${formData.get('dataInicio')}</td>
-                        <td>${formData.get('dataFim')}</td>
-                        <td>${formData.get('quantidadeEstimada')}</td>
-                        <td>${formData.get('quantidadeFinal')}</td>
-                        <td>${formData.get('precoEstimado')}</td>
-                        <td>${formData.get('precoFinal')}</td>
-                    </tr>`;
+            // Fecha o modal
+            closeAddContractModal();
 
-                document.querySelector('#recibosContainer').insertAdjacentHTML('beforeend', newRow);
-                closeAddContractModal();  // Fechar o modal
-            } else {
-                alert('Erro ao adicionar o recibo: ' + data.message);
-            }
-        })
-        .catch(error => console.error('Erro:', error));
-    });
+            // Atualiza a página para mostrar o novo recibo
+            window.location.reload();
+        } else {
+            alert('Erro: ' + data.message);
+        }
+    })
+    .catch(error => console.error('Erro:', error));
+});
+
 </script>
+<script>
+    function deactivateRecibo(reciboId) {
+        if (confirm('Tem certeza de que deseja desativar este recibo?')) {
+            fetch(`/deactivate_recibo/${reciboId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();  // Atualiza a página para refletir a mudança
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+    }
+
+
+    function editRecibo(reciboId) {
+    // Confirmar se o utilizador quer mudar o estado do recibo para "Pago"
+    if (confirm("Deseja marcar este recibo como 'Pago'?")) {
+        // Chama a função para atualizar o estado do recibo
+        updateReciboStatusToPaid(reciboId);
+    }
+}
+
+function updateReciboStatusToPaid(reciboId) {
+    // Enviar uma requisição AJAX para atualizar o estado do recibo
+    fetch(`/update_recibo_status/${reciboId}/pago/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ reciboId: reciboId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("Recibo atualizado para 'Pago'.");
+            location.reload();  // Recarregar a página para refletir as alterações
+        } else {
+            alert("Erro ao atualizar o recibo.");
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert("Erro ao comunicar com o servidor.");
+    });
+}
+
+function updatePrecoPorTonelada() {
+        var colheitaSelect = document.getElementById('colheitaId');
+        var precoPorTonelada = colheitaSelect.options[colheitaSelect.selectedIndex].getAttribute('data-preco');
+        
+        // Atualiza o campo de preço final
+        updatePrecoFinal();
+    }
+
+    // Função para calcular o preço final
+    function updatePrecoFinal() {
+        var colheitaSelect = document.getElementById('colheitaId');
+        var precoPorTonelada = colheitaSelect.options[colheitaSelect.selectedIndex].getAttribute('data-preco');
+        var quantidade = parseFloat(document.getElementById('quantidade').value);
+        
+        // Verifica se a quantidade é válida
+        if (!isNaN(quantidade) && quantidade > 0 && precoPorTonelada) {
+            var precoFinal = precoPorTonelada * quantidade;
+            document.getElementById('precofinal').value = precoFinal.toFixed(2);
+        } else {
+            document.getElementById('precofinal').value = '0.00';
+        }
+    }
+
+    // Função para calcular o preço final ao submeter o formulário
+    function calculatePrecoFinal(event) {
+        event.preventDefault();  // Previne o envio padrão do formulário
+        updatePrecoFinal();  // Atualiza o preço final antes de submeter
+        document.getElementById('addReceiptForm').submit();  // Submete o formulário
+    }
+
+</script>
+
 
 {% endblock %}

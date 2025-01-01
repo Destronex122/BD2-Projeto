@@ -14,7 +14,7 @@ from django.db import connection
 from pymongo import MongoClient
 from django.shortcuts import render, get_object_or_404
 import datetime
-from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes, Periodos, Recibos
+from .models import Users,Castas, Colheitas,Vinhas,Pesagens, Pedidos, Clientes, Contratos, Campos,Transportes,Cargo, NotasColheitas, NotasPedidos, Metodospagamento, PedidosItem, Estadostransporte, Estadosrecibo, Estadosaprovacoes, Periodos, Recibos, Estadostransporte
 from django.utils import timezone
 from django.db.models.functions import Coalesce
 from django.db.models import Value, BooleanField, Case, When, F, Q, Max
@@ -145,8 +145,7 @@ def users(request):
 
 @login_required
 def delivery(request):
-
-    #Filtros
+    # Filtros
     filter_number = request.GET.get('filterNumber', '').strip()
     filter_date = request.GET.get('filterDate', None)
     filter_state = request.GET.get('filterState', '').strip()
@@ -160,19 +159,49 @@ def delivery(request):
     if filter_state:
         transporte = transporte.filter(estadoid__nome__icontains=filter_state)
 
+    # Adição de Transporte
+    if request.method == 'POST' and request.POST.get('action') == 'add_transport':
+        # Captura os dados do formulário
+        nome = request.POST['nome']
+        morada = request.POST['morada']
+        data = request.POST['data']
+        preco_transporte = request.POST['precoTransporte']
+        estado_id = request.POST['estadoId']
+        recibo_id = request.POST['reciboId']
+        print(f"--------------------------------------------------------Estado ID: {estado_id}, Recibo ID: {recibo_id}--------------------------------------------------------------------")
+
+        # Chamada ao procedimento armazenado
+        
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                CALL sp_inserir_transport(%s, %s, %s, %s, %s, %s)
+                """,
+                [morada, data, preco_transporte, estado_id, recibo_id, nome]
+            )
+        
+        # Redireciona para evitar resubmissão do formulário
+        return redirect('delivery')
+
+    # Obter estados para o formulário de adição
+    estados = Estadostransporte.objects.all()
+    recibos = Recibos.objects.all()
+
     return render(request, 'delivery.html', {
-        'Transportes': transporte,
+        'transportes': transporte,
+        'recibos': recibos,
         'filters': {
             'filterNumber': filter_number,
             'filterDate': filter_date,
             'filterState': filter_state,
         },
-    })
+        'estados': estados, 
+})
 
 @login_required
-def deliverydetail(request,transposteid):
-    transporte = get_object_or_404 (Transportes, idtransposte = transposteid ) 
-    return render(request, 'deliverydetail.html', {'Transportes' : transporte })
+def deliverydetail(request, idtransporte):
+    transporte = get_object_or_404(Transportes, idtransporte=idtransporte)  # Corrigido para idtransporte
+    return render(request, 'deliverydetail.html', {'transporte': transporte})  # Variável 'transporte' para o template
 
 
 #COLHEITA
@@ -643,8 +672,8 @@ def contracts(request):
                 # Captura os valores enviados pelo formulário
                 cliente_id = int(request.POST.get('clienteId'))
                 pedido_id = int(request.POST.get('pedidoId')) if request.POST.get('pedidoId') else None
-                data_inicio = request.POST.get('dataInicio')
-                data_fim = request.POST.get('dataFim')
+                data_inicio = datetime.strptime(request.POST.get('dataInicio'), '%Y-%m-%d').date() if request.POST.get('dataInicio') else None
+                data_fim = datetime.strptime(request.POST.get('dataFim'), '%Y-%m-%d').date() if request.POST.get('dataFim') else None
                 quantidade_estimada = float(request.POST.get('quantidadeEstimada'))
                 preco_estimado = float(request.POST.get('precoEstimado'))
                 quantidade_final = float(request.POST.get('quantidadeFinal'))
@@ -655,19 +684,18 @@ def contracts(request):
                     raise ValueError("A quantidade final deve ser maior ou igual à quantidade estimada.")
 
                 # Valores padrão para campos opcionais
-                preco_final = 0
                 is_active = True
 
                 # Chamar o procedimento armazenado
                 with connection.cursor() as cursor:
                     cursor.execute("""
-                        CALL sp_criarcontrato(
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        CALL inserircontrato(
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
                     """, [
-                        cliente_id, pedido_id, data_inicio, data_fim,
+                         nome,cliente_id, pedido_id, data_inicio, data_fim,
                         quantidade_estimada, preco_estimado,
-                        quantidade_final, preco_final, nome, is_active
+                        quantidade_final, is_active
                     ])
                 return JsonResponse({'status': 'success', 'message': 'Contrato criado com sucesso!'})
 
@@ -1699,26 +1727,83 @@ def delete_approved_status(request, approvedId):
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 
-@login_required
-def add_receipt(request):
+@csrf_exempt
+def create_recibo(request):
     if request.method == 'POST':
-        contrato_id = request.POST.get('contratoId')
-        metodopagamento_id = request.POST.get('metodopagamentoId')
-        valor = request.POST.get('valor')
-        data = request.POST.get('data')
+        try:
+            # Parse JSON do corpo do pedido
+            data = json.loads(request.body)
 
-        contrato = Contratos.objects.get(contratoid=contrato_id)
-        metodopagamento = Metodospagamento.objects.get(id=metodopagamento_id)
+            # Extrai e valida dados
+            idcontrato = int(data.get('idcontrato', 0)) or None
+            datainicio = data.get('datainicio')
+            precofinal = float(data.get('precofinal', 0)) or None
+            colheitaid = int(data.get('colheitaid', 0)) or None
+            metodopagamentoid = int(data.get('metodopagamentoid', 0)) or None
+            estadopagamentoid = int(data.get('estadopagamentoid', 0)) or None
+            isactive = bool(data.get('isactive', True))
 
-        # Criar o novo recibo
-        recibo = Recibos.objects.create(
-            idcontrato=contrato,
-            metodopagamento=metodopagamento,
-            valor=valor,
-            data=data
-        )
+            # Executa a procedure no banco de dados
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL sp_Recibo_Create(%s, %s, %s, %s, %s, %s, %s)",
+                    [idcontrato, datainicio, precofinal, colheitaid, metodopagamentoid, estadopagamentoid, isactive]
+                )
 
-        # Redirecionar para o contrato ou retornar uma resposta JSON de sucesso
-        return JsonResponse({'status': 'success', 'message': 'Recibo adicionado com sucesso!'})
+            return JsonResponse({'success': True, 'message': 'Recibo criado com sucesso!'})
 
-    return JsonResponse({'status': 'error', 'message': 'Método inválido!'})
+        except Exception as e:
+            # Retorna mensagem de erro
+            return JsonResponse({'success': False, 'message': f'Erro ao criar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+@csrf_exempt
+def deactivate_recibo(request, recibo_id):
+    if request.method == 'POST':
+        try:
+            # Atualiza o recibo para isactive = false
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE recibos SET isactive = false WHERE reciboid = %s AND isactive = true",
+                    [recibo_id]
+                )
+                
+            return JsonResponse({'success': True, 'message': 'Recibo desativado com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao desativar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+
+
+def update_recibo_status(request, recibo_id):
+    # Verificar se a requisição é POST
+    if request.method == "POST":
+        recibo = get_object_or_404(Recibos, pk=recibo_id)
+
+        # Verificar se o recibo está atualmente 'Não Pago' antes de alterar para 'Pago'
+        if recibo.estadoid.nome == 'Não Pago':
+            recibo.estadoid = get_object_or_404(Estadosrecibo, nome='Pago')
+            recibo.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
+    return JsonResponse({'success': False, 'message': 'Método inválido.'})
+
+def update_contrato_qtdefinal(idcontrato):
+    try:
+        # Obtém o contrato pelo id
+        contrato = Contratos.objects.get(contratoid=idcontrato)
+        
+        # Soma as quantidades de todos os recibos ativos associados ao contrato
+        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
+        
+        # Atualiza o campo qtdefinal do contrato
+        contrato.qtdefinal = total_quantidade
+        contrato.save()
+
+        return True
+    except Exception as e:
+        return False
+

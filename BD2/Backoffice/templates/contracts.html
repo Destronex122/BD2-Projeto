@@ -120,7 +120,7 @@
     <table class="table table-bordered" id="contractTable">
         <thead>
             <tr>
-                <th>Nº do contrato</th>
+                <th>Nome do contrato</th>
                 <th>Cliente</th>
                 <th>Data de início</th>
                 <th>Data de fim</th>
@@ -132,7 +132,7 @@
         <tbody>
             {% for contrato in contrato %}
             <tr  data-contratoid="{{ contrato.contratoid}}">
-                <td>{{ contrato.contratoid}}</td>
+                <td>{{ contrato.nome}}</td>
                 <td>{{ contrato.clienteid.nif}}</td>
                 <td>{{ contrato.datainicio|date:'Y-m-d' }}</td>
                 <td>{{ contrato.datafim|date:'Y-m-d'}}</td>
@@ -180,23 +180,10 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                alert(data.message);
-
-                // Adicionar dinamicamente à tabela
-                const newRow = `
-                    <tr>
-                        <td>${formData.get('clienteId')}</td>
-                        <td>${formData.get('pedidoId')}</td>
-                        <td>${formData.get('dataInicio')}</td>
-                        <td>${formData.get('dataFim')}</td>
-                        <td>${formData.get('quantidadeEstimada')}</td>
-                        <td>${formData.get('precoEstimado')}</td>
-                    </tr>
-                `;
-                document.querySelector('#contractTable tbody').insertAdjacentHTML('beforeend', newRow);
-
+                
                 closeAddContractModal(); // Fecha o modal
                 this.reset(); // Reseta o formulário
+                window.location.reload()
             } else {
                 alert(data.message);
             }

@@ -14,7 +14,7 @@ urlpatterns = [
     path('load_vineyards/', views.load_vineyards, name='load_vineyards'),
     path('home/', views.backofficeIndex, name='backofficeIndex'),
     path('delivery/',  views.delivery, name='delivery'),
-    path('deliverydetail/',  views.deliverydetail, name='deliverydetail'),
+    path('deliverydetail/<int:idtransporte>/',  views.deliverydetail, name='deliverydetail'),
     path('harvest/',  views.harvest, name='harvest'),
     path('create-harvest/', views.create_harvest, name='create_harvest'),
     path('edit-harvest/<int:colheita_id>/', views.edit_harvest, name='edit_harvest'),
@@ -63,6 +63,8 @@ urlpatterns = [
     path('edit_approved_status/<int:approvedId>/', views.edit_approved_status, name='edit_approved_status'),
     path('delete_approved_status/<int:approvedId>/', views.delete_approved_status, name='delete_approved_status'), 
     path('settings/', views.settings, name='settings'),
-    #path('add-receipt/', views.add_receipt, name='add_receipt')
+    path('create_recibo/', views.create_recibo, name='create_recibo'),
+    path('deactivate_recibo/<int:recibo_id>/', views.deactivate_recibo, name='deactivate_recibo'),
+    path('update_recibo_status/<int:recibo_id>/pago/', views.update_recibo_status, name='update_recibo_status')
     
 ]
