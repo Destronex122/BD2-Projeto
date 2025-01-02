@@ -100,48 +100,37 @@
     <!-- Filtros -->
     <div class="filters" style="margin-bottom: 20px;">
         <form method="get" id="filterForm" action="{% url 'harvest' %}">
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 15px;">
                 <!-- Filtros -->
-                <div class="form-group">
-                    <label for="combinedFilter" >Pesquisar:</label>
-                    <input 
-                        type="text" 
-                        id="combinedFilter" 
-                        name="combinedFilter" 
-                        class="form-control" 
-                        value="{{ request.GET.combinedFilter|default:'' }}" 
-                        placeholder="Pesquisar por vinha, peso ou preço">
+                <div style="flex: 1; min-width: 200px;">
+                    <label for="combinedFilter">Vinha:</label>
+                    <input type="text" id="combinedFilter" name="combinedFilter" class="form-control" value="{{ request.GET.combinedFilter|default:'' }}" placeholder="Pesquisar por vinha">
                 </div>
-                <div class="form-group">
+                <div style="flex: 1; min-width: 200px;">
                     <label for="filterPeriodoInicio">Período - Data de início:</label>
-                    <input 
-                        type="date" 
-                        id="filterPeriodoInicio" 
-                        name="filterPeriodoInicio" 
-                        class="form-control" 
-                        value="{{ request.GET.filterPeriodoInicio|default:'' }}">
+                    <input type="date" id="filterPeriodoInicio" name="filterPeriodoInicio" class="form-control" value="{{ request.GET.filterPeriodoInicio|default:'' }}">
                 </div>
-                <div class="form-group">
+                <div style="flex: 1; min-width: 200px;">
                     <label for="filterPeriodoFim">Período - Data de fim:</label>
-                    <input 
-                        type="date" 
-                        id="filterPeriodoFim" 
-                        name="filterPeriodoFim" 
-                        class="form-control" 
-                        value="{{ request.GET.filterPeriodoFim|default:'' }}">
+                    <input type="date" id="filterPeriodoFim" name="filterPeriodoFim" class="form-control" value="{{ request.GET.filterPeriodoFim|default:'' }}">
                 </div>
-                <div class="form-group">
-                    <label for="filterIsActive">Estado:</label>
-                    <select 
-                        id="filterIsActive" 
-                        name="filterIsActive" 
-                        class="form-control">
-                        <option value="">Todos</option>
-                        <option value="active" {% if request.GET.filterIsActive == 'active' %}selected{% endif %}>Ativo</option>
-                        <option value="inactive" {% if request.GET.filterIsActive == 'inactive' %}selected{% endif %}>Inativo</option>
+                <div style="flex: 1; min-width: 150px;">
+                    <label for="filterTerminou">Terminada:</label>
+                    <select id="filterTerminou" name="filterTerminou" class="form-control">
+                        <option value="all" {% if filters.filterTerminou == 'all' %}selected{% endif %}>Todos</option>
+                        <option value="yes" {% if filters.filterTerminou == 'yes' %}selected{% endif %}>Sim</option>
+                        <option value="no" {% if filters.filterTerminou == 'no' %}selected{% endif %}>Não</option>
                     </select>
                 </div>
-                <div class="form-group" style="margin-top: 24px;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label for="filterIsActive">Estado:</label>
+                    <select id="filterIsActive" name="filterIsActive" class="form-control">
+                        <option value="all" {% if filters.filterIsActive == 'all' %}selected{% endif %}>Todos</option>
+                        <option value="active" {% if filters.filterIsActive == 'active' %}selected{% endif %}>Ativo</option>
+                        <option value="inactive" {% if filters.filterIsActive == 'inactive' %}selected{% endif %}>Inativo</option>
+                    </select>
+                </div>
+                <div style="margin-top: 24px;">
                     <button id="applyFilters" type="submit" class="button">Filtrar</button>
                     <button id="clear-filter" type="button" class="secondary-button">Limpar</button>
                 </div>
@@ -172,15 +161,17 @@
                 data-periodo-inicio="{{ colheita.periodo_inicio|date:'Y-m-d' }}" 
                 data-periodo-fim="{{ colheita.periodo_fim|date:'Y-m-d' }}" 
                 data-periodo-ano="{{ colheita.periodo_ano }}"
-                data-previsao-fim="{{ colheita.previsao_fim_colheita|date:'Y-m-d' }}">
+                data-previsao-fim="{{ colheita.previsao_fim_colheita|date:'Y-m-d' }}"
+                data-terminado="{{ colheita.terminado|yesno:'true,false' }}" 
+                data-isactive="{{ colheita.isactive_cleaned|yesno:'true,false' }}">
                 <td>{{ colheita.vinha_nome }}</td>
                 <td>{{ colheita.peso_total }}</td>
                 <td>{{ colheita.preco_por_tonelada }}</td>
                 <td>
-                    {% if colheita.data_ultima_pesagem %}
+                    {% if colheita.data_ultima_pesagem != 'Sem pesagens' %}
                         {{ colheita.data_ultima_pesagem|date:"Y-m-d" }}
                     {% else %}
-                        -
+                        Sem pesagens
                     {% endif %}
                 </td>
                 <td>
@@ -188,7 +179,7 @@
                     {% if colheita.periodo_fim %}
                         {{ colheita.periodo_fim|date:"Y-m-d" }}
                     {% else %}
-                        -
+                        atualidade
                     {% endif %}
                 </td>
                 <td>{{ colheita.previsao_fim_colheita|date:"Y-m-d" }}</td>
@@ -237,9 +228,7 @@
             <div class="form-group">
                 <label for="vinhaId">Vinha</label>
                 <select name="vinhaId" id="vinhaId" required>
-                    <option value="-1" disabled {% if not selected_vinha_id %}selected{% endif %}>
-                        Selecione uma vinha
-                    </option>
+                    <option value="-1" disabled {% if not selected_vinha_id %}selected{% endif %}>Selecione uma vinha</option>
                     {% for vinha in vinhas %}
                         <option value="{{ vinha.vinhaid }}" {% if vinha.vinhaid == selected_vinha_id %}selected{% endif %}>
                             {{ vinha.nome }}
@@ -315,47 +304,7 @@
         }
     });
 
-    //LÓGICA DOS FILTROS
-    document.getElementById('applyFilters').addEventListener('click', function() {
-        const filterVinha = document.getElementById('filterVinha').value.toLowerCase();
-        const filterDataInicio = document.getElementById('filterDataInicio').value;
-        const filterDataFim = document.getElementById('filterDataFim').value;
-        const filterEstado = document.getElementById('filterEstado').value; // Obtemos o valor do filtro de estado
-
-        const rows = document.querySelectorAll('#harvestTable tbody tr');
-
-        rows.forEach(row => {
-            const vinha = row.getAttribute('data-vinha').toLowerCase();
-            const dataPesagem = row.getAttribute('data-pesagem');
-            const isActive = row.getAttribute('data-isactive') === 'true'; // Pegamos o estado ativo/inativo da linha
-
-            const matchesVinha = !filterVinha || vinha.includes(filterVinha);
-            const matchesDataInicio = !filterDataInicio || dataPesagem >= filterDataInicio;
-            const matchesDataFim = !filterDataFim || dataPesagem <= filterDataFim;
-
-            // Verifica o estado
-            const matchesEstado =
-                filterEstado === '' || // Se o filtro de estado não foi selecionado, corresponde a tudo
-                (filterEstado === 'active' && isActive) || 
-                (filterEstado === 'inactive' && !isActive);
-
-            if (matchesVinha && matchesDataInicio && matchesDataFim && matchesEstado) {
-                row.style.display = ''; // Mostra a linha
-            } else {
-                row.style.display = 'none'; // Oculta a linha
-            }
-        });
-    });
-
-    // Limpa os filtros e recarrega a página sem parâmetros
-    document.getElementById('clear-filter').addEventListener('click', function (event) {
-        event.preventDefault(); // Evita o comportamento padrão do botão
-        // Remove todos os parâmetros do URL
-        const baseUrl = window.location.origin + window.location.pathname; // URL base sem parâmetros
-        window.location.href = baseUrl; // Redireciona para a URL base
-    });
-
-    //Abrir popup para criar/editar colheitas
+    // Função para abrir o modal de edição/criação
     function openAddHarvestModal(isEdit = false, colheitaid = null) {
         const modal = document.getElementById('addHarvestModal');
         const modalTitle = document.getElementById('addHarvestModalTitle');
@@ -365,10 +314,17 @@
 
             if (isEdit) {
                 modalTitle.textContent = 'Editar colheita';
-                document.getElementById('harvestId').value = colheitaid; // Define o ID da colheita
-                const row = document.querySelector(`tr[data-id="${colheitaid}"]`);// Encontra a linha correspondente na tabela
+                document.getElementById('harvestId').value = colheitaid;
+                const row = document.querySelector(`tr[data-id="${colheitaid}"]`); // Encontra a linha correspondente na tabela
                 if (row) {
-                    document.getElementById('vinhaId').value = row.getAttribute('data-vinha-id');
+                    const vinhaId = row.getAttribute('data-vinha-id');
+                    const select = document.getElementById('vinhaId');
+                    for (let option of select.options) {
+                        if (option.value == vinhaId) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
                     document.getElementById('harvestPesoTotal').value = row.getAttribute('data-peso-total');
                     document.getElementById('harvestPrecoPorTonelada').value = row.getAttribute('data-preco-por-tonelada');
                     document.getElementById('harvestPeriodoInicio').value = row.getAttribute('data-periodo-inicio');
@@ -380,9 +336,8 @@
                 }
             } else {
                 modalTitle.textContent = 'Adicionar colheita';
-                // Limpa os campos do formulário para adicionar um novo registro
                 document.getElementById('harvestId').value = '';
-                document.getElementById('vinhaId').value = '';
+                document.getElementById('vinhaId').value = '-1';
                 document.getElementById('harvestPesoTotal').value = '';
                 document.getElementById('harvestPrecoPorTonelada').value = '';
                 document.getElementById('harvestPeriodoInicio').value = '';
@@ -395,14 +350,14 @@
         }
     }
 
-    //Fechar popup
+    // Fechar o modal
     function closeAddHarvestModal() {
         document.getElementById('addHarvestModal').style.display = 'none';
     }
 
     document.getElementById('closeAddHarvestModal').addEventListener('click', closeAddHarvestModal);
     document.getElementById('cancelAddHarvest').addEventListener('click', closeAddHarvestModal);
-
+    
     function getCSRFToken() {
         const cookies = document.cookie.split(';');
         for (let cookie of cookies) {
@@ -414,7 +369,7 @@
         return null;
     }
 
-    //Ação de submeter dados na BD das colheitas (e períodos)
+    // Submissão do formulário
     function submitHarvest(event) {
         event.preventDefault();
 
@@ -422,14 +377,10 @@
         const vinhaId = document.getElementById('vinhaId').value;
         const isEdit = harvestId !== '';
 
-        // Validação do campo vinhaId
         if (vinhaId === "-1") {
             alert("Por favor, selecione uma vinha.");
             return;
         }
-
-        console.log("Vinha ID selecionada:", vinhaId); // Debug para verificar o valor coletado
-        console.log("Elemento 'vinhaId':", document.getElementById('vinhaId'));
 
         const url = isEdit ? `/edit-harvest/${harvestId}/` : '/create-harvest/';
         const harvestData = new FormData();
@@ -456,12 +407,7 @@
             if (!response.ok) {
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
-                return response.json();
-            } else {
-                throw new Error("Resposta do servidor não é JSON.");
-            }
+            return response.json();
         })
         .then(data => {
             if (data.success) {
@@ -477,45 +423,108 @@
         });
     }
 
-    //Ação de inativar colheita
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('.delete-btn')) {
-            const deleteButton = e.target.closest('.delete-btn');
-            const harvestid = deleteButton.getAttribute('data-id');
+    // Função de paginação
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableBody = document.getElementById('harvestBody');
+        const paginationContainer = document.getElementById('pagination');
 
-            if (confirm('Tem certeza de que deseja inativar esta colheita?')) {
+        const rowsPerPage = 5;
+        let currentPage = 1;
+        let allRows = Array.from(tableBody.querySelectorAll('tr'));
+        console.log("Total de registros no HTML:", allRows.length);
+        let filteredRows = [...allRows]; // Inicializa a lista filtrada com todas as linhas
 
-                fetch(`/inactivate_harvest/${harvestid}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'Content-Type': 'application/json',
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Se a colheita foi inativada com sucesso, desabilite o botão
-                        const row = deleteButton.closest('tr');
-                        row.dataset.isactive = 'false'; // Marca como inativo
+        // Função de filtro
+        function applyFilter() {
+            const combinedFilter = document.getElementById('combinedFilter').value.toLowerCase().trim();
+            const filterPeriodoInicio = document.getElementById('filterPeriodoInicio').value;
+            const filterPeriodoFim = document.getElementById('filterPeriodoFim').value;
+            const filterIsActive = document.getElementById('filterIsActive').value;
+            const filterTerminou = document.getElementById('filterTerminou').value;
 
-                        // Desabilita o botão de delete
-                        deleteButton.disabled = true;
-                        deleteButton.classList.add('disabled');
+            filteredRows = allRows.filter(row => {
+                const vinhaName = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                const isActive = row.getAttribute('data-isactive') === 'true'; 
+                const dataInicio = row.getAttribute('data-periodo-inicio');
+                const dataFim = row.getAttribute('data-periodo-fim');
+                const isTerminado = row.getAttribute('data-terminado') === 'true';
 
-                        // Pode atualizar a interface ou mostrar uma mensagem de sucesso
-                        alert(data.message || 'Colheita inativada com sucesso!');
-                    } else {
-                        alert(data.message || 'Erro ao inativar a colheita.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    alert('Erro ao inativar a colheita.');
+                const matchesCombinedFilter = !combinedFilter || vinhaName.includes(combinedFilter);
+                const matchesPeriodoInicio = !filterPeriodoInicio || (dataInicio && dataInicio >= filterPeriodoInicio);
+                const matchesPeriodoFim = !filterPeriodoFim || (dataFim && dataFim <= filterPeriodoFim);
+                const matchesEstado =
+                    filterIsActive === 'all' || 
+                    (filterIsActive === 'active' && isActive) || 
+                    (filterIsActive === 'inactive' && !isActive);
+                const matchesTerminou =
+                    filterTerminou === 'all' ||
+                    (filterTerminou === 'yes' && isTerminado) ||
+                    (filterTerminou === 'no' && !isTerminado);
+                
+                return matchesCombinedFilter  && matchesPeriodoInicio  && matchesPeriodoFim  && matchesEstado && matchesTerminou;
+            });
+            currentPage = 1;
+            // Atualiza a paginação após o filtro
+            updateTable();
+        }
+
+        // Função de paginação
+        function updateTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            // Ocultar todas as linhas
+            allRows.forEach(row => (row.style.display = 'none'));
+
+            // Mostrar apenas as linhas filtradas da página atual
+            filteredRows.slice(startIndex, endIndex).forEach(row => (row.style.display = ''));
+
+            // Atualizar os botões de paginação
+            renderPaginationButtons();
+        }
+
+        // Renderiza os botões de paginação
+        function renderPaginationButtons() {
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.add('pagination-button');
+                if (i === currentPage) button.classList.add('active');
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    updateTable();
                 });
+                paginationContainer.appendChild(button);
             }
         }
+
+       // Função para limpar filtros
+        document.getElementById('clear-filter').addEventListener('click', function (event) {
+            event.preventDefault(); 
+
+            document.getElementById('combinedFilter').value = ''; 
+            document.getElementById('filterPeriodoInicio').value = ''; 
+            document.getElementById('filterPeriodoFim').value = ''; 
+            document.getElementById('filterIsActive').value = 'all'; 
+            document.getElementById('filterTerminou').value = 'all';
+
+            filteredRows = [...allRows]; 
+            currentPage = 1; 
+            updateTable(); 
+        });
+
+        // Aplica os filtros ao clicar em "Filtrar"
+        document.getElementById('applyFilters').addEventListener('click', function (event) {
+            event.preventDefault(); 
+            applyFilter();
+        });
+
+        updateTable();
     });
 </script>
+
 
 {% endblock %}

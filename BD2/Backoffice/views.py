@@ -209,26 +209,41 @@ def deliverydetail(request, idtransporte):
 @login_required
 def harvest(request):
     # Obter filtros
-    filter_vinha = request.GET.get('filterVinha', '').strip()
+    filter_combined = request.GET.get('combinedFilter', '').strip()
     filter_periodo_inicio = request.GET.get('filterPeriodoInicio', None)
     filter_periodo_fim = request.GET.get('filterPeriodoFim', None)
-    filter_estado = request.GET.get('filterIsActive', '').strip()
+    filter_estado = request.GET.get('filterIsActive', 'all') 
+    filter_terminado = request.GET.get('filterTerminou', 'all')
 
     # Queryset de colheitas
     colheitas = Colheitas.objects.select_related('vinhaid', 'periodoid').all()
 
     # Aplicar filtros
-    if filter_vinha:
-        colheitas = colheitas.filter(vinhaid__nome__icontains=filter_vinha)
+    if filter_combined:
+        colheitas = colheitas.filter(
+            Q(vinhaid__nome__icontains=filter_combined)  # Nome da vinha
+        )
     if filter_periodo_inicio:
         colheitas = colheitas.filter(periodoid__datainicio__gte=filter_periodo_inicio)
     if filter_periodo_fim:
         colheitas = colheitas.filter(periodoid__datafim__lte=filter_periodo_fim)
-    if filter_estado:
+    if filter_estado and filter_estado != 'all':
         if filter_estado == 'active':
             colheitas = colheitas.filter(isactive=True)
         elif filter_estado == 'inactive':
             colheitas = colheitas.filter(isactive=False)
+    if filter_terminado and filter_terminado != 'all':
+        if filter_terminado == 'yes':
+            colheitas = colheitas.filter(periodoid__datafim__isnull=False)
+        elif filter_terminado == 'no':
+            colheitas = colheitas.filter(periodoid__datafim__isnull=True)
+
+    colheitas = colheitas.order_by('periodoid__datainicio')
+
+    rows_per_page = 5
+    total_records = colheitas.count()
+    total_pages = (total_records + rows_per_page - 1) // rows_per_page  # Calcula o total de páginas
+    page_number = int(request.GET.get('page', 1))  # Obtém o número da página (padrão é 1)
 
     # Queryset de vinhas para o dropdown
     vinhas = Vinhas.objects.filter(isactive=True)
@@ -247,28 +262,36 @@ def harvest(request):
         colheitas_context.append({
             'colheitaid': colheita.colheitaid,
             'vinha_nome': colheita.vinhaid.nome if colheita.vinhaid else "Sem Vinha",
-            'vinha_id': colheita.vinhaid.id if colheita.vinhaid and hasattr(colheita.vinhaid, 'id') else None,
+            'vinha_id': colheita.vinhaid.vinhaid if colheita.vinhaid else None,
             'peso_total': colheita.pesototal,
             'preco_por_tonelada': colheita.precoportonelada,
-            'data_ultima_pesagem': colheita.data_ultima_pesagem or '-',
+            'data_ultima_pesagem': colheita.data_ultima_pesagem or 'Sem pesagens',
             'periodo_inicio': colheita.periodoid.datainicio if colheita.periodoid else None,
             'periodo_fim': colheita.periodoid.datafim if colheita.periodoid else None,
             'periodo_ano': colheita.periodoid.ano if colheita.periodoid else None,
             'previsao_fim_colheita': colheita.previsaofimcolheita,
             'isactive': colheita.isactive,
+            'isactive_cleaned': bool(colheita.isactive), 
             'terminado': bool(colheita.periodoid.datafim) if colheita.periodoid else False,
         })
 
     # Renderizar o template
     return render(request, 'harvest.html', {
         'colheitas': colheitas_context,
-        'vinhas': vinhas,  # Passa as vinhas para o template,
+        'vinhas': vinhas,  
+        'pagination': {
+            'current_page': page_number,
+            'total_pages': total_pages,
+            'has_previous': page_number > 1,
+            'has_next': page_number < total_pages,
+        },
         'filters': {
-            'filterVinha': filter_vinha,
+            'combinedFilter': filter_combined,
             'filterPeriodoInicio': filter_periodo_inicio,
             'filterPeriodoFim': filter_periodo_fim,
             'filterIsActive': filter_estado,
-        },
+            'filterTerminou': filter_terminado,
+        }
     })
 
 def validate_date(field_value, field_name):
@@ -348,78 +371,52 @@ def create_harvest(request):
 
 @login_required
 def edit_harvest(request, colheita_id):
-    # Buscar a colheita com o ID especificado
-    harvest = get_object_or_404(Colheitas, pk=colheita_id)
-    
-    # Obter todas as vinhas
-    vinhas = Vinhas.objects.all()
+    try:
+        # Buscar a colheita com o ID especificado
+        harvest = get_object_or_404(Colheitas, pk=colheita_id)
+        print(f"Editando colheita ID: {colheita_id}")
 
-    # Obter o período associado à colheita
-    periodo = harvest.periodoid  # Supondo que a colheita tem uma relação de ForeignKey com Periodos
-
-    selected_vinha_id = harvest.vinhaid if harvest.vinha else None
-
-    # Verificando se é uma requisição POST para salvar a edição
-    if request.method == 'POST':
-        try:
+        if request.method == 'POST':
             # Obter os dados do formulário
             vinha_id = request.POST.get('vinhaId')
-            peso_total = float(request.POST.get('pesoTotal'))
-            preco_por_tonelada = float(request.POST.get('precoPorTonelada'))
-            data_pesagem = request.POST.get('dataPesagem')
+            peso_total = request.POST.get('pesoTotal')
+            preco_por_tonelada = request.POST.get('precoPorTonelada')
             periodo_inicio = request.POST.get('periodoInicio')
             periodo_fim = request.POST.get('periodoFim')
-            periodo_ano = int(request.POST.get('periodoAno'))
+            periodo_ano = request.POST.get('periodoAno')
             previsao_fim_colheita = request.POST.get('previsaoFimColheita')
 
-            # Validando e processando os campos
-            if not peso_total or not preco_por_tonelada or not periodo_inicio or not periodo_ano:
+            print(f"Dados recebidos: vinha_id={vinha_id}, peso_total={peso_total}, preco_por_tonelada={preco_por_tonelada}, periodo_inicio={periodo_inicio}, periodo_fim={periodo_fim}, periodo_ano={periodo_ano}, previsao_fim_colheita={previsao_fim_colheita}")
+
+            # Validação
+            if not vinha_id or not peso_total or not periodo_inicio or not periodo_ano:
                 return JsonResponse({'success': False, 'message': 'Preencha todos os campos obrigatórios.'})
 
-            # Se data_pesagem não for fornecida, envia None (NULL)
-            data_pesagem = validate_date(data_pesagem, "Pesagem")
-            periodo_inicio = validate_date(periodo_inicio, "Início do Período")
-            periodo_fim = validate_date(periodo_fim, "Fim do Período")
-            previsao_fim_colheita = validate_date(previsao_fim_colheita, "Previsão de Fim da Colheita")
+            # Atualizar os dados da colheita
+            harvest.vinhaid_id = vinha_id
+            harvest.pesototal = peso_total
+            harvest.precoportonelada = preco_por_tonelada
+            harvest.periodoid.datainicio = periodo_inicio
+            harvest.periodoid.datafim = periodo_fim
+            harvest.periodoid.ano = periodo_ano
+            harvest.previsaofimcolheita = previsao_fim_colheita
 
-            # Chamar o procedimento armazenado para editar a colheita
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    CALL sp_editar_colheita(
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s
-                    )
-                """, [
-                    colheita_id,
-                    vinha_id if vinha_id else None,
-                    peso_total,
-                    preco_por_tonelada,
-                    data_pesagem,
-                    periodo_inicio,
-                    periodo_fim,
-                    periodo_ano,
-                    previsao_fim_colheita
-                ])
+            # Salvar no banco de dados
+            harvest.save()
+            print("Colheita atualizada com sucesso!")
 
             return JsonResponse({'success': True, 'message': 'Colheita editada com sucesso!'})
 
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erro ao editar colheita: {e}'})
-
-    # Caso não seja uma requisição POST, passamos os dados para o template
-    context = {
-        'harvest': harvest,  
-        'vinhas': vinhas,   
-        'selected_vinha_id': selected_vinha_id,
-        'selected_peso_total': harvest.pesototal,
-        'selected_preco_por_tonelada': harvest.precoportonelada,
-        'selected_periodo_inicio': periodo.datainicio if periodo else '',
-        'selected_periodo_fim': periodo.datafim if periodo else '',
-        'selected_periodo_ano': periodo.ano if periodo else '',
-        'selected_previsao_fim_colheita': harvest.previsaofimcolheita
-    }
+        # Dados para renderizar o formulário de edição
+        vinhas = Vinhas.objects.filter(isactive=True)
+        return render(request, 'harvest.html', {
+            'harvest': harvest,
+            'vinhas': vinhas,
+        })
+    except Exception as e:
+        print(f"Erro ao editar colheita: {e}")
+        return JsonResponse({'success': False, 'message': f'Erro ao editar colheita: {e}'})
     
-    return render(request, 'harvest.html', context)
-
 
 @login_required
 def inactivate_harvest(request, colheita_id):
