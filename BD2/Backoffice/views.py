@@ -340,9 +340,9 @@ def create_harvest(request):
             
             try:
                 data_pesagem = validate_date(data_pesagem, "Pesagem")
-                periodo_inicio = validate_date(periodo_inicio, "Início do Período")
-                periodo_fim = validate_date(periodo_fim, "Fim do Período")
-                previsao_fim_colheita = validate_date(previsao_fim_colheita, "Previsão de Fim da Colheita")
+                periodo_inicio = validate_date(periodo_inicio, "Início do período")
+                periodo_fim = validate_date(periodo_fim, "Fim do período")
+                previsao_fim_colheita = validate_date(previsao_fim_colheita, "Previsão de fim da colheita")
             except ValueError as ve:
                 return JsonResponse({'success': False, 'message': str(ve)})
 

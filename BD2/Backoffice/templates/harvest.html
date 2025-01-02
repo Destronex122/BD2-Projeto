@@ -101,7 +101,6 @@
     <div class="filters" style="margin-bottom: 20px;">
         <form method="get" id="filterForm" action="{% url 'harvest' %}">
             <div style="display: flex; gap: 15px;">
-                <!-- Filtros -->
                 <div style="flex: 1; min-width: 200px;">
                     <label for="combinedFilter">Vinha:</label>
                     <input type="text" id="combinedFilter" name="combinedFilter" class="form-control" value="{{ request.GET.combinedFilter|default:'' }}" placeholder="Pesquisar por vinha">
@@ -185,17 +184,10 @@
                 <td>{{ colheita.previsao_fim_colheita|date:"Y-m-d" }}</td>
                 <td>{{ colheita.terminado|yesno:"Sim,Não" }}</td>
                 <td>
-                    <button title="Editar colheita" 
-                            onclick="openAddHarvestModal(true, '{{ colheita.colheitaid }}')" 
-                            type="button">
+                    <button title="Editar colheita" onclick="openAddHarvestModal(true, '{{ colheita.colheitaid }}')" type="button">
                         <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
                     </button>
-                    <button 
-                        title="Inativar colheita" 
-                        type="button" 
-                        class="delete-btn" 
-                        data-id="{{ colheita.colheitaid }}" 
-                        {% if not colheita.isactive %}disabled{% endif %}>
+                    <button title="Inativar colheita" type="button" class="delete-btn" data-id="{{ colheita.colheitaid }}" {% if not colheita.isactive %}disabled{% endif %}>
                         <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
                     </button>
                 </td>
@@ -290,13 +282,13 @@
     // Redireciona para os detalhes da colheita ao clicar em uma linha
     harvestTable.addEventListener('click', function (event) {
         const targetRow = event.target.closest('tr'); // Obtém a linha clicada
-        const isHeader = event.target.closest('thead'); // Ignora cliques no cabeçalho
+        const isHeader = event.target.closest('thead'); // Ignora botões no cabeçalho
         
         // Verifica se o clique foi em um botão ou dentro de um botão
         const isButton = event.target.closest('button');
 
         if (targetRow && !isHeader && !isButton) { 
-            const colheitaid = targetRow.getAttribute('data-id'); // Obtém o atributo "data-colheitaid"
+            const colheitaid = targetRow.getAttribute('data-id'); 
             if (colheitaid) {
                 // Redireciona para a URL correspondente
                 window.location.href = `/backoffice/harvestdetail/${colheitaid}/`;
@@ -479,7 +471,6 @@
             // Mostrar apenas as linhas filtradas da página atual
             filteredRows.slice(startIndex, endIndex).forEach(row => (row.style.display = ''));
 
-            // Atualizar os botões de paginação
             renderPaginationButtons();
         }
 

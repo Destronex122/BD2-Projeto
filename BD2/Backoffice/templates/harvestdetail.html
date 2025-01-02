@@ -273,7 +273,7 @@
         <br>
         <form id="noteForm" onsubmit="event.preventDefault(); saveNote();">
             {% csrf_token %}
-            <input type="hidden" id="noteId" name="noteId"> <!-- Campo oculto para o ID da nota -->
+            <input type="hidden" id="noteId" name="noteId">
             
             <div class="form-group">
                 <label for="noteText">Nota</label>
@@ -300,13 +300,13 @@
 
         // Configura o título e os valores
         modalTitle.textContent = isEdit ? 'Editar pesagem' : 'Adicionar pesagem';
-        pesagemIdField.value = pesagemId || ''; // Define o ID da pesagem (ou vazio para criar)
-        pesoBrutoField.value = pesoBruto || ''; // Preenche o peso bruto
-        pesoLiquidoField.value = pesoLiquido || ''; // Preenche o peso líquido
+        pesagemIdField.value = pesagemId || ''; 
+        pesoBrutoField.value = pesoBruto || ''; 
+        pesoLiquidoField.value = pesoLiquido || '';
         if (dataPesagem) {
             dataPesagemField.value = new Date(dataPesagem).toISOString().split('T')[0];
         } else {
-            dataPesagemField.value = ''; // Deixa vazio para criação
+            dataPesagemField.value = ''; 
         }
 
         // Exibe o modal
@@ -322,7 +322,7 @@
         const pesoBruto = document.getElementById('pesoBruto').value;
         const pesoLiquido = document.getElementById('pesoLiquido').value;
         const dataPesagem = document.getElementById('dataPesagem').value;
-        const pesagemId = document.getElementById('pesagemId')?.value; // Campo oculto com o ID da pesagem (se existir)
+        const pesagemId = document.getElementById('pesagemId')?.value; 
 
         if (!pesoBruto || !pesoLiquido || !dataPesagem) {
             alert('Todos os campos devem ser preenchidos.');
@@ -333,7 +333,7 @@
 
         if (pesagemId) {
             // EDITAR PESAGEM
-            fetch(`/edit_pesagem/${pesagemId}/`, {  // Envia o ID da pesagem como parte da URL
+            fetch(`/edit_pesagem/${pesagemId}/`, {  
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -362,7 +362,7 @@
             // CRIAR NOVA PESAGEM
             const colheitaId = window.location.pathname.split('/').filter(Boolean).pop();
 
-            fetch(`/add_pesagem/${colheitaId}/`, {  // Envia o ID da colheita como parte da URL
+            fetch(`/add_pesagem/${colheitaId}/`, {  
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -424,12 +424,12 @@
         // Configura o título da modal e os campos
         if (isEdit) {
             modalTitle.textContent = 'Editar nota';
-            noteIdField.value = noteId;  // Preenche o ID da nota para edição
-            noteTextField.value = noteText;  // Preenche o texto da nota
+            noteIdField.value = noteId;  
+            noteTextField.value = noteText;  
         } else {
             modalTitle.textContent = 'Adicionar nota';
-            noteIdField.value = '';  // Limpa o campo do ID
-            noteTextField.value = '';  // Limpa o campo de texto
+            noteIdField.value = '';  
+            noteTextField.value = '';  
         }
 
         // Exibe a modal
@@ -444,22 +444,21 @@
 
     // Função para salvar ou editar a nota
     function saveNote() {
-        const noteId = document.getElementById('noteId').value;  // ID da nota (para edição)
-        const noteText = document.getElementById('noteText').value;  // Novo texto da nota
+        const noteId = document.getElementById('noteId').value;  
+        const noteText = document.getElementById('noteText').value;  
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const colheitaId = window.location.pathname.split('/').filter(Boolean).pop();  // ID da colheita da URL
+        const colheitaId = window.location.pathname.split('/').filter(Boolean).pop();  
 
         let url, method;
-        // Se estiver editando, usamos o método PUT ou POST conforme o Django permite
+        
         if (noteId) {
-            url = `/edit_note_harvest/${noteId}/`;  // Endpoint para editar
-            method = 'POST';  // Pode ser POST porque é edição
+            url = `/edit_note_harvest/${noteId}/`; 
+            method = 'POST'; 
         } else {
-            url = `/add_note_harvest/${colheitaId}/`;  // Endpoint para criar
+            url = `/add_note_harvest/${colheitaId}/`;
             method = 'POST';
         }
 
-        // Envia os dados da nota para o backend
         fetch(url, {
             method: method,
             headers: {
@@ -471,7 +470,6 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Se a operação for bem-sucedida, recarrega a página para mostrar as notas atualizadas
                 alert('Nota salva com sucesso!');
                 location.reload();
             } else {
