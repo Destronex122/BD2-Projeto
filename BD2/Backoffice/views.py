@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, HttpResponse
+from django.shortcuts import render, redirect, HttpResponse, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from .models import load_vineyards
@@ -732,6 +732,8 @@ def load_vineyards_view(request):
     print(vineyards)
     return render(request, 'vineyards.html', {'Vinhas': vineyards})
 
+
+# DETALHE DO PEDIDO
 @login_required
 def requestdetail(request, pedidoid):
     pedido = get_object_or_404(Pedidos, pedidoid=pedidoid)
@@ -754,6 +756,8 @@ def requestdetail(request, pedidoid):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f'Ocorreu um erro: {e}'})
     
+    # Queryset de vinhas para o dropdown
+    castas = Castas.objects.filter(isactive=True)
     # Recupera os itens do pedido
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -761,9 +765,11 @@ def requestdetail(request, pedidoid):
                 pi.idpedido_item, 
                 pi.idpedido, 
                 c.nome AS casta_nome, 
+                c.castaid AS castaid,
                 pi.quantidade, 
                 e.idaprovacao AS estado_id, 
-                e.nome AS estado_nome
+                e.nome AS estado_nome,
+                pi.isactive
             FROM pedidos_item pi
             LEFT JOIN castas c ON pi.castaid = c.castaid
             LEFT JOIN estadosaprovacoes e ON pi.estadoaprovacaoid = e.idaprovacao
@@ -771,16 +777,18 @@ def requestdetail(request, pedidoid):
             ORDER BY pi.idpedido_item
         """, [pedidoid])
         pedido_items = cursor.fetchall()
-    
+
     # Mapeia os dados para uma lista de dicionários
     pedido_items_list = [
         {
             "idpedido_item": item[0],
             "idpedido": item[1],
             "casta_nome": item[2],
-            "quantidade": item[3],
-            "estado_id": item[4],
-            "estado_nome": item[5],
+            "castaid": item[3], 
+            "quantidade": item[4],
+            "estado_id": item[5],
+            "estado_nome": item[6],
+            "isactive": item[7], 
         }
         for item in pedido_items
     ]
@@ -801,6 +809,7 @@ def requestdetail(request, pedidoid):
     # Passa os dados principais do pedido
     pedido_context = {
         'pedidoid': pedido.pedidoid,
+        'nome': pedido.nome,
         'clienteid': pedido.clienteid.clienteid if pedido.clienteid else None,
         'cliente_nome': pedido.clienteid if pedido.clienteid else "Cliente não especificado",
         'aprovadorid': pedido.aprovadorid.userid if pedido.aprovadorid else None,
@@ -808,16 +817,77 @@ def requestdetail(request, pedidoid):
         'datainicio': pedido.datainicio,
         'datafim': pedido.datafim,
         'precoestimado': pedido.precoestimado,
+        'isactive':pedido.isactive,
     }
     
     return render(request, 'requestdetail.html', {
         'pedido': pedido_context,
         'notas': notas_list,
         'pedido_items': pedido_items_list,
+        'castas': castas, 
     })
 
+@csrf_exempt
+def add_item(request):
+    if request.method == 'POST':
+        try:
+            # Carregar os dados enviados no corpo da requisição
+            data = json.loads(request.body)
+            castaId = data.get('castaId')
+            quantidade = data.get('quantidade')
+            pedidoId = data.get('pedidoId')  # Certifique-se de que o ID do pedido está sendo enviado
 
-# @login_required
+            # Validação básica
+            if not castaId or not quantidade or not pedidoId:
+                return JsonResponse({'success': False, 'message': 'Todos os campos são obrigatórios.'}, status=400)
+
+            # Chamar o procedimento armazenado
+            with connection.cursor() as cursor:
+                query = "CALL sp_add_pedido_item(%s, %s, %s)"
+                cursor.execute(query, [pedidoId, castaId, quantidade])
+
+            return JsonResponse({'success': True, 'message': 'Item adicionado com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao adicionar item: {e}'}, status=500)
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'}, status=405)
+
+
+@csrf_exempt
+def edit_item(request, item_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            casta_id = data.get('castaId')  # Novo ID da casta
+            quantidade = data.get('quantidade')  # Nova quantidade
+
+            if not casta_id and not quantidade:
+                return JsonResponse({'success': False, 'message': 'Pelo menos um campo deve ser atualizado.'}, status=400)
+
+            with connection.cursor() as cursor:
+                # Chamar o procedimento armazenado
+                cursor.execute("CALL sp_edit_pedido_item(%s, %s, %s)", [item_id, casta_id, quantidade])
+            
+            return JsonResponse({'success': True, 'message': 'Item editado com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao editar item: {str(e)}'}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'}, status=405)
+
+
+def delete_item(request, item_id):
+    if request.method == 'POST':
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_delete_pedido_item(%s)", [item_id])
+            
+            return JsonResponse({'success': True, 'message': 'Item inativado com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao inativar item: {str(e)}'}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Método não permitido.'}, status=405)
+
+
+
 @login_required
 def add_note_request(request, pedidoid):
     if request.method == 'POST':

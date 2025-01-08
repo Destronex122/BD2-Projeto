@@ -20,7 +20,7 @@
     }
 
     .reject-btn {
-        background-color: #f44336;
+        background-color: #584230;
         color: white;
         border: none;
         padding: 5px 10px;
@@ -29,7 +29,7 @@
     }
 
     .reject-btn:hover {
-        background-color: #e53935;
+        background-color: #584230;
     }
 
     a {
@@ -85,7 +85,22 @@
         color: #a0a0a0; /* Cor da seta desabilitada */
         cursor: not-allowed; /* Mostra um cursor de bloqueio */
     }
+
+    .delete-btn:disabled {
+        background-color: #e9e8e2;
+        color: #a0a0a0;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+    }
+
 </style>
+
+
 <nav aria-label="breadcrumb" class="breadcrumb-container">
     <ol class="separadores">
         <li class="breadcrumb-item"><a href="{% url 'request' %}">Pedidos</a></li>
@@ -103,15 +118,15 @@
                 <h2>Informações</h2>
                 <div class="info-item">
                     <span class="label">Pedido:</span>
-                    <span class="label">{{pedido.pedidoid}} </span>
+                    <span>{{pedido.nome}} </span>
                 </div>
                 <div class="info-item">
                     <span class="label">Cliente:</span>
-                    <span class="label">{{pedido.clienteid.nome}} </span>
+                    <span>{{pedido.clienteid.nome}} </span>
                 </div>
                 <div class="info-item">
                     <span class="label">Aprovador:</span>
-                    <span class="label">{{pedido.aprovador_nome}} </span>
+                    <span>{{pedido.aprovador_nome}} </span>
                 </div>
             </div>
 
@@ -119,15 +134,15 @@
                 <h2>Detalhes</h2>
                 <div class="info-item">
                     <span class="label">Data de início:</span>
-                    <span class="label">{{pedido.datainicio|date:"Y-m-d"}} </span>
+                    <span>{{pedido.datainicio|date:"Y-m-d"}} </span>
                 </div>
                 <div class="info-item">
                     <span class="label">Data de fim:</span>
-                    <span class="label">{{pedido.datafim|date:"Y-m-d"}} </span>
+                    <span>{{pedido.datafim|date:"Y-m-d"}} </span>
                 </div>
                 <div class="info-item">
                     <span class="label">Preço estimado:</span>
-                    <span class="label">{{pedido.precoestimado}} </span>
+                    <span>{{pedido.precoestimado}} </span>
                 </div>
             </div>
 
@@ -135,9 +150,11 @@
              <div class="info-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h2>Notas</h2>
+                    {% if pedido.isactive %}
                     <button onclick="openNoteModal()">
                         <img src="{% static 'add.png' %}" title="Adicionar nova nota" alt="edit" style="height: 25px; width: 25px;">
                     </button>
+                    {% endif %}   
                 </div>
 
                 <!-- Carrossel de notas -->
@@ -177,38 +194,61 @@
         </div>
         </div>
         <div class="editable-area">
-            <h2>Itens do Pedido</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
+                <h2>Itens do pedido</h2>
+                {% if pedido.isactive %}
+                <button onclick="openItemModal(false)">
+                    <img src="{% static 'add.png' %}" title="Adicionar novo item" alt="Adicionar Item" style="height: 25px; width: 25px;">
+                </button>
+                {% endif %}   
+            </div>
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th>ID Item</th>
                         <th>Casta</th>
-                        <th>Quantidade</th>
+                        <th>Quantidade (kg)</th>
                         <th>Estado</th>
-                        <th>Ações</th> <!-- Nova coluna -->
+                        <th style="width: 100px;">Ações</th> 
+                        <th style="width: 200px;">Decisão</th> 
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in pedido_items %}
                     <tr>
-                        <td>{{ item.idpedido_item }}</td>
                         <td>{{ item.casta_nome }}</td>
                         <td>{{ item.quantidade }}</td>
                         <td>{{ item.estado_nome }}</td>
+                        <td>  
+                            {% if pedido.isactive and item.estado_id == 6 %} 
+                            <div style="width: 100px;">
+                                <button class="edit-button" 
+                                        onclick="openItemModal(true, '{{ item.idpedido_item }}', '{{ item.castaid  }}', '{{ item.quantidade }}')">
+                                    <img src="{% static 'edit.png' %}" title="Editar item" alt="edit" style="height: 25px; width: auto;">
+                                </button>
+                                <button title="Inativar item" type="button" class="delete-btn" data-id="{{ item.idpedido_item }}" {% if not item.isactive %}disabled{% endif %}>
+                                    <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
+                                </button>
+                            </div>
+                            {% else %}
+                                <span>-</span>
+                            {% endif %} 
+                        </td>
                         <td>
                             {% if item.estado_id == 6 %} <!-- Mostrar botões apenas se estado for "Pendente" -->
+                            <div style="width: 200px;">
                                 <form method="post" class="estado-form" style="display:inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="idpedido_item" value="{{ item.idpedido_item }}">
                                     <input type="hidden" name="updateEstado" value="Aceite">
-                                    <button type="submit" class="accept-btn">Aceitar</button>
+                                    <button type="submit" class="accept-btn" style="padding:10px">Aceitar</button>
                                 </form>
                                 <form method="post" class="estado-form" style="display:inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="idpedido_item" value="{{ item.idpedido_item }}">
                                     <input type="hidden" name="updateEstado" value="Rejeitado">
-                                    <button type="submit" class="reject-btn">Rejeitar</button>
+                                    <button type="submit" class="reject-btn" style="padding:10px">Rejeitar</button>
                                 </form>
+                            </div>
                             {% else %}
                                 <span>Sem ações disponíveis</span>
                             {% endif %}
@@ -253,7 +293,158 @@
     </div>
 </div>
 
+<!-- Modal para adicionar/editar item -->
+<div class="popup-overlay" id="modalOverlay" style="display: none;">
+    <div class="popup-content">
+       <div class="popup-header">
+           <h5 id="modalTitle" class="modal-title">Adicionar item</h5>
+           <div style="display:flex; justify-content: flex-end;">
+               <span class="close" onclick="closeItemModal()">&times;</span>
+           </div>
+       </div>
+       <br>
+       <form id="itemForm" onsubmit="event.preventDefault(); salvarItem();">
+           {% csrf_token %}
+                <input type="hidden" id="itemId" name="itemId"> <!-- Campo oculto para o ID -->
+                <input type="hidden" id="pedidoId" name="pedidoId" value="{{ pedido.pedidoid }}">
+
+                <div class="form-group">
+                    <label for="castaId">Casta</label>
+                    <select name="castaId" id="castaId" required>
+                        <option value="-1" disabled selected>Selecione uma casta</option>
+                        {% for casta in castas %}
+                        <option value="{{ casta.castaid }}" {% if casta.castaid == selectedCastaId %}selected{% endif %}>
+                            {{ casta.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                   <label for="quantidade">Quantidade (kg):</label>
+                   <input type="number" id="quantidade" name="quantidade" class="form-control" step="0.01" min="0.01" required>
+               </div>
+
+               <div style="display:flex; justify-content: flex-end;">
+                   <button type="button" class="secondary-button" onclick="closeItemModal()">Cancelar</button>
+                   <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+               </div>
+       </form>
+   </div>
+</div>
+
+
+
 <script>
+    function openItemModal(isEdit = false, itemId = '', selectedCastaId = '', quantidade = '') {
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalTitle = document.getElementById('modalTitle');
+        const castaIdField = document.getElementById('castaId');
+        const quantidadeField = document.getElementById('quantidade');
+
+        modalTitle.textContent = isEdit ? 'Editar item' : 'Adicionar item';
+        document.getElementById('itemId').value = itemId || ''; // Atualiza o campo oculto para itemId
+        castaIdField.value = selectedCastaId || '-1';
+        quantidadeField.value = quantidade || '';
+
+        modalOverlay.style.display = 'flex';
+    }
+
+    function closeItemModal() {
+        const modalOverlay = document.getElementById('modalOverlay');
+        const itemForm = document.getElementById('itemForm');
+
+        // Fecha a modal e reseta o formulário
+        modalOverlay.style.display = 'none';
+        itemForm.reset();
+    }
+
+    function salvarItem() {
+        const castaId = document.getElementById('castaId').value;
+        const quantidade = document.getElementById('quantidade').value.trim();
+        const itemId = document.getElementById('itemId') ? document.getElementById('itemId').value : null;
+        const pedidoId = document.getElementById('pedidoId').value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        if (!castaId || castaId === '-1' || quantidade === '' || isNaN(quantidade) || quantidade <= 0) {
+            alert('Todos os campos devem ser preenchidos.');
+            return;
+        }
+
+        const url = itemId 
+            ? `/edit_item/${itemId}/` // URL para editar item
+            : `/add_item/`; // URL para adicionar item
+        const method = 'POST';
+
+        const payload = {
+            castaId: castaId,
+            quantidade: quantidade,
+            pedidoId: pedidoId // Adicione o pedidoId ao payload
+        };
+
+        console.log('Payload enviado:', payload);
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            console.log('Resposta:', response);
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert(itemId ? 'Item editado com sucesso!' : 'Item adicionado com sucesso!');
+                location.reload();
+            } else {
+                alert(data.message || 'Erro ao salvar item.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao salvar item.');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Seleciona todos os botões de exclusão
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Obtém o ID do item a partir do atributo data-id
+                const itemId = this.getAttribute('data-id');
+
+                if (confirm('Tem certeza de que deseja inativar este item?')) {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                    fetch(`/delete_item/${itemId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Item inativado com sucesso!');
+                            location.reload(); // Atualiza a página para refletir a alteração
+                        } else {
+                            alert(data.message || 'Erro ao inativar item.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao inativar item.');
+                    });
+                }
+            });
+        });
+    });
 
     function openNoteModal(isEdit = false, noteId = null, noteText = '') {
         const modalOverlay = document.getElementById('noteModalOverlay');
@@ -425,7 +616,7 @@
 
     document.querySelectorAll('.estado-form').forEach(form => {
         form.addEventListener('submit', function (event) {
-            event.preventDefault(); // Impede o envio padrão do formulário
+            event.preventDefault(); 
 
             const formData = new FormData(this);
             const idpedido_item = formData.get('idpedido_item');
@@ -443,7 +634,7 @@
                 .then(data => {
                     if (data.status === 'success') {
                         alert(data.message);
-                        location.reload(); // Recarrega a página
+                        location.reload(); 
                     } else {
                         alert(data.message);
                     }
