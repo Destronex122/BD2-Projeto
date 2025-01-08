@@ -50,7 +50,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Casta</th>
+                        <th>Nome</th>
                         <th>Data de plantação</th>
                         <th>Hectares</th>
                         <th>Ações</th>
@@ -208,68 +208,27 @@
                 vineyardMarkers.addLayer(layer);
                 const vineyardForm = document.getElementById('vineyardForm');
 
-        vineyardForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Evita o envio padrão do formulário
-            alert("oi")
-            // Identifica se é edição ou criação
-            const isEdit = document.getElementById('saveButton').dataset.isEdit === 'true';
-
-            // Obtém os valores do formulário
-            const nome = document.getElementById('name').value.trim();
-            const casta = document.getElementById('castasDropdown').value;
-            const dataplantacao = document.getElementById('date').value;
-            const hectares = document.getElementById('size').value;
-            const coordinates = document.getElementById('coordinates').value; 
-            // Obtém o ID da vinha se for edição
-            const vinhaId = isEdit ? document.querySelector('#saveButton').dataset.vinhaid : null;
-
-            // Valida campos obrigatórios (adapte conforme necessário)
-            if (!nome || !casta || !hectares) {
-                alert('Por favor, preencha todos os campos obrigatórios.');
-                return;
-            }
-
-            // URL e método HTTP para a operação
-            const url = isEdit ? `/backoffice/update_vineyard/${vinhaId}/` : '/backoffice/create_vineyard/';
-            const method = isEdit ? 'PUT' : 'POST';
-
-            // Preparar os dados para envio
-            const data = {
-                nome,
-                casta,
-                dataplantacao,
-                hectares,
-            };
-            
-            // Se for uma nova vinha, adicionar as coordenadas
-            if (!isEdit) {
-            data.coordinates = JSON.parse(coordinates); 
-            }
-
-            // Faz a solicitação ao backend
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    loadVineyards(vineyardId);
+            document.getElementById('saveVineyard').addEventListener('click', function () {
+            const formData = new FormData(document.getElementById('vineyardForm'));
+            const dropdownValue = document.getElementById('dropdown_vineyard').value;
+            formData.append('dropdown_vineyard', dropdownValue);
+            fetch('/backoffice/vineyards/create_vineyard/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Vinha adicionada com sucesso!');
+                    location.reload();
                 } else {
-                    alert(result.message || 'Erro ao salvar a vinha.');
+                    alert('Erro ao adicionar vinha: ' + data.error);
                 }
-            } catch (error) {
-                console.error("Erro:", error);
-                alert('Erro ao salvar a vinha.');
-            }
+            });
         });
-        
                 // Abrir o modal
                 openModal();
         
@@ -289,7 +248,7 @@
             // Preencher o campo oculto de coordenadas (se existir)
             // Se você estiver usando um campo de texto para exibir as coordenadas (não recomendado para edição manual)
              document.getElementById('coordinates').value = JSON.stringify(coordinates);
-             document.getElementById('saveButton').dataset.isEdit = 'false';
+             document.getElementById('saveVineyard').dataset.isEdit = 'false';
         
             // Se você quiser armazenar as coordenadas como um campo JSON no backend, é melhor não exibi-las diretamente no formulário.
         
@@ -397,7 +356,7 @@
     
                     <br>
     
-                    <button id="saveButton" data-is-edit="false" type="submit">Guardar</button>
+                    <button id="saveVineyard" data-is-edit="false" type="submit">Guardar</button>
                 </form>
             </div>
         </div>
@@ -409,6 +368,10 @@
         const closeButton = document.getElementsByClassName('close')[0];
         
         function openModal() {
+            document.querySelector('.close').addEventListener('click', function () {
+                window.location.reload();
+            });
+            
             modal.classList.add('open');
         }
 

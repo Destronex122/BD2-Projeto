@@ -1728,38 +1728,51 @@ def load_castas(request):
     castas = Castas.objects.all().values('castaid', 'nome')
     return JsonResponse(list(castas), safe=False)
 
-@login_required
+@csrf_exempt
 def create_vineyard(request):
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            
-            # Obter a instância da Casta
-            casta = Castas.objects.get(pk=data.get('casta'))
+            # Capturar dados enviados no formulário
+            nome = request.POST.get('name')
+            castaid = request.POST.get('casta')
+            campoid = request.POST.get('dropdown_vineyard')
+            raw_coordenadas = request.POST.get('coordinates')
+            dataplantacao = request.POST.get('DATE')
+            hectares = request.POST.get('size')
 
-            # Obter a instância do Campo (Quinta) - você precisará passar o campoId de alguma forma
-            campo = Campos.objects.get(pk=data.get('campoid'))  # Substitua 'campoid' pelo nome correto do campo
+            # Formatar coordenadas no formato desejado
+            try:
+                raw_coordinates = json.loads(raw_coordenadas)
+                coordenadas = json.dumps({"coordinates": [raw_coordinates]})
+            except Exception:
+                return JsonResponse({'success': False, 'error': 'Formato de coordenadas inválido.'})
 
-            # Criar a nova vinha
-            vinha = Vinhas.objects.create(
-                nome=data.get('nome'),
-                castaid=casta,
-                campoid=campo,
-                coordenadas=data.get('coordinates'), # Ajuste conforme a estrutura do seu modelo para coordenadas
-                dataplantacao=data.get('dataplantacao'),
-                hectares=data.get('hectares'),
-                isactive=True  # Ou defina como você preferir
-            )
+            # Verificação de dados obrigatórios
+            if not nome or not coordenadas or not hectares:
+                return JsonResponse({'success': False, 'error': 'Campos obrigatórios estão faltando.'})
 
-            return JsonResponse({'status': 'success', 'vinhaid': vinha.vinhaid})
-        except Castas.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Casta não encontrada'}, status=400)
-        except Campos.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Campo (Quinta) não encontrado'}, status=400)
+            # Inserção no banco de dados usando cursor
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    CALL inserirvinha(%s, %s, %s, %s, %s, %s)
+                    """,
+                    [
+                        nome,
+                        castaid,
+                        campoid,
+                        coordenadas,
+                        dataplantacao,
+                        hectares
+                    ]
+                )
+
+            return JsonResponse({'success': True})
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    else:
-        return JsonResponse({'status': 'error', 'message': 'Método inválido'}, status=405)
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Método não suportado.'})
+
     
 @require_http_methods(["PUT"])
 @csrf_protect
