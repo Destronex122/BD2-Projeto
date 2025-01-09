@@ -51,34 +51,13 @@
                 <thead>
                     <tr>
                         <th>Nome</th>
+                        <th>Casta</th>
                         <th>Data de plantação</th>
                         <th>Hectares</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for vinha in Vinhas %}
-                        <tr>
-                            <td>{{ vinha.castaid.nome }}</td>  <!-- Assume-se que 'Castas' tem um campo 'nome' -->
-                            <td>{{ vinha.dataplantacao|date:"d/m/Y" }}</td>
-                            <td>{{ vinha.hectares }}</td>
-                            {% comment %} <td>
-                                <div style="display:flex">
-                                    <form method="GET" style="display:inline; margin-right:8px" action="{% url 'edit_vinha' vinha.vinhaid %}">
-                                        <button type="submit">ç
-                                            <img src="{% static 'edit.png' %}" title="Editar vinha" alt="edit" style="height: 25px; width: auto;">
-                                        </button>
-                                    </form>
-                                    <form method="POST" style="display:inline;" action="{% url 'delete_vinha' vinha.vinhaid %}">
-                                        {% csrf_token %}
-                                        <button type="submit">
-                                            <img src="{% static 'delete.png' %}" title="Eliminar vinha" alt="delete" style="height: 25px; width: auto;">
-                                        </button>
-                                    </form>
-                                </div>
-                            </td> {% endcomment %}
-                        </tr>
-                    {% endfor %}
                 </tbody>
             </table>
  
@@ -124,8 +103,10 @@
         
             data.forEach(item => {
                 const row = document.createElement('tr');
+                row.setAttribute('data-id', item.VinhaId); // Adiciona o atributo data-id com o ID da vinha
                 row.innerHTML = `
                     <td>${item.Nome}</td>
+                    <td>${item.Casta}</td>
                     <td>${item.DataPlantacao || 'N/A'}</td>
                     <td>${item.Hectares || 'N/A'}</td>
                     <td>
@@ -134,6 +115,39 @@
                     </td>
                 `;
                 tableBody.appendChild(row);
+            });
+
+            document.querySelectorAll('button img[alt="delete"]').forEach(button => {
+                button.parentElement.addEventListener('click', function () {
+                    const row = this.closest('tr'); // Linha da tabela onde o botão está
+                    const vinhaId = row.dataset.id; // Assuma que o ID da vinha está armazenado como um atributo `data-id`
+        
+                    if (confirm('Tem certeza de que deseja eliminar esta vinha?')) {
+                        // Fazer a requisição para o backend
+                        fetch(`/backoffice/vineyards/delete/${vinhaId}/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            },
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Vinha eliminada com sucesso!');
+                                location.reload(); // Recarregar a página
+                            } else {
+                                alert('Erro ao eliminar vinha: ' + data.error);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro ao eliminar vinha:', error);
+                            alert('Erro ao eliminar vinha.');
+                        });
+                    } else {
+                        alert('Ação cancelada!');
+                        location.reload();
+                    }
+                });
             });
         }
         

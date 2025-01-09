@@ -13,6 +13,7 @@ urlpatterns = [
     path('save_polygon/', views.save_polygon_view, name="save_polygon"),
     path('backoffice/load_castas/', views.load_castas, name='load_castas'),
     path('vineyards/create_vineyard/', views.create_vineyard, name='create_vineyard'),
+    path('vineyards/delete/<int:vinhaid>/', views.delete_vineyard, name='delete_vineyard'),
     path('load_vineyards/', views.load_vineyards, name='load_vineyards'),
     path('home/', views.backofficeIndex, name='backofficeIndex'),
     path('delivery/',  views.delivery, name='delivery'),

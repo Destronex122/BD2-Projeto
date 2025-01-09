@@ -1737,7 +1737,7 @@ def create_vineyard(request):
             castaid = request.POST.get('casta')
             campoid = request.POST.get('dropdown_vineyard')
             raw_coordenadas = request.POST.get('coordinates')
-            dataplantacao = request.POST.get('DATE')
+            dataplantacao = request.POST.get('date')
             hectares = request.POST.get('size')
 
             # Formatar coordenadas no formato desejado
@@ -1750,6 +1750,8 @@ def create_vineyard(request):
             # Verificação de dados obrigatórios
             if not nome or not coordenadas or not hectares:
                 return JsonResponse({'success': False, 'error': 'Campos obrigatórios estão faltando.'})
+            
+            print(dataplantacao)
 
             # Inserção no banco de dados usando cursor
             with connection.cursor() as cursor:
@@ -1798,6 +1800,18 @@ def update_vineyard(request, vinha_id):
         return JsonResponse({'status': 'error', 'message': 'Casta não encontrada'}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+@csrf_exempt
+def delete_vineyard(request, vinhaid):
+    if request.method == 'POST':
+        print("oi")
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("CALL sp_desativarvinha(%s)", [vinhaid])
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Método não suportado.'})
 
 
 @csrf_exempt
