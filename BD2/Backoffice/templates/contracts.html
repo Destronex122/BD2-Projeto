@@ -11,15 +11,45 @@
         background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
         cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
     }
+
+    .popup-overlay {
+        position: fixed; /* Garante que o modal fique fixo na tela */
+        top: 0;
+        left: 0;
+        width: 100%; /* Preenche a largura da tela */
+        height: 100%; /* Preenche a altura da tela */
+        background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semitransparente */
+        display: flex; /* Usa flexbox para centralizar */
+        justify-content: center; /* Centraliza horizontalmente */
+        align-items: center; /* Centraliza verticalmente */
+        z-index: 1000; /* Certifique-se de que o modal fique acima de outros elementos */
+    }
+
+    .popup-content {
+        position: absolute; /* Posiciona o modal em relação ao container */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%); /* Move o modal para o centro */
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        width: 500px;
+        max-width: 90%;
+    }
 </style>
 
 <div class="editable-area newPadding">    
     <div style="display:flex; justify-content: space-between;">
         <h1>Contratos</h1>
+        <div style="text-align:right; margin-bottom: 20px;" onclick="openAddContractModal()">
+            <button type="button" onclick="openAddContractModal()">
+                <img src="{% static 'add.png' %}" title="Adicionar novo contrato" alt="add" style="height: 25px; width: auto;">
+            </button>
+        </div>
     </div>
     <p>Selecione um contrato para visualizar o detalhe do mesmo.</p> 
 
-   <!-- Filtros para a tabela -->
 <!-- Filtros para a tabela -->
 <div class="filters" style="margin-bottom: 20px;">
     <form method="get" id="filterForm">
@@ -43,11 +73,7 @@
                     class="form-control" 
                     value="{{ filters.filterDate|default:'' }}">
             </div>
-            <div style="text-align:right; margin-bottom: 20px;" onclick="openAddContractModal()">
-                <button type="button" onclick="openAddContractModal()">
-                    <img src="{% static 'add.png' %}" title="Adicionar novo utilizador" alt="add" style="height: 25px; width: auto;">
-                </button>
-            </div>
+            
             <div class="form-group" style="margin-top:24px; width:10%">
                 <button type="submit" id="applyFilters" class="button" style="align-self: flex-end;">Aplicar</button>
             </div>
@@ -56,15 +82,14 @@
 </div>
 
 
-
-
 <!-- Modal para adicionar contrato -->
 <div class="popup-overlay" id="addContractModal" style="display: none;">
     <div class="popup-content">
         <div class="popup-header">
-            <h5>Adicionar Contrato</h5>
+            <h5>Adicionar contrato</h5>
             <span class="modal-close" onclick="closeAddContractModal()">&times;</span>
         </div>
+        <br>
         <form id="addContractForm" method="post" action="."> <!-- Mesma URL -->
             {% csrf_token %}
             <div class="form-group">
@@ -76,7 +101,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="pedidoId">Item de Pedido:</label>
+                <label for="pedidoId">Item de pedido:</label>
                 <select id="pedidoId" name="pedidoId" class="form-control">
                     {% for pedido in pedidos %}
                     <option value="{{ pedido.idpedido_item }}">{{ pedido.nome }} - {{ pedido.castaid.nome }}</option>
@@ -84,27 +109,27 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="dataInicio">Data de Início:</label>
+                <label for="dataInicio">Data de início:</label>
                 <input type="date" id="dataInicio" name="dataInicio" class="form-control" required>
             </div>
             <div class="form-group">
-                <label for="dataFim">Data de Fim:</label>
+                <label for="dataFim">Data de fim:</label>
                 <input type="date" id="dataFim" name="dataFim" class="form-control">
             </div>
             <div class="form-group">
-                <label for="quantidadeEstimada">Quantidade Estimada:</label>
+                <label for="quantidadeEstimada">Quantidade estimada:</label>
                 <input type="number" id="quantidadeEstimada" name="quantidadeEstimada" class="form-control" required>
             </div>
             <div class="form-group">
-                <label for="precoEstimado">Preço Estimado:</label>
+                <label for="precoEstimado">Preço estimado:</label>
                 <input type="number" id="precoEstimado" name="precoEstimado" class="form-control" required>
             </div>
             <div class="form-group">
-                <label for="quantidadeFinal">Quantidade Final:</label>
+                <label for="quantidadeFinal">Quantidade final:</label>
                 <input type="number" id="quantidadeFinal" name="quantidadeFinal" class="form-control" min="0" required>
             </div>
             <div class="form-group">
-                <label for="nomeContrato">Nome do Contrato:</label>
+                <label for="nomeContrato">Nome do contrato:</label>
                 <input type="text" id="nomeContrato" name="nomeContrato" class="form-control" required>
             </div>
             <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
@@ -143,7 +168,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="deleteContract" value="{{ contrato.contratoid }}">
                         
-                        <button type="submit" class="delete-btn"><img src="{% static 'delete.png' %}" title="Eliminar campo" style="height: 25px; width: auto;"></button>
+                        <button type="submit" class="delete-btn"><img src="{% static 'delete.png' %}" title="Inativar contrato" style="height: 25px; width: auto;"></button>
                     </form>
                 </td>
             </tr>

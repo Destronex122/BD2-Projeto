@@ -11,6 +11,31 @@
         background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
         cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
     }
+    .popup-overlay {
+        position: fixed; /* Garante que o modal fique fixo na tela */
+        top: 0;
+        left: 0;
+        width: 100%; /* Preenche a largura da tela */
+        height: 100%; /* Preenche a altura da tela */
+        background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semitransparente */
+        display: flex; /* Usa flexbox para centralizar */
+        justify-content: center; /* Centraliza horizontalmente */
+        align-items: center; /* Centraliza verticalmente */
+        z-index: 1000; /* Certifique-se de que o modal fique acima de outros elementos */
+    }
+
+    .popup-content {
+        position: absolute; /* Posiciona o modal em relação ao container */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%); /* Move o modal para o centro */
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        width: 500px;
+        max-width: 90%;
+    }
 </style>
 
 <div class="editable-area newPadding">    
@@ -54,12 +79,13 @@
     <div class="popup-overlay" id="addTransportModal" style="display: none;">
         <div class="popup-content">
             <div class="popup-header">
-                <h5>Adicionar Transporte</h5>
+                <h5>Adicionar transporte</h5>
                 <span class="modal-close" onclick="closeAddTransportModal()">&times;</span>
             </div>
+            <br>
             <form method="post"> 
                 {% csrf_token %}
-                <input type="hidden" name="action" value="add_transport"> <!-- Define a ação -->
+                <input type="hidden" name="action" value="add_transport"> 
                 <div class="form-group">
                     <label for="nome">Nome:</label>
                     <input type="text" id="nome" name="nome" class="form-control" required>
@@ -73,7 +99,7 @@
                     <input type="date" id="data" name="data" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="precoTransporte">Preço do Transporte:</label>
+                    <label for="precoTransporte">Preço do transporte:</label>
                     <input type="number" id="precoTransporte" name="precoTransporte" class="form-control" required>
                 </div>
                 <div class="form-group">
@@ -104,10 +130,10 @@
     <table class="table table-bordered" id="transportTable">
         <thead>
             <tr>
-                <th>Nº do Transporte</th>
+                <th>Nº do transporte</th>
                 <th>Morada</th>
                 <th>Data</th>
-                <th>Preço Transporte</th>
+                <th>Preço do transporte</th>
                 <th>Estado</th>
                 <th>Ações</th>
             </tr>
