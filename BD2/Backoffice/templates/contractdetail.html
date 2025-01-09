@@ -4,6 +4,8 @@
 
 {% block content %}
 
+{% load static %}
+
 <style>
     a {
         color: #616646;
@@ -48,7 +50,6 @@
 
     .button {
         border: none;
-        padding: 8px 16px;
         cursor: pointer;
     }
 
@@ -93,19 +94,19 @@
             <div class="info-card">
                 <h2>Valores</h2>
                 <div class="info-item">
-                    <span class="label">Quantidade Estimada:</span>
+                    <span class="label">Quantidade estimada:</span>
                     <span class="value">{{contrato.qtdeestimada}}</span>
                 </div>
                 <div class="info-item">
-                    <span class="label">Quantidade Final:</span>
+                    <span class="label">Quantidade final:</span>
                     <span class="value">{{contrato.qtdefinal}}</span>
                 </div>
                 <div class="info-item">
-                    <span class="label">Preço Estimado:</span>
+                    <span class="label">Preço estimado:</span>
                     <span class="value">{{contrato.precoestimado}}</span>
                 </div>
                 <div class="info-item">
-                    <span class="label">Preço Final:</span>
+                    <span class="label">Preço final:</span>
                     <span class="value">{{contrato.precofinal}}</span>
                 </div>
             </div>
@@ -129,7 +130,7 @@
 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
     <h2 class="pesagens-title">Recibos</h2>
     <button type="button" onclick="openAddContractModal()" title="Adicionar novo recibo" class="button">
-        Adicionar
+        <img src="{% static 'add.png' %}" title="Adicionar novo recibo" alt="add" style="height: 25px; width: auto;">
     </button>
 </div>
 
@@ -147,24 +148,26 @@
             {% if recibo.isactive %}
                 <span style="color: green;">✓</span>
             {% else %}
-                <span style="color: red;">✗</span>
+                <span style="color: 584230;">✗</span>
             {% endif %}
         </p>
 
         <!-- Caixote do lixo (apenas visível para recibos ativos) -->
         {% if recibo.isactive %}
-            <button type="button" onclick="deactivateRecibo({{ recibo.reciboid }})" class="delete-icon" style="position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; font-size: 20px;">
-                <i class="fa fa-trash" style="color: #ff6b6b;"></i>
+            <button type="button" onclick="deactivateRecibo('{{ recibo.reciboid }}')" class="delete-icon" style="position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; font-size: 20px;">
+                <i class="fa fa-trash" style="color: #584230;"></i>
             </button>
         {% endif %}
 
         <!-- Botão de edição (aparece apenas para recibos não pagos) -->
         {% if recibo.estadoid.nome == 'Não Pago' %}
-            <button type="button" onclick="editRecibo({{ recibo.reciboid }})" class="secondary-button" style="background-color: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+            <button type="button" onclick="editRecibo('{{ recibo.reciboid }}')" class="secondary-button" style="background-color: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
                 <i class="fa fa-edit"></i> Pagar
             </button>
         {% endif %}
     </div>
+    {% empty %}
+            <p>Não há recibos registados para este contrato.</p>
     {% endfor %}
 </div>
 
@@ -177,19 +180,18 @@
 <div class="popup-overlay" id="addReceiptModal">
     <div class="popup-content">
         <div class="popup-header">
-            <h5>Adicionar Recibo:</h5>
+            <h5>Adicionar recibo</h5>
             <span class="modal-close" onclick="closeAddContractModal()">&times;</span>
         </div>
+        <br>
         <form id="addReceiptForm" onsubmit="calculatePrecoFinal(event)"> 
             {% csrf_token %}
             <input type="hidden" name="idcontrato" value="{{ contrato.contratoid }}">
             
-            <!-- Data de Início -->
             <div class="form-group">
-                <label for="datainicio">Data de Início:</label>
+                <label for="datainicio">Data de início:</label>
                 <input type="date" id="datainicio" name="datainicio" class="form-control" required>
             </div>
-            
             
             <div class="form-group">
                 <label for="colheitaId">Colheita:</label>
@@ -204,21 +206,18 @@
                 </select>
             </div>
             
-            <!-- Quantidade -->
             <div class="form-group">
                 <label for="quantidade">Quantidade (toneladas):</label>
                 <input type="number" step="any" id="quantidade" name="quantidade" class="form-control" required onchange="updatePrecoFinal()">
             </div>
 
-            <!-- Preço Final -->
             <div class="form-group">
-                <label for="precofinal">Preço Final (€):</label>
+                <label for="precofinal">Preço final (€):</label>
                 <input type="number" step="0.01" id="precofinal" name="precofinal" class="form-control" readonly>
             </div>
             
-            <!-- Método de Pagamento -->
             <div class="form-group">
-                <label for="metodopagamentoid">Método de Pagamento:</label>
+                <label for="metodopagamentoid">Método de pagamento:</label>
                 <select id="metodopagamentoid" name="metodopagamentoid" class="form-control">
                     {% for metodo in metodospagamento %}
                         <option value="{{ metodo.idmetodopagamento }}">{{ metodo.nome }}</option>
@@ -226,9 +225,8 @@
                 </select>
             </div>
             
-            <!-- Estado do Pagamento -->
             <div class="form-group">
-                <label for="estadopagamentoid">Estado do Pagamento:</label>
+                <label for="estadopagamentoid">Estado do pagamento:</label>
                 <select id="estadopagamentoid" name="estadopagamentoid" class="form-control">
                     {% for estado in estadosrecibos %}
                         <option value="{{ estado.idestado }}">{{ estado.nome }}</option>
@@ -236,6 +234,9 @@
                 </select>
             </div>
             
+            
+            <!-- Botões -->
+
             <!-- Botões -->
             <div class="form-group" style="text-align: right; margin-top: 15px;">
                 <button type="button" onclick="closeAddContractModal()" class="secondary-button">Cancelar</button>
