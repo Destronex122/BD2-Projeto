@@ -1846,30 +1846,7 @@ def create_vineyard(request):
     return JsonResponse({'success': False, 'error': 'Método não suportado.'})
 
     
-@require_http_methods(["PUT"])
-@csrf_protect
-def update_vineyard(request, vinha_id):
-    try:
-        vinha = Vinhas.objects.get(pk=vinha_id)
-        data = json.loads(request.body)
 
-        vinha.nome = data.get('nome')
-        vinha.dataplantacao = data.get('dataplantacao')
-        vinha.hectares = data.get('hectares')
-
-        # Obter a instância da Casta, se fornecida
-        if 'casta' in data:
-            casta = Castas.objects.get(pk=data.get('casta'))
-            vinha.castaid = casta
-
-        vinha.save()
-        return JsonResponse({'status': 'success'})
-    except Vinhas.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Vinha não encontrada'}, status=404)
-    except Castas.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Casta não encontrada'}, status=400)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
 @csrf_exempt
 def delete_vineyard(request, vinhaid):
@@ -1964,3 +1941,45 @@ def update_contrato_qtdefinal(idcontrato):
     except Exception as e:
         return False
 
+def get_vineyard(request, vinha_id):
+    vinha = get_object_or_404(Vinhas, vinhaid=vinha_id)
+    data = {
+        "Nome": vinha.nome,
+        "CastaId": vinha.castaid.castaid if vinha.castaid else None,  # Pega o ID do objeto relacionado
+        "DataPlantacao": vinha.dataplantacao.strftime('%Y-%m-%d') if vinha.dataplantacao else None,
+        "Hectares": vinha.hectares,
+        "Coordenadas": vinha.coordenadas  # Assumindo que este campo já é serializável
+    }
+    return JsonResponse({"success": True, "vineyard": data})
+
+def update_vineyard(request):
+    if request.method == "POST":
+        vinha_id = request.POST.get('id')
+        casta_id = request.POST.get('casta')
+        nome = request.POST.get('name')
+        campo_id = request.POST.get('campoid')
+        coordenadas = request.POST.get('coordinates')
+        data_plantacao = request.POST.get('date')
+        hectares = request.POST.get('size')
+
+        with connection.cursor() as cursor:
+            print("caralho")
+            print(nome)
+            cursor.execute(
+                """
+                CALL sp_update_vinha(%s,%s,%s,%s,%s,%s,%s)
+                """,
+                [
+                vinha_id,
+                nome,
+                casta_id,
+                campo_id,
+                coordenadas,
+                data_plantacao,
+                hectares
+            ]
+            )
+            print("fiom")
+        
+        return JsonResponse({"success": True, "message": "Vinha atualizada com sucesso!"})
+    return JsonResponse({"success": False, "error": "Método inválido."})
