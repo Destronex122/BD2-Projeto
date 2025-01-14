@@ -10,6 +10,7 @@ urlpatterns = [
     path('users/',  views.users, name='users'),
     path('user/<int:userid>/', views.userdetail, name='user-detail'),
     path('fields/', views.fields, name='fields'),
+    path('save_marker/', views.save_marker_view, name='save_marker'),
     path('save_polygon/', views.save_polygon_view, name="save_polygon"),
     path('backoffice/load_castas/', views.load_castas, name='load_castas'),
     path('vineyards/create_vineyard/', views.create_vineyard, name='create_vineyard'),
