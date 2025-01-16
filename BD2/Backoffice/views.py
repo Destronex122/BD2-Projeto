@@ -23,11 +23,12 @@ from django.contrib.auth.hashers import make_password
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_protect
 from datetime import datetime
+import pymongo
 
 
 # Conectar ao MongoDB
 client = MongoClient("mongodb+srv://admin:admin@bdii22470.9hleq.mongodb.net/?retryWrites=true&w=majority&appName=BDII22470/")
-db = client['Interaction_Database']  # Substituir pelo nome da base do MongoDB
+db = client['GrapeFlow']  # Substituir pelo nome da base do MongoDB
 collection = db['coordinates']  # Substituir pelo nome da coleção do MongoDB
 
 
@@ -58,7 +59,40 @@ def settings(request):
 
 @login_required
 def backofficeIndex(request):
-    return render(request, 'backofficeIndex.html')
+    # Calcular a produção no PostgreSQL
+    try:
+        with connection.cursor() as cursor:
+            # Executar a função no PostgreSQL
+            cursor.execute("SELECT f_get_producao_uvas_por_ano();")
+            producao = cursor.fetchone()[0]  # JSON retornado pelo PostgreSQL
+
+            cursor.execute("SELECT f_get_entregas_pendentes();")
+            entregas = cursor.fetchone()[0]  # JSON retornado pelo PostgreSQL
+
+            cursor.execute("SELECT f_get_entregas_realizadas_ano_corrente();")
+            entregas_realizadas = cursor.fetchone()[0]  # Valor inteiro retornado pelo PostgreSQL
+    except Exception as e:
+        producao = 0  # Valor padrão em caso de erro
+        entregas = 0
+        entregas_realizadas = 0
+    # Salvar os dados no MongoDB
+    try:
+        db = client['GrapeFlow']
+        db.Dashboard.insert_one({
+            "producao_uvas": producao,
+            "entregas_pendentes": entregas,
+            "entregas_realizadas": entregas_realizadas
+        })
+    except Exception as e:
+        print(f"Erro ao salvar no MongoDB: {e}")
+
+    dados=db.dashboard.find_one(
+            sort=[("data de registo", pymongo.DESCENDING)]
+        )
+    return render(request, 'backofficeIndex.html', {
+        'producao_corrente': producao,
+        'entregas_pendentes': entregas
+    })
 
 @login_required
 def userdetail(request, userid):
@@ -1983,3 +2017,66 @@ def update_vineyard(request):
         
         return JsonResponse({"success": True, "message": "Vinha atualizada com sucesso!"})
     return JsonResponse({"success": False, "error": "Método inválido."})
+
+@csrf_exempt
+def update_dashboard(request):
+    if request.method == 'POST':
+        try:
+            # Executar o procedimento no PostgreSQL
+            with connection.cursor() as cursor:
+                cursor.callproc('atualizar_dados_dashboard')  # Nome do procedimento no PostgreSQL
+                results = cursor.fetchall()
+            
+            # Conectar ao MongoDB
+            client = pymongo.MongoClient('mongodb://localhost:27017/')
+            db = client['nome_do_banco']  # Substitua pelo nome do banco
+            collection = db['dashboard']
+
+            # Atualizar a coleção com os novos dados
+            collection.delete_many({})  # Opcional: limpar a coleção antes
+            for row in results:
+                collection.insert_one({
+                    'metric': row[0],
+                    'value': row[1],
+                })
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Método não permitido.'})
+
+
+def atualizar_producao_uvas(request):
+                
+        # Conectar ao PostgreSQL e executar a função
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT f_get_producao_uvas_corrente();")
+            producao = cursor.fetchone()[0] or 0
+
+        
+        db = client['GrapeFlow']
+
+        # Inserir os dados no MongoDB na coleção 'producao_uvas'
+        db.producao_uvas.insert_one({
+            "ano": datetime.now().year,
+            "producao": producao,
+            "data de registo": datetime.now()
+        })
+
+        return JsonResponse({"success": True, "producao": producao})
+
+    
+def buscar_producao_uvas(request):
+    try:
+        # Conectar ao MongoDB
+        client = pymongo.MongoClient('mongodb://localhost:27017/')
+        db = client['GrapeFlow']
+
+        # Buscar os dados mais recentes
+        producao = db.producao_uvas.find_one(sort=[('_id', pymongo.DESCENDING)])
+        if not producao:
+            return JsonResponse({"success": False, "message": "Nenhum dado encontrado"})
+
+        return JsonResponse({"success": True, "producao": producao['producao']})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
