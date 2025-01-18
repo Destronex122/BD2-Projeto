@@ -33,19 +33,20 @@
         </div>
     </div>
     <br>
-    <div style="margin-bottom:30px">
-        {% if is_admin %}
-        <select class="custom-select mr-3" name="vineyard" id="dropdown_vineyard" required>
-            {% for quinta in quintas %}
-                <option value={{ quinta.campoid }}>{{ quinta.nome }}</option>
-            {% endfor %}
-        </select>
-        {% endif %}
-    </div>
+    
 
     <div style="display:flex; justify-content: space-between;">
         <div id="map" style="width: 650px; height: 450px; margin-right:24px"></div>
         <div style="width:50%;">
+            <div style="margin-bottom:30px">
+                {% if is_admin %}
+                <select class="custom-select mr-3" name="vineyard" id="dropdown_vineyard" required>
+                    {% for quinta in quintas %}
+                        <option value={{ quinta.campoid }}>{{ quinta.nome }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
             <!-- vineyard_list.html -->
             <table>
                 <thead>
