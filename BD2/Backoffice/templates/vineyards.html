@@ -70,6 +70,16 @@
         var map = L.map('map').setView(terrainCoordinates, 5);
 
         map.removeControl(map.attributionControl);
+        document.querySelector('.leaflet-control-zoom-in').setAttribute('title', 'Aproximar');
+        document.querySelector('.leaflet-control-zoom-out').setAttribute('title', 'Afastar');
+        L.drawLocal.draw.toolbar.buttons.polygon = 'Adicionar uma vinha';
+        L.drawLocal.draw.toolbar.actions.text = 'Cancelar';
+        L.drawLocal.draw.toolbar.finish.text = 'Finalizar';
+        L.drawLocal.draw.toolbar.undo.text = 'Remover o último ponto';
+        L.drawLocal.draw.handlers.polygon.tooltip.start = 'Clique para começar a desenhar a forma.';
+        L.drawLocal.draw.handlers.polygon.tooltip.cont = 'Clique para continuar desenhando a forma.';
+        L.drawLocal.draw.handlers.polygon.tooltip.end = 'Clique no primeiro ponto para fechar a forma.';
+        
 
         var osmLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
@@ -433,7 +443,15 @@
         }
         
     </script>
-
+    <style>
+        form input, form select, form button {
+            height: 40px; /* Ajuste para a altura dos dois primeiros inputs */
+            line-height: 1.5; /* Ajusta o alinhamento do texto dentro do campo */
+            padding: 5px 10px; /* Adiciona espaçamento interno */
+            box-sizing: border-box; /* Garante que padding não afete o tamanho total */
+        }
+    </style>
+    
     <div id="myModal" class="sidebar">
         <div class="p-3">
             <div style="text-align:right; padding:0px 24px;">
@@ -442,23 +460,27 @@
             <h2>Informação da vinha</h2>
             <div id="vineyardInfo" style="margin-top: 15px;"></div>
             <div id="formContainer" style="display: block; margin-top: 15px;">
-                <form id="vineyardForm"> <label for="name">Nome:</label>
+                <form id="vineyardForm"> 
+                    <label for="name">Nome:</label>
                     <input style="width: 50%;" type="text" id="name" name="name">
     
-                    <label for="castasDropdown">Casta:</label>
-                    <select style="width: 50%;" id="castasDropdown" name="casta"></select>
+                    <label for="castasDropdown" style="margin-top: 10px;">Casta:</label>
+                    <select style="width: 50%;" id="castasDropdown" name="casta" class="custom-select mr-3"></select>
     
-                    <label for="date">Data de plantação:</label>
+                    <label for="date" style="margin-top: 10px;">Data de plantação:</label>
                     <input style="width: 50%;" type="date" id="date" name="date">
     
-                    <label for="size">Hectares:</label>
+                    <label for="size" style="margin-top: 10px;">Hectares:</label>
                     <input style="width: 50%;" type="number" id="size" name="size" readonly>
     
                     <input type="hidden" id="coordinates" name="coordinates">
     
                     <br>
-    
-                    <button id="saveVineyard" data-is-edit="false" type="submit">Guardar</button>
+
+                    <div style="margin-top: 10px;">
+                        <button id="closeButton" class="secondary-button" class="close">Cancelar</button>
+                        <button id="saveVineyard" data-is-edit="false" type="submit">Guardar</button>
+                    </div>
                 </form>
             </div>
         </div>
