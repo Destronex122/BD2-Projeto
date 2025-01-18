@@ -97,7 +97,7 @@ def backofficeIndex(request):
 @login_required
 def userdetail(request, userid):
     user = get_object_or_404(Users, userid=userid)
-    cargos = Cargo.objects.all()  # Buscar todos os cargos do banco de dados
+    cargos = Cargo.objects.all()  # Buscar todos os cargos da base de dados
     if request.method == 'POST':
         # Atualizar os dados do usuário
         user.nome = request.POST.get('nome')
@@ -435,7 +435,6 @@ def edit_harvest(request, colheita_id):
             harvest.periodoid.ano = periodo_ano
             harvest.previsaofimcolheita = previsao_fim_colheita
 
-            # Salvar no banco de dados
             harvest.save()
             print("Colheita atualizada com sucesso!")
 
@@ -488,7 +487,7 @@ def harvestdetail(request, colheitaid):
     pages = list(range(1, total_pages + 1))
 
     ultima_pesagem = pesagens.first()
-    
+
     # Consultar as notas
     with connection.cursor() as cursor:
         cursor.execute("SELECT notaid, colheitaid, notas, data FROM public.notas_colheitas WHERE colheitaid = %s ORDER BY data DESC", [colheitaid])
@@ -1323,7 +1322,7 @@ def save_marker_view(request):
 @require_http_methods(['GET'])
 def load_markers_view(request):
     try:
-        # Carregar todos os campos do banco de dados
+        # Carregar todos os campos da base de dados
         campos = Campos.objects.all()
         markers = []
 
@@ -1428,7 +1427,7 @@ def update_campo(request, campoid):
         except (ValueError, TypeError):
             return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas.'}, status=400)
 
-        # Chamar o procedimento armazenado no banco de dados
+        # Chamar o procedimento armazenado na base de dados
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -1566,7 +1565,7 @@ def edit_payment_method(request, method_id):
 #ESTADO DO TRANSPORTE
 @login_required
 def transport_states(request):
-    # Obtém os dados do banco
+    # Obtém os dados da base de dados
     states = Estadostransporte.objects.all().order_by('nome')
 
     # Filtro (opcional)
@@ -1656,7 +1655,7 @@ def delete_transport_state(request, state_id):
 #ESTADO DO RECIBO
 @login_required
 def receipt_status(request):
-    # Obtém os dados do banco
+    # Obtém os dados da base de dados
     states = Estadosrecibo.objects.all().order_by('nome')
 
     # Filtro (opcional)
@@ -1746,7 +1745,7 @@ def delete_receipt_status(request, status_id):
 #ESTADO DA APROVAÇÃO
 @login_required
 def approved_status(request):
-    # Obtém os dados do banco
+    # Obtém os dados do da base de dados
     states = Estadosaprovacoes.objects.all().order_by('nome')
 
     # Filtro (opcional)
@@ -1861,7 +1860,7 @@ def create_vineyard(request):
             
             print(dataplantacao)
 
-            # Inserção no banco de dados usando cursor
+            # Inserção na base de dados usando cursor
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
@@ -1915,7 +1914,7 @@ def create_recibo(request):
             estadopagamentoid = int(data.get('estadopagamentoid', 0)) or None
             isactive = bool(data.get('isactive', True))
 
-            # Executa a procedure no banco de dados
+            # Executa a procedure na base de dados
             with connection.cursor() as cursor:
                 cursor.execute(
                     "CALL sp_Recibo_Create(%s, %s, %s, %s, %s, %s, %s)",
@@ -2033,7 +2032,7 @@ def update_dashboard(request):
             
             # Conectar ao MongoDB
             client = pymongo.MongoClient('mongodb://localhost:27017/')
-            db = client['nome_do_banco']  # Substitua pelo nome do banco
+            db = client['nome_do_banco']  # Substitua pelo nome da base de dados
             collection = db['dashboard']
 
             # Atualizar a coleção com os novos dados

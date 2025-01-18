@@ -186,7 +186,7 @@
                     <button title="Editar colheita" onclick="openAddHarvestModal(true, '{{ colheita.colheitaid }}')" type="button">
                         <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
                     </button>
-                    <button title="Inativar colheita" type="button" class="delete-btn" data-id="{{ colheita.colheitaid }}" {% if not colheita.isactive %}disabled{% endif %}>
+                    <button title="Inativar colheita" type="button" class="delete-btn" data-id="{{ colheita.colheitaid }}" onclick="inactivateHarvest('{{ colheita.colheitaid }}')" {% if not colheita.isactive %}disabled{% endif %}>
                         <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
                     </button>
                 </td>
@@ -414,6 +414,34 @@
         });
     }
 
+    function inactivateHarvest(colheitaId) {
+        // Exibe a mensagem de confirmação
+        if (confirm('Tem certeza de que deseja inativar esta colheita?')) {
+            fetch(`/inactivate-harvest/${colheitaId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(), // Inclui o token CSRF
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Exibe a mensagem de sucesso e recarrega a página
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    // Exibe a mensagem de erro
+                    alert('Erro: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao inativar a colheita.');
+            });
+        }
+    }
+
     // Função de paginação
     document.addEventListener('DOMContentLoaded', function () {
         const tableBody = document.getElementById('harvestBody');
@@ -422,7 +450,6 @@
         const rowsPerPage = 5;
         let currentPage = 1;
         let allRows = Array.from(tableBody.querySelectorAll('tr'));
-        console.log("Total de registros no HTML:", allRows.length);
         let filteredRows = [...allRows]; // Inicializa a lista filtrada com todas as linhas
 
         // Função de filtro
