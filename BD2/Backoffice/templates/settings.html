@@ -709,7 +709,7 @@
 
                 if (confirm('Tem certeza de que deseja eliminar este estado?')) {
                     fetch(`/delete_approved_status/${approvedId}/`, {
-                        method: 'POST', // Certifique-se de que está usando o método correto
+                        method: 'POST', 
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token }}',
@@ -874,7 +874,7 @@
 
                 if (confirm('Tem certeza de que deseja eliminar este estado?')) {
                     fetch(`/delete_receipt_status/${statusId}/`, {
-                        method: 'POST', // Certifique-se de que está usando o método correto
+                        method: 'POST', 
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token }}',
@@ -1039,7 +1039,7 @@
 
             if (confirm('Tem certeza de que deseja eliminar este estado?')) {
                 fetch(`/delete_transport_state/${stateId}/`, {
-                    method: 'POST', // Certifique-se de que está usando o método correto
+                    method: 'POST', 
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': '{{ csrf_token }}',
@@ -1066,8 +1066,6 @@
     });
     updateTable();
     }
-
-
 
 
 

@@ -774,22 +774,27 @@ def load_vineyards_view(request):
 @login_required
 def requestdetail(request, pedidoid):
     pedido = get_object_or_404(Pedidos, pedidoid=pedidoid)
-    
+   
     # Atualizar o estado do pedido_item
     if request.method == "POST" and "updateEstado" in request.POST:
         idpedido_item = int(request.POST.get("idpedido_item"))
-        novo_estado = request.POST.get("novo_estado")  # Aceite ou Rejeitado
+        novo_estado = request.POST.get("updateEstado")  # Aceite ou Rejeitado
+        
+        # Mapeamento de estado para o ID correto
+        estado_map = {"Aceite": 1, "Rejeitado": 2}  # Substitua pelos IDs reais do banco de dados
+        estado_id = estado_map.get(novo_estado)
+       
         try:
             with connection.cursor() as cursor:
+                print(f"SQL: UPDATE pedidos_item SET estadoaprovacaoid = {estado_id} WHERE idpedido_item = {idpedido_item}")
+
                 # Atualiza o estado do pedido_item
                 cursor.execute("""
                     UPDATE pedidos_item
-                    SET estadoaprovacaoid = (
-                        SELECT idaprovacao FROM estadosaprovacoes WHERE nome = %s
-                    )
+                    SET estadoaprovacaoid = %s
                     WHERE idpedido_item = %s
-                """, [novo_estado, idpedido_item])
-            return JsonResponse({'status': 'success', 'message': f'Estado atualizado para "{novo_estado}" com sucesso!'})
+                """, [estado_id, idpedido_item])
+            return JsonResponse({'status': 'success', 'message': f'Estado atualizado com sucesso!'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f'Ocorreu um erro: {e}'})
     
