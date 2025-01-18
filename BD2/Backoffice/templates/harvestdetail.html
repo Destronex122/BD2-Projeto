@@ -255,7 +255,7 @@
                 </div>
                 <div style="display:flex; justify-content: flex-end;">
                     <button type="button" class="secondary-button" onclick="closePesagemModal()">Cancelar</button>
-                    <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+                    <button type="submit" class="button" style="margin-left: 10px;">Guardar</button>
                 </div>
         </form>
     </div>
@@ -282,7 +282,7 @@
 
             <div style="display: flex; justify-content: flex-end;">
                 <button type="button" class="secondary-button" onclick="closeNoteModal()">Cancelar</button>
-                <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+                <button type="submit" class="button" style="margin-left: 10px;">Guardar</button>
             </div>
         </form>
     </div>
@@ -351,12 +351,12 @@
                         alert('Pesagem editada com sucesso!');
                         location.reload();
                     } else {
-                        alert(data.message || 'Erro ao salvar edição da pesagem.');
+                        alert(data.message || 'Erro ao guardar edição da pesagem.');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao salvar edição da pesagem.');
+                    alert('Erro ao guardar edição da pesagem.');
                 });
         } else {
             // CRIAR NOVA PESAGEM
@@ -380,12 +380,12 @@
                         alert('Pesagem adicionada com sucesso!');
                         location.reload();
                     } else {
-                        alert(data.message || 'Erro ao salvar pesagem.');
+                        alert(data.message || 'Erro ao guardar pesagem.');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao salvar pesagem.');
+                    alert('Erro ao guardar pesagem.');
                 });
         }
     }
@@ -442,7 +442,7 @@
     }
 
 
-    // Função para salvar ou editar a nota
+    // Função para guardar ou editar a nota
     function saveNote() {
         const noteId = document.getElementById('noteId').value;  
         const noteText = document.getElementById('noteText').value;  
@@ -470,15 +470,15 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Nota salva com sucesso!');
+                alert('Nota guardada com sucesso!');
                 location.reload();
             } else {
-                alert(data.message || 'Erro ao salvar nota.');
+                alert(data.message || 'Erro ao guardar nota.');
             }
         })
         .catch(error => {
             console.error('Erro:', error);
-            alert('Erro ao salvar nota.');
+            alert('Erro ao guardar nota.');
         });
     }
 

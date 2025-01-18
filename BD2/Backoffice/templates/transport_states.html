@@ -117,7 +117,7 @@
                     </div>
                     <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                         <button type="button" class="secondary-button" id="cancelAddTransportState">Cancelar</button>
-                        <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+                        <button type="submit" class="button" style="margin-left: 10px;">Guardar</button>
                     </div>
                 </form>
             </div>
@@ -238,12 +238,12 @@
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert(data.message || 'Erro ao salvar o estado.');
+                    alert(data.message || 'Erro ao guardar o estado.');
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                alert('Erro ao salvar o estado.');
+                alert('Erro ao guardar o estado.');
             });
     });
 
