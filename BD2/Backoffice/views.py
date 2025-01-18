@@ -1051,6 +1051,7 @@ def request(request):
     if request.method == 'POST':
         try:
             # Capturar os dados enviados pelo formulário
+            cliente_id = int(request.POST.get('clienteid'))
             aprovador_id = int(request.POST.get('aprovadorid'))
             nome = request.POST.get('newNome')
             data_inicio = request.POST.get('newDataInicio')
@@ -1062,10 +1063,11 @@ def request(request):
             with connection.cursor() as cursor:
                 cursor.execute("""
                     CALL sp_inserirpedido(
-                        %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s
                     )
                 """, [
                     nome,
+                    cliente_id,
                     data_inicio,
                     data_fim,
                     aprovador_id,
@@ -1147,13 +1149,19 @@ def update_request(request, pedidoid):
 def delete_request(request, pedidoid):
     if request.method == 'POST':
         try:
+            # Chama a stored procedure para inativar o pedido
             with connection.cursor() as cursor:
-                cursor.execute("CALL delete_pedido(%s)", [pedidoid])
-            return redirect('/request')
+                cursor.execute("CALL sp_delete_pedido(%s)", [pedidoid])
+            # Retorna sucesso como JSON
+            return JsonResponse({'success': True, 'message': 'Pedido inativado com sucesso!'})
+        
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+            # Retorna erro como JSON
+            return JsonResponse({'success': False, 'message': f'Ocorreu um erro: {str(e)}'})
+    
+    # Retorna erro para métodos não permitidos
+    return JsonResponse({'success': False, 'message': 'Método inválido. Apenas requisições POST são permitidas.'})
 
-    return JsonResponse({'success': False, 'message': 'Método inválido.'})
 
 #CASTAS
 def grapevariety(request):
