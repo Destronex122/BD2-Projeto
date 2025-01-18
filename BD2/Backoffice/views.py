@@ -487,10 +487,14 @@ def harvestdetail(request, colheitaid):
     # Cria a lista de páginas
     pages = list(range(1, total_pages + 1))
 
+    ultima_pesagem = pesagens.first()
+    
     # Consultar as notas
     with connection.cursor() as cursor:
         cursor.execute("SELECT notaid, colheitaid, notas, data FROM public.notas_colheitas WHERE colheitaid = %s ORDER BY data DESC", [colheitaid])
         notas = cursor.fetchall()
+
+    
 
     notas_list = [{"notaid": nota[0], "colheitaid": nota[1], "notas": nota[2], "data": nota[3]} for nota in notas]
 
@@ -500,7 +504,7 @@ def harvestdetail(request, colheitaid):
         'peso_total': colheita.pesototal,
         'preco_por_tonelada': colheita.precoportonelada,
         'periodo': colheita.periodoid.ano if colheita.periodoid else None,
-        'data_pesagem': colheita.datapesagem,
+        'data_pesagem': ultima_pesagem.datadepesagem if ultima_pesagem else None,
         'previsao_fim_colheita': colheita.previsaofimcolheita,
         'terminada': "Sim" if colheita.terminada else "Não",
         'data_termino': colheita.datapesagem if colheita.terminada else "Não terminada",
