@@ -6,6 +6,12 @@
 
 {% load static %}
 
+<div>
+    <button id="refresh-button" style="margin-top:20px;">Atualizar Dashboard</button>
+</div>
+
+
+
 <div class="editable-area newPadding">
     <div class="container-fluid py-4">
         <div class="row justify-content-center">
@@ -16,8 +22,10 @@
                             <div class="col-8">
                                 <div class="numbers">
                                     <!-- Displaying grape production for the current year -->
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Produção de Uvas do ano corrente (kg)</p>
-                                    <h5 class="font-weight-bolder mb-0">5,000 kg</h5>
+                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">
+                                        Produção de Uvas do ano corrente (kg)
+                                    </p>
+                                    <h5 id="producao-uvas" class="font-weight-bolder mb-0">{{ producao_corrente|floatformat:2 }} kg</h5>
                                 </div>
                             </div>
                             <div class="col-4 text-end">
@@ -37,7 +45,7 @@
                                 <div class="numbers">
                                     <!-- Displaying pending deliveries -->
                                     <p class="text-sm mb-0 text-capitalize font-weight-bold">Entregas Pendentes</p>
-                                    <h5 class="font-weight-bolder mb-0">15</h5>
+                                    <h5 id="entregas-pendentes" class="font-weight-bolder mb-0">{{ entregas_pendentes }}</h5>
                                 </div>
                             </div>
                             <div class="col-4 text-end">

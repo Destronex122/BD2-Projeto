@@ -150,9 +150,97 @@
                     }
                 });
             });
+
+            document.querySelectorAll('button img[alt="edit"]').forEach(button => {
+                button.parentElement.addEventListener('click', function () {
+                    const row = this.closest('tr'); // Linha da tabela onde o botão está
+                    const vinhaId = row.dataset.id; // Obtém o ID da vinha armazenado no atributo data-id
+            
+                    // Fazer um fetch para obter os dados da vinha selecionada
+                    fetch(`/backoffice/vineyards/get/${vinhaId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Preencher o modal com os dados recebidos
+                                preencherModalParaEdicao(data.vineyard);
+            
+                                // Exibir o modal
+                                openModal();
+                                
+                                document.getElementById('saveVineyard').addEventListener('click', function (event) {
+                                    event.preventDefault(); // Impede o comportamento padrão do botão de envio
+                                
+                                    const isEdit = this.dataset.isEdit === 'true';
+                                    const vineyardId = this.dataset.id;
+                                    const form = document.getElementById('vineyardForm');
+                                
+                                    // Certifique-se de que todos os campos necessários estão preenchidos antes de criar o FormData
+                                    const formData = new FormData(form);
+                                
+                                    if (isEdit) {
+                                        // Adiciona o ID da vinha ao FormData
+                                        const dropdownValue = document.getElementById('dropdown_vineyard').value;
+                                        formData.append('id', vineyardId);
+                                        formData.append('campoid', dropdownValue);
+                                        
+                                    }
+                                
+                                    // Debugging para garantir que o FormData está correto
+                                    for (let [key, value] of formData.entries()) {
+                                        console.log(key, value);
+                                    }
+                                
+                                    // Envia os dados via Fetch API
+                                    fetch('/backoffice/vineyards/update/', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                                        },
+                                        body: formData
+                                    })
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                alert(data.message);
+                                                location.reload(); // Recarrega a página após o sucesso
+                                            } else {
+                                                alert('Erro: ' + data.error);
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('Erro:', error);
+                                            alert('Erro ao salvar a vinha.');
+                                        });
+                                });
+                                
+                                
+                                // Armazenar o ID da vinha no botão "Guardar"
+                                document.getElementById('saveVineyard').dataset.id = vinhaId;
+                                document.getElementById('saveVineyard').dataset.isEdit = 'true';
+                            } else {
+                                alert('Erro ao carregar dados da vinha.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro ao carregar dados da vinha:', error);
+                            alert('Erro ao carregar dados da vinha.');
+                        });
+                });
+            });
+            
         }
         
         
+        function preencherModalParaEdicao(vineyard) {
+            carregarCastas(vineyard.CastaId);
+            document.getElementById('name').value = vineyard.Nome;
+            console.log(vineyard.CastaId);
+            document.getElementById('castasDropdown').value = vineyard.CastaId; // ID da casta
+            document.getElementById('date').value = vineyard.DataPlantacao;
+            document.getElementById('size').value = vineyard.Hectares;
+            document.getElementById('coordinates').value = vineyard.Coordenadas;
+            
+        }
         
         // Função para carregar as vinhas com base no ID da quinta selecionada
         function loadVineyards(vineyardId) {
@@ -244,11 +332,7 @@
                 }
             });
         });
-                // Abrir o modal
                 openModal();
-        
-                // Armazenar a camada no botão "Guardar" para uso posterior
-                //document.querySelector('#myModal button[type="submit"]').dataset.layerId = L.Util.stamp(layer);
             }
         });
 
@@ -270,7 +354,7 @@
             // Carregar as castas no dropdown
             carregarCastas();
         }
-        function carregarCastas() {
+        function carregarCastas(value) {
             fetch('/backoffice/load_castas/', { // Rota para obter a lista de castas
                 method: 'GET'
             })
@@ -290,6 +374,9 @@
                     option.text = casta.nome;
                     castasDropdown.appendChild(option);
                 });
+                if(value != null){
+                    castasDropdown.value=value;
+                }
             })
             .catch(error => {
                 console.error('Erro:', error);
