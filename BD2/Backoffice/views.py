@@ -1022,6 +1022,8 @@ def delete_note_request(request, notaid):
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
+
+# CONTRATO
 @login_required
 def contractdetail(request, contratoid):
     contrato = get_object_or_404(Contratos, contratoid=contratoid)
@@ -1044,9 +1046,7 @@ def contractdetail(request, contratoid):
     })
 
 
-
-
-
+# PEDIDOS
 @login_required
 def request(request):
     # Filters
