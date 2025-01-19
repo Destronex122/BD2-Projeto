@@ -55,6 +55,14 @@
         cursor: not-allowed;
         opacity: 0.5;
     }
+
+    .delete-btn:disabled {
+        background-color: #e9e8e2; /* Cor de fundo desabilitada */
+        color: #a0a0a0; /* Cor do ícone desabilitado */
+        cursor: not-allowed; /* Mostra um cursor de bloqueio */
+        opacity: 0.6; /* Torna o botão visualmente mais claro */
+    }
+
 </style>
 
 <div class="editable-area newPadding">    
@@ -126,10 +134,11 @@
                 <td>{{ pedido.precoestimado }}</td>
                 <td>{{ pedido.aprovadorid.nome }}</td>
                 <td class="actions-column">
-                    <button title="Editar pedido" type="button" class="edit-btn" onclick="openEditModal('{{ pedido.pedidoid }}')" data-id="{{ casta.castaid }}">
+                    <!-- <button title="Editar pedido" type="button" class="edit-btn" onclick="openEditModal('{{ pedido.pedidoid }}')">
                         <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
-                    </button>
-                    <button title="Eliminar pedido" type="button"  class="delete-btn" onclick="deleteRequest('{{ pedido.pedidoid }}')" data-id="{{ casta.castaid }}">
+                    </button> -->
+                    <button title="Eliminar pedido" type="button"  class="delete-btn" onclick="deleteRequest(this, '{{ pedido.pedidoid }}')" 
+                    {% if not pedido.isactive %}disabled{% endif %}>
                         <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
                     </button>
                 </td>
@@ -207,114 +216,149 @@
                 <!-- Botões -->
                 <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                     <button type="button" onclick="closeAddRequestModal()" class="secondary-button">Cancelar</button>
-                    <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>
+                    <button type="submit" class="button" style="margin-left: 10px;">Guardar</button>
                 </div>
             </form>
         </div>
     </div>
+</div>
     
-    
-
-    <script>
-function openAddRequestModal() {
-    const modal = document.getElementById('addRequestModal');
-    modal.style.display = 'flex'; 
-}
+<script>
+    function openAddRequestModal() {
+        const modal = document.getElementById('addRequestModal');
+        modal.style.display = 'flex'; 
+    }
 
 
-function closeAddRequestModal() {
-    const modal = document.getElementById('addRequestModal');
-    modal.style.display = 'none'; 
-}
+    function closeAddRequestModal() {
+        const modal = document.getElementById('addRequestModal');
+        modal.style.display = 'none'; 
+    }
 
-function openEditModal(pedidoid) {
-    const targetRow = event.target.closest('tr');
-    if (pedidoid) {
-            window.location.href = `/backoffice/requestdetail/${pedidoid}/`;
+    function openEditModal(pedidoid) {
+        const targetRow = event.target.closest('tr');
+        if (pedidoid) {
+                window.location.href = `/backoffice/requestdetail/${pedidoid}/`;
+            }
+
+
+        document.getElementById('pedidoid').value = pedidoid;
+        document.getElementById('newNome').value = nome;
+        document.getElementById('newClienteId').value = clienteId;
+        document.getElementById('newAprovadorId').value = aprovadorId;
+        document.getElementById('newDataInicio').value = dataInicio;
+        document.getElementById('newDataFim').value = dataFim;
+        document.getElementById('newPrecoEstimado').value = precoEstimado;
+
+        
+        document.getElementById('modalTitle').textContent = 'Editar Pedido';
+
+        // Mostra o popup
+        const modal = document.getElementById('addRequestModal');
+        modal.style.display = 'flex';
+    }
+
+
+    document.getElementById('requestTable').addEventListener('click', function (event) {
+        const targetCell = event.target.closest('td'); 
+        const targetRow = event.target.closest('tr'); 
+
+        
+        if (targetCell && targetCell.classList.contains('actions-column')) {
+            return; 
+        }
+        
+        if (targetRow && !targetRow.closest('thead')) {
+            // Redirecionar para o detalhe do pedido
+            window.location.href = `/backoffice/requestdetail/${targetRow.dataset.pedidoid}/`;
+        }
+    });
+
+    document.getElementById('addRequestForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        // Capturar os valores do formulário
+        const clienteid = document.getElementById('clienteid').value;
+        const aprovadorid = document.getElementById('aprovadorid').value;
+        const nome = document.getElementById('newNome').value;
+        const datainicio = document.getElementById('newDataInicio').value;
+        const datafim = document.getElementById('newDataFim').value;
+        const precoestimado = document.getElementById('newPrecoEstimado').value;
+
+        // Validação dos campos
+        if (!clienteid || !aprovadorid || !nome || !datainicio || !datafim || !precoestimado) {
+            alert('Por favor, preencha todos os campos.');
+            return;
         }
 
+        // Preparar os dados para envio
+        const formData = new FormData();
+        formData.append('clienteid', clienteid);
+        formData.append('aprovadorid', aprovadorid);
+        formData.append('newNome', nome);
+        formData.append('newDataInicio', datainicio);
+        formData.append('newDataFim', datafim);
+        formData.append('newPrecoEstimado', precoestimado);
 
-    document.getElementById('pedidoid').value = pedidoid;
-    document.getElementById('newNome').value = nome;
-    document.getElementById('newClienteId').value = clienteId;
-    document.getElementById('newAprovadorId').value = aprovadorId;
-    document.getElementById('newDataInicio').value = dataInicio;
-    document.getElementById('newDataFim').value = dataFim;
-    document.getElementById('newPrecoEstimado').value = precoEstimado;
+        // Enviar a requisição POST
+        fetch('.', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // Atualizar a tabela
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao enviar o pedido.');
+        });
+    });
 
-    
-    document.getElementById('modalTitle').textContent = 'Editar Pedido';
+    function deleteRequest(button, pedidoid) {
+        if (!confirm('Tem certeza de que deseja inativar este pedido?')) {
+            return;
+        }
 
-    // Mostra o popup
-    const modal = document.getElementById('addRequestModal');
-    modal.style.display = 'flex';
-}
+        // Desativa o botão imediatamente para evitar cliques adicionais
+        button.disabled = true;
 
+        fetch(`/delete_request/${pedidoid}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
 
-document.getElementById('requestTable').addEventListener('click', function (event) {
-    const targetCell = event.target.closest('td'); 
-    const targetRow = event.target.closest('tr'); 
+                // Desativar o botão e aplicar estilo após a resposta de sucesso
+                button.disabled = true;
+            } else {
+                alert(data.message);
 
-    
-    if (targetCell && targetCell.classList.contains('actions-column')) {
-        return; 
+                // Reativar o botão em caso de erro
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao inativar o pedido:', error);
+            alert('Erro ao inativar o pedido.');
+
+            // Reativar o botão em caso de erro
+            button.disabled = false;
+        });
     }
-    
-    if (targetRow && !targetRow.closest('thead')) {
-        // Redirecionar para o detalhe do pedido
-        window.location.href = `/backoffice/requestdetail/${targetRow.dataset.pedidoid}/`;
-    }
-});
+</script>
 
-document.getElementById('addRequestForm').addEventListener('submit', function (event) {
-    event.preventDefault();
-
-// Capturar os valores do formulário
-const clienteid = document.getElementById('clienteid').value;
-const aprovadorid = document.getElementById('aprovadorid').value;
-const nome = document.getElementById('newNome').value;
-const datainicio = document.getElementById('newDataInicio').value;
-const datafim = document.getElementById('newDataFim').value;
-const precoestimado = document.getElementById('newPrecoEstimado').value;
-
-// Validação dos campos
-if (!clienteid || !aprovadorid || !nome || !datainicio || !datafim || !precoestimado) {
-    alert('Por favor, preencha todos os campos.');
-    return;
-}
-
-// Preparar os dados para envio
-const formData = new FormData();
-formData.append('clienteid', clienteid);
-formData.append('aprovadorid', aprovadorid);
-formData.append('newNome', nome);
-formData.append('newDataInicio', datainicio);
-formData.append('newDataFim', datafim);
-formData.append('newPrecoEstimado', precoestimado);
-
-// Enviar a requisição POST
-fetch('.', {
-    method: 'POST',
-    headers: {
-        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-    },
-    body: formData,
-})
-.then(response => response.json())
-.then(data => {
-    if (data.success) {
-        alert(data.message);
-        location.reload(); // Atualizar a tabela
-    } else {
-        alert(data.message);
-    }
-})
-.catch(error => {
-    console.error('Erro:', error);
-    alert('Erro ao enviar o pedido.');
-});
-});
-    </script>
-</div>
 
 {% endblock %}

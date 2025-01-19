@@ -127,7 +127,7 @@ def backofficeIndex(request):
 @login_required
 def userdetail(request, userid):
     user = get_object_or_404(Users, userid=userid)
-    cargos = Cargo.objects.all()  # Buscar todos os cargos do banco de dados
+    cargos = Cargo.objects.all()  # Buscar todos os cargos da base de dados
     if request.method == 'POST':
         # Atualizar os dados do usuário
         user.nome = request.POST.get('nome')
@@ -465,7 +465,6 @@ def edit_harvest(request, colheita_id):
             harvest.periodoid.ano = periodo_ano
             harvest.previsaofimcolheita = previsao_fim_colheita
 
-            # Salvar no banco de dados
             harvest.save()
             print("Colheita atualizada com sucesso!")
 
@@ -517,10 +516,14 @@ def harvestdetail(request, colheitaid):
     # Cria a lista de páginas
     pages = list(range(1, total_pages + 1))
 
+    ultima_pesagem = pesagens.first()
+
     # Consultar as notas
     with connection.cursor() as cursor:
         cursor.execute("SELECT notaid, colheitaid, notas, data FROM public.notas_colheitas WHERE colheitaid = %s ORDER BY data DESC", [colheitaid])
         notas = cursor.fetchall()
+
+    
 
     notas_list = [{"notaid": nota[0], "colheitaid": nota[1], "notas": nota[2], "data": nota[3]} for nota in notas]
 
@@ -530,7 +533,7 @@ def harvestdetail(request, colheitaid):
         'peso_total': colheita.pesototal,
         'preco_por_tonelada': colheita.precoportonelada,
         'periodo': colheita.periodoid.ano if colheita.periodoid else None,
-        'data_pesagem': colheita.datapesagem,
+        'data_pesagem': ultima_pesagem.datadepesagem if ultima_pesagem else None,
         'previsao_fim_colheita': colheita.previsaofimcolheita,
         'terminada': "Sim" if colheita.terminada else "Não",
         'data_termino': colheita.datapesagem if colheita.terminada else "Não terminada",
@@ -801,22 +804,27 @@ def load_vineyards_view(request):
 @login_required
 def requestdetail(request, pedidoid):
     pedido = get_object_or_404(Pedidos, pedidoid=pedidoid)
-    
+   
     # Atualizar o estado do pedido_item
     if request.method == "POST" and "updateEstado" in request.POST:
         idpedido_item = int(request.POST.get("idpedido_item"))
-        novo_estado = request.POST.get("novo_estado")  # Aceite ou Rejeitado
+        novo_estado = request.POST.get("updateEstado")  # Aceite ou Rejeitado
+        
+        # Mapeamento de estado para o ID correto
+        estado_map = {"Aceite": 1, "Rejeitado": 2}  # Substitua pelos IDs reais do banco de dados
+        estado_id = estado_map.get(novo_estado)
+       
         try:
             with connection.cursor() as cursor:
+                print(f"SQL: UPDATE pedidos_item SET estadoaprovacaoid = {estado_id} WHERE idpedido_item = {idpedido_item}")
+
                 # Atualiza o estado do pedido_item
                 cursor.execute("""
                     UPDATE pedidos_item
-                    SET estadoaprovacaoid = (
-                        SELECT idaprovacao FROM estadosaprovacoes WHERE nome = %s
-                    )
+                    SET estadoaprovacaoid = %s
                     WHERE idpedido_item = %s
-                """, [novo_estado, idpedido_item])
-            return JsonResponse({'status': 'success', 'message': f'Estado atualizado para "{novo_estado}" com sucesso!'})
+                """, [estado_id, idpedido_item])
+            return JsonResponse({'status': 'success', 'message': f'Estado atualizado com sucesso!'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f'Ocorreu um erro: {e}'})
     
@@ -1073,6 +1081,7 @@ def request(request):
     if request.method == 'POST':
         try:
             # Capturar os dados enviados pelo formulário
+            cliente_id = int(request.POST.get('clienteid'))
             aprovador_id = int(request.POST.get('aprovadorid'))
             nome = request.POST.get('newNome')
             data_inicio = request.POST.get('newDataInicio')
@@ -1084,10 +1093,11 @@ def request(request):
             with connection.cursor() as cursor:
                 cursor.execute("""
                     CALL sp_inserirpedido(
-                        %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s
                     )
                 """, [
                     nome,
+                    cliente_id,
                     data_inicio,
                     data_fim,
                     aprovador_id,
@@ -1169,13 +1179,19 @@ def update_request(request, pedidoid):
 def delete_request(request, pedidoid):
     if request.method == 'POST':
         try:
+            # Chama a stored procedure para inativar o pedido
             with connection.cursor() as cursor:
-                cursor.execute("CALL delete_pedido(%s)", [pedidoid])
-            return redirect('/request')
+                cursor.execute("CALL sp_delete_pedido(%s)", [pedidoid])
+            # Retorna sucesso como JSON
+            return JsonResponse({'success': True, 'message': 'Pedido inativado com sucesso!'})
+        
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+            # Retorna erro como JSON
+            return JsonResponse({'success': False, 'message': f'Ocorreu um erro: {str(e)}'})
+    
+    # Retorna erro para métodos não permitidos
+    return JsonResponse({'success': False, 'message': 'Método inválido. Apenas requisições POST são permitidas.'})
 
-    return JsonResponse({'success': False, 'message': 'Método inválido.'})
 
 #CASTAS
 def grapevariety(request):
@@ -1349,7 +1365,7 @@ def save_marker_view(request):
 @require_http_methods(['GET'])
 def load_markers_view(request):
     try:
-        # Carregar todos os campos do banco de dados
+        # Carregar todos os campos da base de dados
         campos = Campos.objects.all()
         markers = []
 
@@ -1454,7 +1470,7 @@ def update_campo(request, campoid):
         except (ValueError, TypeError):
             return JsonResponse({'status': 'error', 'message': 'Coordenadas inválidas.'}, status=400)
 
-        # Chamar o procedimento armazenado no banco de dados
+        # Chamar o procedimento armazenado na base de dados
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -1592,7 +1608,7 @@ def edit_payment_method(request, method_id):
 #ESTADO DO TRANSPORTE
 @login_required
 def transport_states(request):
-    # Obtém os dados do banco
+    # Obtém os dados da base de dados
     states = Estadostransporte.objects.all().order_by('nome')
 
     # Filtro (opcional)
@@ -1682,7 +1698,7 @@ def delete_transport_state(request, state_id):
 #ESTADO DO RECIBO
 @login_required
 def receipt_status(request):
-    # Obtém os dados do banco
+    # Obtém os dados da base de dados
     states = Estadosrecibo.objects.all().order_by('nome')
 
     # Filtro (opcional)
@@ -1772,7 +1788,7 @@ def delete_receipt_status(request, status_id):
 #ESTADO DA APROVAÇÃO
 @login_required
 def approved_status(request):
-    # Obtém os dados do banco
+    # Obtém os dados do da base de dados
     states = Estadosaprovacoes.objects.all().order_by('nome')
 
     # Filtro (opcional)
@@ -1858,6 +1874,9 @@ def delete_approved_status(request, approvedId):
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
+
+
+# VINHAS
 def load_castas(request):
     castas = Castas.objects.all().values('castaid', 'nome')
     return JsonResponse(list(castas), safe=False)
@@ -1887,7 +1906,7 @@ def create_vineyard(request):
             
             print(dataplantacao)
 
-            # Inserção no banco de dados usando cursor
+            # Inserção na base de dados usando cursor
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
@@ -1910,8 +1929,6 @@ def create_vineyard(request):
     return JsonResponse({'success': False, 'error': 'Método não suportado.'})
 
     
-
-    
 @csrf_exempt
 def delete_vineyard(request, vinhaid):
     if request.method == 'POST':
@@ -1924,86 +1941,6 @@ def delete_vineyard(request, vinhaid):
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Método não suportado.'})
 
-
-@csrf_exempt
-def create_recibo(request):
-    if request.method == 'POST':
-        try:
-            # Parse JSON do corpo do pedido
-            data = json.loads(request.body)
-
-            # Extrai e valida dados
-            idcontrato = int(data.get('idcontrato', 0)) or None
-            datainicio = data.get('datainicio')
-            precofinal = float(data.get('precofinal', 0)) or None
-            colheitaid = int(data.get('colheitaid', 0)) or None
-            metodopagamentoid = int(data.get('metodopagamentoid', 0)) or None
-            estadopagamentoid = int(data.get('estadopagamentoid', 0)) or None
-            isactive = bool(data.get('isactive', True))
-
-            # Executa a procedure no banco de dados
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "CALL sp_Recibo_Create(%s, %s, %s, %s, %s, %s, %s)",
-                    [idcontrato, datainicio, precofinal, colheitaid, metodopagamentoid, estadopagamentoid, isactive]
-                )
-
-            return JsonResponse({'success': True, 'message': 'Recibo criado com sucesso!'})
-
-        except Exception as e:
-            # Retorna mensagem de erro
-            return JsonResponse({'success': False, 'message': f'Erro ao criar recibo: {str(e)}'})
-
-    return JsonResponse({'success': False, 'message': 'Método inválido'})
-
-@csrf_exempt
-def deactivate_recibo(request, recibo_id):
-    if request.method == 'POST':
-        try:
-            # Atualiza o recibo para isactive = false
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "UPDATE recibos SET isactive = false WHERE reciboid = %s AND isactive = true",
-                    [recibo_id]
-                )
-                
-            return JsonResponse({'success': True, 'message': 'Recibo desativado com sucesso!'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erro ao desativar recibo: {str(e)}'})
-
-    return JsonResponse({'success': False, 'message': 'Método inválido'})
-
-
-
-def update_recibo_status(request, recibo_id):
-    # Verificar se a requisição é POST
-    if request.method == "POST":
-        recibo = get_object_or_404(Recibos, pk=recibo_id)
-
-        # Verificar se o recibo está atualmente 'Não Pago' antes de alterar para 'Pago'
-        if recibo.estadoid.nome == 'Não Pago':
-            recibo.estadoid = get_object_or_404(Estadosrecibo, nome='Pago')
-            recibo.save()
-            return JsonResponse({'success': True})
-        else:
-            return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
-    return JsonResponse({'success': False, 'message': 'Método inválido.'})
-
-def update_contrato_qtdefinal(idcontrato):
-    try:
-        # Obtém o contrato pelo id
-        contrato = Contratos.objects.get(contratoid=idcontrato)
-        
-        # Soma as quantidades de todos os recibos ativos associados ao contrato
-        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
-        
-        # Atualiza o campo qtdefinal do contrato
-        contrato.qtdefinal = total_quantidade
-        contrato.save()
-
-        return True
-    except Exception as e:
-        return False
 
 def get_vineyard(request, vinha_id):
     vinha = get_object_or_404(Vinhas, vinhaid=vinha_id)
@@ -2048,6 +1985,89 @@ def update_vineyard(request):
         return JsonResponse({"success": True, "message": "Vinha atualizada com sucesso!"})
     return JsonResponse({"success": False, "error": "Método inválido."})
 
+# RECIBO
+@csrf_exempt
+def create_recibo(request):
+    if request.method == 'POST':
+        try:
+            # Parse JSON do corpo do pedido
+            data = json.loads(request.body)
+
+            # Extrai e valida dados
+            idcontrato = int(data.get('idcontrato', 0)) or None
+            datainicio = data.get('datainicio')
+            precofinal = float(data.get('precofinal', 0)) or None
+            colheitaid = int(data.get('colheitaid', 0)) or None
+            metodopagamentoid = int(data.get('metodopagamentoid', 0)) or None
+            estadopagamentoid = int(data.get('estadopagamentoid', 0)) or None
+            isactive = bool(data.get('isactive', True))
+
+            # Executa a procedure na base de dados
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL sp_Recibo_Create(%s, %s, %s, %s, %s, %s, %s)",
+                    [idcontrato, datainicio, precofinal, colheitaid, metodopagamentoid, estadopagamentoid, isactive]
+                )
+
+            return JsonResponse({'success': True, 'message': 'Recibo criado com sucesso!'})
+
+        except Exception as e:
+            # Retorna mensagem de erro
+            return JsonResponse({'success': False, 'message': f'Erro ao criar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+
+@csrf_exempt
+def deactivate_recibo(request, recibo_id):
+    if request.method == 'POST':
+        try:
+            # Atualiza o recibo para isactive = false
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE recibos SET isactive = false WHERE reciboid = %s AND isactive = true",
+                    [recibo_id]
+                )
+                
+            return JsonResponse({'success': True, 'message': 'Recibo desativado com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao desativar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+
+def update_recibo_status(request, recibo_id):
+    # Verificar se a requisição é POST
+    if request.method == "POST":
+        recibo = get_object_or_404(Recibos, pk=recibo_id)
+
+        # Verificar se o recibo está atualmente 'Não Pago' antes de alterar para 'Pago'
+        if recibo.estadoid.nome == 'Não Pago':
+            recibo.estadoid = get_object_or_404(Estadosrecibo, nome='Pago')
+            recibo.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
+    return JsonResponse({'success': False, 'message': 'Método inválido.'})
+
+def update_contrato_qtdefinal(idcontrato):
+    try:
+        # Obtém o contrato pelo id
+        contrato = Contratos.objects.get(contratoid=idcontrato)
+        
+        # Soma as quantidades de todos os recibos ativos associados ao contrato
+        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
+        
+        # Atualiza o campo qtdefinal do contrato
+        contrato.qtdefinal = total_quantidade
+        contrato.save()
+
+        return True
+    except Exception as e:
+        return False
+
+
+# DASHBOARD
 @csrf_exempt
 def update_dashboard(request):
     if request.method == 'POST':
@@ -2059,7 +2079,7 @@ def update_dashboard(request):
             
             # Conectar ao MongoDB
             client = pymongo.MongoClient('mongodb://localhost:27017/')
-            db = client['nome_do_banco']  # Substitua pelo nome do banco
+            db = client['nome_do_banco']  # Substitua pelo nome da base de dados
             collection = db['dashboard']
 
             # Atualizar a coleção com os novos dados

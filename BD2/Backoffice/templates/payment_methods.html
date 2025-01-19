@@ -117,7 +117,7 @@
                     </div>
                     <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                         <button type="button" class="secondary-button" id="cancelAddPaymentMethod">Cancelar</button>
-                        <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+                        <button type="submit" class="button" style="margin-left: 10px;">Guardar</button>
                     </div>
                 </form>
             </div>
@@ -242,12 +242,12 @@
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert(data.message || 'Erro ao salvar método.');
+                    alert(data.message || 'Erro ao guardar método.');
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                alert('Erro ao salvar método.');
+                alert('Erro ao guardar método.');
             });
     });
 

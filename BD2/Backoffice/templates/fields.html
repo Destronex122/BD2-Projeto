@@ -143,7 +143,7 @@
                     <input type="text" id="campoCoordinates" name="coordenadas" readonly />
                     <div style="margin-top: 10px;">
                         <button id="closeSidebarButton" class="secondary-button" class="close">Cancelar</button>
-                        <button type="submit">Salvar</button>
+                        <button type="submit">Guardar</button>
                     </div>
                 </form>
             </div>
@@ -460,6 +460,7 @@
                 const sidebar = document.getElementById('campoSidebar');
                 sidebar.style.display = 'none'; // Fecha a sidebar
                 sidebar.classList.remove('open');
+                location.reload(); 
             }
 
             // Event listeners para fechar a sidebar
@@ -567,7 +568,7 @@
                         updateTable();
                         renderPaginationButtons();
                     } else {
-                        alert(result.message || 'Erro ao salvar o campo.');
+                        alert(result.message || 'Erro ao guardar o campo.');
                     }
 
                 }

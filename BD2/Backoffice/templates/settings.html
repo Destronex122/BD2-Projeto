@@ -299,20 +299,20 @@
                 body: JSON.stringify({ varietyName: varietyName }),
             })
                 .then(response => {
-                    if (!response.ok) throw new Error('Erro ao salvar a casta.');
+                    if (!response.ok) throw new Error('Erro ao guardar a casta.');
                     return response.json();
                 })
                 .then(data => {
                     if (data.success) {
-                        alert('Casta salva com sucesso!');
+                        alert('Casta guardada com sucesso!');
                         location.reload();
                     } else {
-                        alert(data.message || 'Erro ao salvar a casta.');
+                        alert(data.message || 'Erro ao guardar a casta.');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao salvar a casta.');
+                    alert('Erro ao guardar a casta.');
                 });
         });
 
@@ -515,7 +515,7 @@
                 body: JSON.stringify({ nome: methodName }),
             })
                 .then(response => {
-                    if (!response.ok) throw new Error('Erro ao salvar o método');
+                    if (!response.ok) throw new Error('Erro ao guardar o método');
                     return response.json();
                 })
                 .then(data => {
@@ -523,12 +523,12 @@
                         alert('Método salvo com sucesso!');
                         location.reload();
                     } else {
-                        alert(data.message || 'Erro ao salvar o método.');
+                        alert(data.message || 'Erro ao guardar o método.');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao salvar o método.');
+                    alert('Erro ao guardar o método.');
                 });
         });
 
@@ -686,7 +686,7 @@
                 body: JSON.stringify({ nome: statusName }),
             })
                 .then(response => {
-                    if (!response.ok) throw new Error('Erro ao salvar o estado');
+                    if (!response.ok) throw new Error('Erro ao guardar o estado');
                     return response.json();
                 })
                 .then(data => {
@@ -694,12 +694,12 @@
                         alert('Estado salvo com sucesso!');
                         location.reload();
                     } else {
-                        alert(data.message || 'Erro ao salvar o estado.');
+                        alert(data.message || 'Erro ao guardar o estado.');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao salvar o estado.');
+                    alert('Erro ao guardar o estado.');
                 });
         });
 
@@ -709,7 +709,7 @@
 
                 if (confirm('Tem certeza de que deseja eliminar este estado?')) {
                     fetch(`/delete_approved_status/${approvedId}/`, {
-                        method: 'POST', // Certifique-se de que está usando o método correto
+                        method: 'POST', 
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token }}',
@@ -851,7 +851,7 @@
                 body: JSON.stringify({ nome: statusName }),
             })
                 .then(response => {
-                    if (!response.ok) throw new Error('Erro ao salvar o estado');
+                    if (!response.ok) throw new Error('Erro ao guardar o estado');
                     return response.json();
                 })
                 .then(data => {
@@ -859,12 +859,12 @@
                         alert('Estado salvo com sucesso!');
                         location.reload();
                     } else {
-                        alert(data.message || 'Erro ao salvar o estado.');
+                        alert(data.message || 'Erro ao guardar o estado.');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao salvar o estado.');
+                    alert('Erro ao guardar o estado.');
                 });
         });
 
@@ -874,7 +874,7 @@
 
                 if (confirm('Tem certeza de que deseja eliminar este estado?')) {
                     fetch(`/delete_receipt_status/${statusId}/`, {
-                        method: 'POST', // Certifique-se de que está usando o método correto
+                        method: 'POST', 
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token }}',
@@ -1016,7 +1016,7 @@
                 body: JSON.stringify({ nome: stateName }),
             })
                 .then(response => {
-                    if (!response.ok) throw new Error('Erro ao salvar o estado');
+                    if (!response.ok) throw new Error('Erro ao guardar o estado');
                     return response.json();
                 })
                 .then(data => {
@@ -1024,12 +1024,12 @@
                         alert('Estado salvo com sucesso!');
                         location.reload();
                     } else {
-                        alert(data.message || 'Erro ao salvar o estado.');
+                        alert(data.message || 'Erro ao guardar o estado.');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao salvar o estado.');
+                    alert('Erro ao guardar o estado.');
                 });
         });
 
@@ -1039,7 +1039,7 @@
 
             if (confirm('Tem certeza de que deseja eliminar este estado?')) {
                 fetch(`/delete_transport_state/${stateId}/`, {
-                    method: 'POST', // Certifique-se de que está usando o método correto
+                    method: 'POST', 
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': '{{ csrf_token }}',
@@ -1066,8 +1066,6 @@
     });
     updateTable();
     }
-
-
 
 
 

@@ -287,7 +287,7 @@
 
             <div style="display: flex; justify-content: flex-end;">
                 <button type="button" class="secondary-button" onclick="closeNoteModal()">Cancelar</button>
-                <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+                <button type="submit" class="button" style="margin-left: 10px;">Guardar</button>
             </div>
         </form>
     </div>
@@ -326,7 +326,7 @@
 
                <div style="display:flex; justify-content: flex-end;">
                    <button type="button" class="secondary-button" onclick="closeItemModal()">Cancelar</button>
-                   <button type="submit" class="button" style="margin-left: 10px;">Salvar</button>
+                   <button type="submit" class="button" style="margin-left: 10px;">Guardar</button>
                </div>
        </form>
    </div>
@@ -400,12 +400,12 @@
                 alert(itemId ? 'Item editado com sucesso!' : 'Item adicionado com sucesso!');
                 location.reload();
             } else {
-                alert(data.message || 'Erro ao salvar item.');
+                alert(data.message || 'Erro ao guardar item.');
             }
         })
         .catch(error => {
             console.error('Erro:', error);
-            alert('Erro ao salvar item.');
+            alert('Erro ao guardar item.');
         });
     }
 
@@ -473,7 +473,7 @@
     }
 
 
-    // Função para salvar ou editar a nota
+    // Função para guardar ou editar a nota
     function saveNote() {
         const noteId = document.getElementById('noteId').value;  // ID da nota (para edição)
         const noteText = document.getElementById('noteText').value;  // Novo texto da nota
@@ -503,12 +503,12 @@
                 alert(data.message);
                 location.reload();
             } else {
-                alert(data.message || 'Erro ao salvar nota.');
+                alert(data.message || 'Erro ao guardar nota.');
             }
         })
         .catch(error => {
             console.error('Erro:', error);
-            alert('Erro ao salvar nota.');
+            alert('Erro ao guardar nota.');
         });
     }
 
