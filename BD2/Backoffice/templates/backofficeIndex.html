@@ -6,9 +6,7 @@
 
 {% load static %}
 
-<div>
-    <button id="refresh-button" style="margin-top:20px;">Atualizar Dashboard</button>
-</div>
+
 
 
 
@@ -23,9 +21,9 @@
                                 <div class="numbers">
                                     <!-- Displaying grape production for the current year -->
                                     <p class="text-sm mb-0 text-capitalize font-weight-bold">
-                                        Produção de Uvas do ano corrente (kg)
+                                        Produção de Uvas do ano corrente (ton)
                                     </p>
-                                    <h5 id="producao-uvas" class="font-weight-bolder mb-0">{{ producao_corrente|floatformat:2 }} kg</h5>
+                                    <h5 id="producao-uvas" class="font-weight-bolder mb-0">{{ producao_corrente|floatformat:2 }}</h5>
                                 </div>
                             </div>
                             <div class="col-4 text-end">
@@ -65,7 +63,7 @@
                                 <div class="numbers">
                                     <!-- Displaying deliveries completed for the current year -->
                                     <p class="text-sm mb-0 text-capitalize font-weight-bold">Entregas Realizadas no Ano Corrente</p>
-                                    <h5 class="font-weight-bolder mb-0">120</h5>
+                                    <h5 class="font-weight-bolder mb-0">{{entregas_realizadas}}</h5>
                                 </div>
                             </div>
                             <div class="col-4 text-end">
@@ -123,84 +121,100 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+    // Dados passados pela view do Django
+    var dadosDashboard = {
+        "contratos": {{ contratos|safe }},
+        "castas": {{ castas|safe }},
+        "recibos": {{ recibos|safe }},
+        "uvas_por_ano": {{ uvas_por_ano|safe }}
+    };
+
+    // Extrair dados de contratos
+    var contratosLabels = dadosDashboard.contratos.map(item => item.ano);
+    var contratosData = dadosDashboard.contratos.map(item => item.total_contratos);
+
     // Gráfico de Pedidos de Contrato por Ano
     var ctxContractRequests = document.getElementById("chart-contract-requests").getContext("2d");
     new Chart(ctxContractRequests, {
         type: "line",
         data: {
-            // Labels representing different years
-            labels: ["2018", "2019", "2020", "2021", "2022", "2023"],
+            labels: contratosLabels,
             datasets: [{
                 label: "Pedidos de Contrato",
-                // Data for contract requests per year
-                data: [120, 150, 170, 200, 230, 250],
-                borderColor: "#ff6384", // Line color for the chart
-                fill: false // Line chart without filling the area below the line
+                data: contratosData,
+                borderColor: "#ff6384",
+                fill: false
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false, // Ensures chart adjusts based on container size
+            maintainAspectRatio: false
         }
     });
+
+    // Extrair dados de castas
+    var castasLabels = dadosDashboard.castas.map(item => item.casta_nome);
+    var castasData = dadosDashboard.castas.map(item => item.numero_vinhas);
 
     // Gráfico de Vinhas por Casta
     var ctxVineyardCount = document.getElementById("chart-vineyard-count").getContext("2d");
     new Chart(ctxVineyardCount, {
         type: "pie",
         data: {
-            // Labels representing different grape varieties
-            labels: ["Touriga Nacional", "Arinto", "Syrah", "Fernão Pires", "Baga"],
+            labels: castasLabels,
             datasets: [{
                 label: "Vinhas por Casta",
-                // Count of vineyards by grape variety
-                data: [30, 25, 20, 15, 10],
-                backgroundColor: ["#ff6384", "#36a2eb", "#ffcd56", "#4caf50", "#ff9800"] // Colors for each pie slice
+                data: castasData,
+                backgroundColor: ["#ff6384", "#36a2eb", "#ffcd56", "#4caf50", "#ff9800"]
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false, // Ensures chart adjusts based on container size
+            maintainAspectRatio: false
         }
     });
+
+    // Extrair dados de recibos
+    var recibosLabels = dadosDashboard.recibos.map(item => item.ano);
+    var recibosData = dadosDashboard.recibos.map(item => item.total_recibos);
 
     // Gráfico de Recibos Finalizados por Ano
     var ctxReceipts = document.getElementById("chart-receipts").getContext("2d");
     new Chart(ctxReceipts, {
         type: "bar",
         data: {
-            // Labels representing different years
-            labels: ["2018", "2019", "2020", "2021", "2022", "2023"],
+            labels: recibosLabels,
             datasets: [{
                 label: "Recibos Finalizados",
-                // Data for finalized receipts per year
-                data: [100, 120, 150, 170, 180, 200],
-                backgroundColor: "#4caf50" // Bar color for the chart
+                data: recibosData,
+                backgroundColor: "#4caf50"
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false, // Ensures chart adjusts based on container size
+            maintainAspectRatio: false
         }
     });
+
+    // Extrair dados de produção de uvas
+    var uvasLabels = dadosDashboard.uvas_por_ano.map(item => item.ano);
+    var uvasData = dadosDashboard.uvas_por_ano.map(item => item.total_toneladas);
 
     // Gráfico de Produção de Uvas
     var ctxGrapeProduction = document.getElementById("chart-grape-production").getContext("2d");
     new Chart(ctxGrapeProduction, {
         type: "bar",
         data: {
-            // Labels representing different years of grape production
-            labels: ["2018", "2019", "2020", "2021", "2022", "2023"],
+            labels: uvasLabels,
             datasets: [{
                 label: "Produção de Uvas (ton)",
-                // Grape production data for each year
-                data: [40, 45, 38, 50, 55, 60],
-                backgroundColor: "#ff9800" // Bar color for the chart
+                data: uvasData,
+                backgroundColor: "#ff9800"
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false, // Ensures chart adjusts based on container size
+            maintainAspectRatio: false
         }
     });
 </script>

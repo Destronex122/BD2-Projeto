@@ -59,11 +59,13 @@ def settings(request):
 
 @login_required
 def backofficeIndex(request):
-    # Calcular a produção no PostgreSQL
+    # Conectar ao MongoDB
+    db = client['GrapeFlow']
+
     try:
         with connection.cursor() as cursor:
-            # Executar a função no PostgreSQL
-            cursor.execute("SELECT f_get_producao_uvas_por_ano();")
+            # Executar todas as funções do PostgreSQL e coletar os resultados
+            cursor.execute("SELECT f_get_producao_uvas_corrente();")
             producao = cursor.fetchone()[0]  # JSON retornado pelo PostgreSQL
 
             cursor.execute("SELECT f_get_entregas_pendentes();")
@@ -71,28 +73,56 @@ def backofficeIndex(request):
 
             cursor.execute("SELECT f_get_entregas_realizadas_ano_corrente();")
             entregas_realizadas = cursor.fetchone()[0]  # Valor inteiro retornado pelo PostgreSQL
+
+            cursor.execute("SELECT f_get_castas();")
+            castas = cursor.fetchone()[0]  # JSON retornado pelo PostgreSQL
+
+            cursor.execute("SELECT f_get_contratos_por_ano();")
+            contratos = cursor.fetchone()[0]  # JSON retornado pelo PostgreSQL
+
+            cursor.execute("SELECT f_get_recibos_por_ano();")
+            recibos = cursor.fetchone()[0]  # JSON retornado pelo PostgreSQL
+
+            cursor.execute("SELECT f_get_uvas_por_ano();")
+            uvas = cursor.fetchone()[0]  # JSON retornado pelo PostgreSQL
+            
+            # Criar um JSON consolidado
+            dashboard_data = {
+                "producao_uvas": producao,
+                "entregas_pendentes": entregas,
+                "entregas_realizadas": entregas_realizadas,
+                "castas": castas,
+                "contratos": contratos,
+                "recibos": recibos,
+                "uvas_por_ano": uvas,
+                "data_registo": datetime.now()  # Adicionar a data de registro
+            }
+
     except Exception as e:
-        producao = 0  # Valor padrão em caso de erro
-        entregas = 0
-        entregas_realizadas = 0
-    # Salvar os dados no MongoDB
+        print(f"Erro ao executar as funções do PostgreSQL: {e}")
+        return render(request, 'backofficeIndex.html', {"error": "Erro ao carregar os dados do dashboard."})
+
     try:
-        db = client['GrapeFlow']
-        db.Dashboard.insert_one({
-            "producao_uvas": producao,
-            "entregas_pendentes": entregas,
-            "entregas_realizadas": entregas_realizadas
-        })
+        db.Dashboard.insert_one(dashboard_data)
     except Exception as e:
         print(f"Erro ao salvar no MongoDB: {e}")
 
-    dados=db.dashboard.find_one(
-            sort=[("data de registo", pymongo.DESCENDING)]
-        )
+    # Recuperar os dados mais recentes do MongoDB
+    dados = db.Dashboard.find_one(sort=[("data_registo", pymongo.DESCENDING)])
+
+    
+
     return render(request, 'backofficeIndex.html', {
-        'producao_corrente': producao,
-        'entregas_pendentes': entregas
+        'producao_corrente': dados.get("producao_uvas"),
+        'entregas_pendentes': dados.get("entregas_pendentes"),
+        'entregas_realizadas': dados.get("entregas_realizadas"),
+        'castas': dados.get("castas"),
+        'contratos': dados.get("contratos"),
+        'recibos': dados.get("recibos"),
+        'uvas_por_ano': dados.get("uvas_por_ano"),
+        'data_registo': dados.get("data_registo")
     })
+
 
 @login_required
 def userdetail(request, userid):
