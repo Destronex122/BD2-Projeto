@@ -1844,6 +1844,9 @@ def delete_approved_status(request, approvedId):
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
+
+
+# VINHAS
 def load_castas(request):
     castas = Castas.objects.all().values('castaid', 'nome')
     return JsonResponse(list(castas), safe=False)
@@ -1896,8 +1899,6 @@ def create_vineyard(request):
     return JsonResponse({'success': False, 'error': 'Método não suportado.'})
 
     
-
-    
 @csrf_exempt
 def delete_vineyard(request, vinhaid):
     if request.method == 'POST':
@@ -1910,86 +1911,6 @@ def delete_vineyard(request, vinhaid):
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Método não suportado.'})
 
-
-@csrf_exempt
-def create_recibo(request):
-    if request.method == 'POST':
-        try:
-            # Parse JSON do corpo do pedido
-            data = json.loads(request.body)
-
-            # Extrai e valida dados
-            idcontrato = int(data.get('idcontrato', 0)) or None
-            datainicio = data.get('datainicio')
-            precofinal = float(data.get('precofinal', 0)) or None
-            colheitaid = int(data.get('colheitaid', 0)) or None
-            metodopagamentoid = int(data.get('metodopagamentoid', 0)) or None
-            estadopagamentoid = int(data.get('estadopagamentoid', 0)) or None
-            isactive = bool(data.get('isactive', True))
-
-            # Executa a procedure na base de dados
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "CALL sp_Recibo_Create(%s, %s, %s, %s, %s, %s, %s)",
-                    [idcontrato, datainicio, precofinal, colheitaid, metodopagamentoid, estadopagamentoid, isactive]
-                )
-
-            return JsonResponse({'success': True, 'message': 'Recibo criado com sucesso!'})
-
-        except Exception as e:
-            # Retorna mensagem de erro
-            return JsonResponse({'success': False, 'message': f'Erro ao criar recibo: {str(e)}'})
-
-    return JsonResponse({'success': False, 'message': 'Método inválido'})
-
-@csrf_exempt
-def deactivate_recibo(request, recibo_id):
-    if request.method == 'POST':
-        try:
-            # Atualiza o recibo para isactive = false
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "UPDATE recibos SET isactive = false WHERE reciboid = %s AND isactive = true",
-                    [recibo_id]
-                )
-                
-            return JsonResponse({'success': True, 'message': 'Recibo desativado com sucesso!'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erro ao desativar recibo: {str(e)}'})
-
-    return JsonResponse({'success': False, 'message': 'Método inválido'})
-
-
-
-def update_recibo_status(request, recibo_id):
-    # Verificar se a requisição é POST
-    if request.method == "POST":
-        recibo = get_object_or_404(Recibos, pk=recibo_id)
-
-        # Verificar se o recibo está atualmente 'Não Pago' antes de alterar para 'Pago'
-        if recibo.estadoid.nome == 'Não Pago':
-            recibo.estadoid = get_object_or_404(Estadosrecibo, nome='Pago')
-            recibo.save()
-            return JsonResponse({'success': True})
-        else:
-            return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
-    return JsonResponse({'success': False, 'message': 'Método inválido.'})
-
-def update_contrato_qtdefinal(idcontrato):
-    try:
-        # Obtém o contrato pelo id
-        contrato = Contratos.objects.get(contratoid=idcontrato)
-        
-        # Soma as quantidades de todos os recibos ativos associados ao contrato
-        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
-        
-        # Atualiza o campo qtdefinal do contrato
-        contrato.qtdefinal = total_quantidade
-        contrato.save()
-
-        return True
-    except Exception as e:
-        return False
 
 def get_vineyard(request, vinha_id):
     vinha = get_object_or_404(Vinhas, vinhaid=vinha_id)
@@ -2034,6 +1955,89 @@ def update_vineyard(request):
         return JsonResponse({"success": True, "message": "Vinha atualizada com sucesso!"})
     return JsonResponse({"success": False, "error": "Método inválido."})
 
+# RECIBO
+@csrf_exempt
+def create_recibo(request):
+    if request.method == 'POST':
+        try:
+            # Parse JSON do corpo do pedido
+            data = json.loads(request.body)
+
+            # Extrai e valida dados
+            idcontrato = int(data.get('idcontrato', 0)) or None
+            datainicio = data.get('datainicio')
+            precofinal = float(data.get('precofinal', 0)) or None
+            colheitaid = int(data.get('colheitaid', 0)) or None
+            metodopagamentoid = int(data.get('metodopagamentoid', 0)) or None
+            estadopagamentoid = int(data.get('estadopagamentoid', 0)) or None
+            isactive = bool(data.get('isactive', True))
+
+            # Executa a procedure na base de dados
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CALL sp_Recibo_Create(%s, %s, %s, %s, %s, %s, %s)",
+                    [idcontrato, datainicio, precofinal, colheitaid, metodopagamentoid, estadopagamentoid, isactive]
+                )
+
+            return JsonResponse({'success': True, 'message': 'Recibo criado com sucesso!'})
+
+        except Exception as e:
+            # Retorna mensagem de erro
+            return JsonResponse({'success': False, 'message': f'Erro ao criar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+
+@csrf_exempt
+def deactivate_recibo(request, recibo_id):
+    if request.method == 'POST':
+        try:
+            # Atualiza o recibo para isactive = false
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE recibos SET isactive = false WHERE reciboid = %s AND isactive = true",
+                    [recibo_id]
+                )
+                
+            return JsonResponse({'success': True, 'message': 'Recibo desativado com sucesso!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Erro ao desativar recibo: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Método inválido'})
+
+
+def update_recibo_status(request, recibo_id):
+    # Verificar se a requisição é POST
+    if request.method == "POST":
+        recibo = get_object_or_404(Recibos, pk=recibo_id)
+
+        # Verificar se o recibo está atualmente 'Não Pago' antes de alterar para 'Pago'
+        if recibo.estadoid.nome == 'Não Pago':
+            recibo.estadoid = get_object_or_404(Estadosrecibo, nome='Pago')
+            recibo.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
+    return JsonResponse({'success': False, 'message': 'Método inválido.'})
+
+def update_contrato_qtdefinal(idcontrato):
+    try:
+        # Obtém o contrato pelo id
+        contrato = Contratos.objects.get(contratoid=idcontrato)
+        
+        # Soma as quantidades de todos os recibos ativos associados ao contrato
+        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
+        
+        # Atualiza o campo qtdefinal do contrato
+        contrato.qtdefinal = total_quantidade
+        contrato.save()
+
+        return True
+    except Exception as e:
+        return False
+
+
+# DASHBOARD
 @csrf_exempt
 def update_dashboard(request):
     if request.method == 'POST':
