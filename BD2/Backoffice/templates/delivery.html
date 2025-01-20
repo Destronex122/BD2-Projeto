@@ -79,13 +79,15 @@
     <div class="popup-overlay" id="addTransportModal" style="display: none;">
         <div class="popup-content">
             <div class="popup-header">
-                <h5>Adicionar transporte</h5>
+                <h5 id="modal-title">Adicionar Transporte</h5>
                 <span class="modal-close" onclick="closeAddTransportModal()">&times;</span>
             </div>
             <br>
-            <form method="post"> 
+            <form method="post" id="transportForm"> 
                 {% csrf_token %}
-                <input type="hidden" name="action" value="add_transport"> 
+                <input type="hidden" name="action" id="form-action" value="add_transport"> <!-- Determina ação -->
+                <input type="hidden" name="transporte_id" id="transporteId" value=""> <!-- Usado para edição -->
+    
                 <div class="form-group">
                     <label for="nome">Nome:</label>
                     <input type="text" id="nome" name="nome" class="form-control" required>
@@ -140,13 +142,22 @@
         </thead>
         <tbody>
             {% for transporte in transportes %}
-            <tr data-idtransporte="{{ transporte.idtransporte }}">
+            <tr data-idtransporte="{{ transporte.idtransporte }}" 
+            data-nome="{{ transporte.nome }}" 
+            data-morada="{{ transporte.morada }}" 
+            data-data="{{ transporte.data|date:'Y-m-d' }}" 
+            data-precotransporte="{{ transporte.precotransporte }}" 
+            data-estadoid="{{ transporte.estadoid.idestado }}" 
+            data-reciboid="{{ transporte.reciboid.reciboid }}">
                 <td>{{ transporte.idtransporte }}</td>
                 <td>{{ transporte.morada }}</td>
                 <td>{{ transporte.data|date:'Y-m-d' }}</td>
                 <td>{{ transporte.precotransporte }}</td>
                 <td>{{ transporte.estadoid.nome }}</td>
                 <td>
+                    <button type="button" class="edit-btn" onclick="event.stopPropagation(); openEditTransportModal(this)">
+                        <img src="{% static 'edit.png' %}" alt="Editar" title="Editar transporte" style="height: 20px; width: auto;">
+                    </button>
                     <form method="post" class="delete-form" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="deleteTransport" value="{{ transporte.idtransporte }}">
@@ -166,13 +177,51 @@
 
     <script>
         // Modal handlers
-        function openAddTransportModal() {
-            document.getElementById('addTransportModal').style.display = 'block';
-        }
+        function openEditTransportModal(button) {
+    // Obtém a linha pai do botão clicado
+    const row = button.closest('tr');
 
-        function closeAddTransportModal() {
-            document.getElementById('addTransportModal').style.display = 'none';
-        }
+    // Extrai os dados armazenados nos atributos data-*
+    const transporteId = row.dataset.idtransporte;
+    const nome = row.dataset.nome;
+    const morada = row.dataset.morada;
+    const data = row.dataset.data;
+    const precoTransporte = row.dataset.precotransporte;
+    const estadoId = row.dataset.estadoid;
+    const reciboId = row.dataset.reciboid;
+
+    // Atualizar o título do modal
+    document.getElementById('modal-title').textContent = 'Editar Transporte';
+
+    // Preencher os campos do formulário com os dados extraídos
+    document.getElementById('form-action').value = 'edit_transport';
+    document.getElementById('transporteId').value = transporteId;
+    document.getElementById('nome').value = nome;
+    document.getElementById('morada').value = morada;
+    document.getElementById('data').value = data;
+    document.getElementById('precoTransporte').value = precoTransporte;
+    document.getElementById('estadoId').value = estadoId;
+    document.getElementById('reciboId').value = reciboId;
+
+    // Abrir o modal
+    document.getElementById('addTransportModal').style.display = 'block';
+}
+    function openAddTransportModal() {
+        // Atualizar o título do modal
+        document.getElementById('modal-title').textContent = 'Adicionar Transporte';
+
+        // Limpar o formulário
+        document.getElementById('form-action').value = 'add_transport';
+        document.getElementById('transporteId').value = '';
+        document.getElementById('transportForm').reset();
+
+        // Abrir o modal
+        document.getElementById('addTransportModal').style.display = 'block';
+    }
+
+    function closeAddTransportModal() {
+        document.getElementById('addTransportModal').style.display = 'none';
+    }
 
         // Redirecionar ao clicar na linha
         document.getElementById('transportTable').addEventListener('click', function(event) {
