@@ -266,6 +266,7 @@ def delivery(request):
 @login_required
 def deliverydetail(request, idtransporte):
     transporte = get_object_or_404(Transportes, idtransporte=idtransporte)  # Corrigido para idtransporte
+    
     return render(request, 'deliverydetail.html', {'transporte': transporte})  # Variável 'transporte' para o template
 
 
