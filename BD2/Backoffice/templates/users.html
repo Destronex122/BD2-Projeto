@@ -156,10 +156,17 @@
                     <label for="newUserCargo">Cargo:</label>
                     <select id="newUserCargo" class="form-control" required>
                         {% for cargo in cargos %}
-                        <option value="{{ cargo.cargoid }}">{{ cargo.nome }}</option>
+                            <!-- Se a role for "Gestor", não mostre "Admin" -->
+                            {% if request.session.user_role == "Gestor" and cargo.nome != "Admin" %}
+                                <option value="{{ cargo.cargoid }}">{{ cargo.nome }}</option>
+                            {% elif request.session.user_role != "Gestor" %}
+                                <!-- Para outras roles, mostre todos os cargos -->
+                                <option value="{{ cargo.cargoid }}">{{ cargo.nome }}</option>
+                            {% endif %}
                         {% endfor %}
                     </select>
                 </div>
+                
                 <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                     <button type="button" onclick="closeAddUserModal()" class="secondary-button">Cancelar</button>
                     <button type="submit" class="button" style="margin-left: 10px;">Adicionar</button>

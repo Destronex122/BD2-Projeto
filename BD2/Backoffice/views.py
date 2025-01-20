@@ -45,7 +45,15 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            login(request, user)
+            login(request, user)  # Faz o login do usuário
+
+            # Recupera a role do usuário e armazena na sessão
+            try:
+                custom_user = Users.objects.get(username=user.username)  # Ajuste se necessário
+                request.session['user_role'] = custom_user.cargoid.nome if custom_user.cargoid else None
+            except Users.DoesNotExist:
+                request.session['user_role'] = None
+
             return redirect('backofficeIndex')
         else:
             messages.error(request, 'Utilizador ou password incorretos!')  # Adiciona uma mensagem de erro
@@ -224,31 +232,62 @@ def delivery(request):
     if filter_state:
         transporte = transporte.filter(estadoid__nome__icontains=filter_state)
 
-    # Adição de Transporte
-    if request.method == 'POST' and request.POST.get('action') == 'add_transport':
-        # Captura os dados do formulário
-        nome = request.POST['nome']
-        morada = request.POST['morada']
-        data = request.POST['data']
-        preco_transporte = request.POST['precoTransporte']
-        estado_id = request.POST['estadoId']
-        recibo_id = request.POST['reciboId']
-        print(f"--------------------------------------------------------Estado ID: {estado_id}, Recibo ID: {recibo_id}--------------------------------------------------------------------")
+    if request.method == 'POST':
+        action = request.POST.get('action')
 
-        # Chamada ao procedimento armazenado
+        if action == 'add_transport':
+            # Captura os dados do formulário
+            nome = request.POST.get('nome')
+            morada = request.POST.get('morada')
+            data = request.POST.get('data')
+            preco_transporte = request.POST.get('precoTransporte')
+            estado_id = request.POST.get('estadoId')
+            recibo_id = request.POST.get('reciboId')
+
+            # Chama o procedimento para adicionar transporte
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    CALL sp_inserir_transport(%s, %s, %s, %s, %s, %s)
+                    """,
+                    [morada, data, preco_transporte, estado_id, recibo_id, nome]
+                )
         
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                CALL sp_inserir_transport(%s, %s, %s, %s, %s, %s)
-                """,
-                [morada, data, preco_transporte, estado_id, recibo_id, nome]
-            )
+        elif action == 'edit_transport':
+            # Captura os dados do formulário para edição
+            transporte_id = request.POST.get('transporte_id')
+            nome = request.POST.get('nome')
+            morada = request.POST.get('morada')
+            data = request.POST.get('data')
+            preco_transporte = request.POST.get('precoTransporte')
+            estado_id = request.POST.get('estadoId')
+            recibo_id = request.POST.get('reciboId')
+
+            # Chama o procedimento para atualizar transporte
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    CALL sp_atualizar_transporte(%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    [transporte_id, nome, morada, data, preco_transporte, estado_id, recibo_id]
+                )
+        
+        elif action == 'delete_transport':
+            # Captura o ID do transporte para exclusão
+            transporte_id = request.POST.get('transporte_id')
+
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    CALL sp_delete_transporte(%s)
+                    """,
+                    [transporte_id]
+                )
         
         # Redireciona para evitar resubmissão do formulário
         return redirect('delivery')
 
-    # Obter estados para o formulário de adição
+    # Obter estados e recibos para o formulário
     estados = Estadostransporte.objects.all()
     recibos = Recibos.objects.all()
 
@@ -261,7 +300,8 @@ def delivery(request):
             'filterState': filter_state,
         },
         'estados': estados, 
-})
+    })
+
 
 @login_required
 def deliverydetail(request, idtransporte):
@@ -1023,6 +1063,8 @@ def delete_note_request(request, notaid):
 
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
+
+# CONTRATO
 @login_required
 def contractdetail(request, contratoid):
     contrato = get_object_or_404(Contratos, contratoid=contratoid)
@@ -1045,9 +1087,7 @@ def contractdetail(request, contratoid):
     })
 
 
-
-
-
+# PEDIDOS
 @login_required
 def request(request):
     # Filters
@@ -2131,3 +2171,6 @@ def buscar_producao_uvas(request):
         return JsonResponse({"success": True, "producao": producao['producao']})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+    
+
+

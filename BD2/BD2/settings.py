@@ -87,7 +87,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'BD2.core.admin_status',
-                'BD2.core.GetFields',
+                'BD2.core.GetFields'
             ],
         },
     },
@@ -95,6 +95,8 @@ TEMPLATES = [
 
 
 WSGI_APPLICATION = 'BD2.wsgi.application'
+
+
 
 
 # Database

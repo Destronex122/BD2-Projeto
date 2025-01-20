@@ -27,74 +27,95 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
+                    <!-- Links comuns a todos -->
                     <li class="nav-item active">
                         <a class="nav-link" href="/backoffice/home">Início</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/backoffice/vineyards">Vinhas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/backoffice/harvest">Colheitas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/backoffice/delivery">Transporte</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/backoffice/request">Pedidos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/backoffice/contracts">Contratos</a>
-                    </li>
+
+                    <!-- Cliente: vê apenas Vinhas e Colheitas -->
+                    {% if request.session.user_role == "Cliente" %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/vineyards">Vinhas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/harvest">Colheitas</a>
+                        </li>
+                    {% endif %}
+
+                    <!-- Operador: vê apenas Colheitas -->
+                    {% if request.session.user_role == "Operador" %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/harvest">Colheitas</a>
+                        </li>
+                    {% endif %}
+
+                    <!-- Gestor: vê tudo, exceto Utilizadores e Gerir Campos -->
+                    {% if request.session.user_role == "Gestor" %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/vineyards">Vinhas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/harvest">Colheitas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/delivery">Transporte</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/request">Pedidos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/contracts">Contratos</a>
+                        </li>
+                    {% endif %}
+
+                    <!-- Admin: vê tudo -->
+                    {% if request.session.user_role == "Admin" %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/vineyards">Vinhas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/harvest">Colheitas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/delivery">Transporte</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/request">Pedidos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/contracts">Contratos</a>
+                        </li>
+                    {% endif %}
                 </ul>
+
                 <div class="ml-auto d-flex align-items-center"> <!-- Alinhamento à direita com ícone de logout -->
-                    <!-- Dropdown do utilizador -->
                     <div class="dropdown">
                         <div class="dropdown-toggle" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <img src="{% static 'userIcon.png' %}" alt="Utilizador" style="height: 40px; width: auto; cursor: pointer;">
                         </div>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-                           <!-- <a class="dropdown-item" href="{% url 'userdetail' request.user.id %}">Perfil</a>-->
-                            {% if is_admin %}
+                            <!-- Links adicionais no dropdown para Admin -->
+                            {% if request.session.user_role == "Admin" or request.session.user_role == "Gestor" %}
                             <a class="dropdown-item" href="{% url 'users' %}">Utilizadores</a>
-                            <a class="dropdown-item" href="{% url 'fields' %}">Gerir campos</a>
-                            <a class="dropdown-item" href="{% url 'settings' %}">Configurações</a>
+                            <a class="dropdown-item" href="{% url 'fields' %}">Gerir Campos</a>
                             {% endif %}
+
+                            {% if request.session.user_role == "Admin" %}
+                             <a class="dropdown-item" href="{% url 'settings' %}">Configurações</a>
+                            {% endif %}
+
                             <div class="dropdown-divider"></div>
                             <form action="{% url 'logout' %}" method="post" style="display: inline;">
                                 {% csrf_token %}
                                 <button type="submit" class="dropdown-item">Terminar sessão</button>
                             </form>
                         </div>
-                        <style>
-                            .dropdown-item{
-                                display:block;
-                                width:100%;
-                                clear:both;
-                                font-weight:400;
-                                color:#212529;
-                                text-align:inherit;
-                                white-space:nowrap;
-                                background-color:transparent;
-                                border:0
-                            }
-                            .dropdown-item:focus,.dropdown-item:hover{
-                                color:#16181b;
-                                text-decoration:none;
-                                background-color:#e9e8e2 ;
-                            }
-                            .dropdown-item.active,.dropdown-item:active{
-                                color:#fff;
-                                text-decoration:none;
-                                background-color: #616646;
-                            }
-                            
-                        </style>
-
                     </div>
                 </div>
             </div>
         </nav>
     {% endif %}
+
     <div class="container" style="width: 100vh;">{% block content %} {% endblock %}</div>
 
     <!-- Scripts necessários -->
