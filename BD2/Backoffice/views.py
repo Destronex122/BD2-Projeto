@@ -318,11 +318,14 @@ def harvest(request):
     filter_periodo_fim = request.GET.get('filterPeriodoFim', None)
     filter_estado = request.GET.get('filterIsActive', 'all') 
     filter_terminado = request.GET.get('filterTerminou', 'all')
-
+    filter_campo = request.GET.get('filterCampo', '').strip()
+    
     # Queryset de colheitas
-    colheitas = Colheitas.objects.select_related('vinhaid', 'periodoid').all()
+    colheitas = Colheitas.objects.select_related('vinhaid', 'vinhaid__campoid', 'periodoid').all()
 
     # Aplicar filtros
+    if filter_campo:
+        colheitas = colheitas.filter(vinhaid__campoid__nome__icontains=filter_campo)
     if filter_combined:
         colheitas = colheitas.filter(
             Q(vinhaid__nome__icontains=filter_combined)  # Nome da vinha
@@ -349,7 +352,7 @@ def harvest(request):
     total_pages = (total_records + rows_per_page - 1) // rows_per_page  # Calcula o total de páginas
     page_number = int(request.GET.get('page', 1))  # Obtém o número da página (padrão é 1)
 
-    # Queryset de vinhas para o dropdown
+    # Queryset de vinhas e campos para dropdown
     vinhas = Vinhas.objects.filter(isactive=True)
 
     # Adicionar informações para exibição
@@ -367,6 +370,7 @@ def harvest(request):
             'colheitaid': colheita.colheitaid,
             'vinha_nome': colheita.vinhaid.nome if colheita.vinhaid else "Sem Vinha",
             'vinha_id': colheita.vinhaid.vinhaid if colheita.vinhaid else None,
+            'campo_nome': colheita.vinhaid.campoid.nome if colheita.vinhaid and colheita.vinhaid.campoid else "Sem Campo",
             'peso_total': colheita.pesototal,
             'preco_por_tonelada': colheita.precoportonelada,
             'data_ultima_pesagem': colheita.data_ultima_pesagem or 'Sem pesagens',
@@ -390,6 +394,7 @@ def harvest(request):
             'has_next': page_number < total_pages,
         },
         'filters': {
+            'filterCampo': filter_campo,
             'combinedFilter': filter_combined,
             'filterPeriodoInicio': filter_periodo_inicio,
             'filterPeriodoFim': filter_periodo_fim,
@@ -397,6 +402,7 @@ def harvest(request):
             'filterTerminou': filter_terminado,
         }
     })
+
 
 def validate_date(field_value, field_name):
                 if not field_value or field_value.strip() == "":

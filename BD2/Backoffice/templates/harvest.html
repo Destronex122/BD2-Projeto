@@ -101,6 +101,10 @@
         <form method="get" id="filterForm" action="{% url 'harvest' %}">
             <div style="display: flex; gap: 15px;">
                 <div style="flex: 1; min-width: 200px;">
+                    <label for="filterCampo">Campo:</label>
+                    <input type="text" id="filterCampo" name="filterCampo" class="form-control" value="{{ request.GET.filterCampo|default:'' }}" placeholder="Pesquisar por campo">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
                     <label for="combinedFilter">Vinha:</label>
                     <input type="text" id="combinedFilter" name="combinedFilter" class="form-control" value="{{ request.GET.combinedFilter|default:'' }}" placeholder="Pesquisar por vinha">
                 </div>
@@ -140,10 +144,11 @@
     <table id="harvestTable" class="table table-bordered">
         <thead>
             <tr>
+                <th>Campo</th>
                 <th>Vinha</th>
                 <th>Peso total (kg)</th>
                 <th>Preço por tonelada (€)</th>
-                <th>Data da última pesagem</th>
+                <th>Última pesagem</th>
                 <th>Período</th>
                 <th>Previsão do fim da colheita</th>
                 <th>Terminada</th>
@@ -162,6 +167,7 @@
                 data-previsao-fim="{{ colheita.previsao_fim_colheita|date:'Y-m-d' }}"
                 data-terminado="{{ colheita.terminado|yesno:'true,false' }}" 
                 data-isactive="{{ colheita.isactive_cleaned|yesno:'true,false' }}">
+                <td>{{ colheita.campo_nome }}</td>
                 <td>{{ colheita.vinha_nome }}</td>
                 <td>{{ colheita.peso_total }}</td>
                 <td>{{ colheita.preco_por_tonelada }}</td>
@@ -214,7 +220,7 @@
         <form id="addHarvestForm" method="post" onsubmit="submitHarvest(event)">
             {% csrf_token %}
             <input type="hidden" id="harvestId" name="harvestId" value="{{ harvest.id }}">
-        
+
             <!-- Campo para a vinha -->
             <div class="form-group">
                 <label for="vinhaId">Vinha</label>
@@ -454,6 +460,7 @@
 
         // Função de filtro
         function applyFilter() {
+            const campoFilter = document.getElementById('filterCampo').value.toLowerCase().trim();
             const combinedFilter = document.getElementById('combinedFilter').value.toLowerCase().trim();
             const filterPeriodoInicio = document.getElementById('filterPeriodoInicio').value;
             const filterPeriodoFim = document.getElementById('filterPeriodoFim').value;
@@ -461,12 +468,14 @@
             const filterTerminou = document.getElementById('filterTerminou').value;
 
             filteredRows = allRows.filter(row => {
-                const vinhaName = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                const campoName = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                const vinhaName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
                 const isActive = row.getAttribute('data-isactive') === 'true'; 
                 const dataInicio = row.getAttribute('data-periodo-inicio');
                 const dataFim = row.getAttribute('data-periodo-fim');
                 const isTerminado = row.getAttribute('data-terminado') === 'true';
 
+                const matchesCamposFilter = !campoFilter || campoName.includes(campoFilter);
                 const matchesCombinedFilter = !combinedFilter || vinhaName.includes(combinedFilter);
                 const matchesPeriodoInicio = !filterPeriodoInicio || (dataInicio && dataInicio >= filterPeriodoInicio);
                 const matchesPeriodoFim = !filterPeriodoFim || (dataFim && dataFim <= filterPeriodoFim);
@@ -479,7 +488,7 @@
                     (filterTerminou === 'yes' && isTerminado) ||
                     (filterTerminou === 'no' && !isTerminado);
                 
-                return matchesCombinedFilter  && matchesPeriodoInicio  && matchesPeriodoFim  && matchesEstado && matchesTerminou;
+                return matchesCamposFilter && matchesCombinedFilter  && matchesPeriodoInicio  && matchesPeriodoFim  && matchesEstado && matchesTerminou;
             });
             currentPage = 1;
             // Atualiza a paginação após o filtro
@@ -521,7 +530,7 @@
        // Função para limpar filtros
         document.getElementById('clear-filter').addEventListener('click', function (event) {
             event.preventDefault(); 
-
+            document.getElementById('filterCampo').value = ''
             document.getElementById('combinedFilter').value = ''; 
             document.getElementById('filterPeriodoInicio').value = ''; 
             document.getElementById('filterPeriodoFim').value = ''; 
@@ -541,6 +550,7 @@
 
         updateTable();
     });
+
 </script>
 
 
