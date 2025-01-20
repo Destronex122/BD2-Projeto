@@ -225,17 +225,18 @@ def delivery(request):
         transporte = transporte.filter(estadoid__nome__icontains=filter_state)
 
     if request.method == 'POST':
-        action = request.POST.get('action', '')
-        
-        # Adição de Transporte
-        if action == 'add_transport':
-            nome = request.POST['nome']
-            morada = request.POST['morada']
-            data = request.POST['data']
-            preco_transporte = request.POST['precoTransporte']
-            estado_id = request.POST['estadoId']
-            recibo_id = request.POST['reciboId']
+        action = request.POST.get('action')
 
+        if action == 'add_transport':
+            # Captura os dados do formulário
+            nome = request.POST.get('nome')
+            morada = request.POST.get('morada')
+            data = request.POST.get('data')
+            preco_transporte = request.POST.get('precoTransporte')
+            estado_id = request.POST.get('estadoId')
+            recibo_id = request.POST.get('reciboId')
+
+            # Chama o procedimento para adicionar transporte
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
@@ -243,34 +244,42 @@ def delivery(request):
                     """,
                     [morada, data, preco_transporte, estado_id, recibo_id, nome]
                 )
-            return redirect('delivery')
         
-        # Edição de Transporte
         elif action == 'edit_transport':
-            transporte_id = request.POST['transporte_id']
-            nome = request.POST['nome']
-            morada = request.POST['morada']
-            data = request.POST['data']
-            preco_transporte = request.POST['precoTransporte']
-            estado_id = request.POST['estadoId']
-            recibo_id = request.POST['reciboId']
+            # Captura os dados do formulário para edição
+            transporte_id = request.POST.get('transporte_id')
+            nome = request.POST.get('nome')
+            morada = request.POST.get('morada')
+            data = request.POST.get('data')
+            preco_transporte = request.POST.get('precoTransporte')
+            estado_id = request.POST.get('estadoId')
+            recibo_id = request.POST.get('reciboId')
+
+            # Chama o procedimento para atualizar transporte
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    CALL sp_atualizar_transporte(%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    [transporte_id, nome, morada, data, preco_transporte, estado_id, recibo_id]
+                )
+        
+        elif action == 'delete_transport':
+            # Captura o ID do transporte para exclusão
+            transporte_id = request.POST.get('transporte_id')
 
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    CALL sp_atualizar_transporte(%s, %s,%s,%s,%s,%s,%s)
+                    CALL sp_delete_transporte(%s)
                     """,
-                    [transporte_id, 
-                     nome,
-                     morada,
-                     data,
-                     preco_transporte,
-                     estado_id,
-                     recibo_id]
+                    [transporte_id]
                 )
-            return redirect('delivery')
+        
+        # Redireciona para evitar resubmissão do formulário
+        return redirect('delivery')
 
-    # Obter estados e recibos
+    # Obter estados e recibos para o formulário
     estados = Estadostransporte.objects.all()
     recibos = Recibos.objects.all()
 
@@ -284,6 +293,7 @@ def delivery(request):
         },
         'estados': estados, 
     })
+
 
 @login_required
 def deliverydetail(request, idtransporte):

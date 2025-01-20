@@ -159,12 +159,14 @@
                         <img src="{% static 'edit.png' %}" alt="Editar" title="Editar transporte" style="height: 20px; width: auto;">
                     </button>
                     <form method="post" class="delete-form" style="display:inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="deleteTransport" value="{{ transporte.idtransporte }}">
-                        <button type="submit" class="delete-btn">
-                            <img src="{% static 'delete.png' %}" title="Eliminar transporte" alt="delete" style="height: 25px; width: auto;">
-                        </button>
-                    </form>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_transport">
+                            <input type="hidden" name="transporte_id" value="{{ transporte.idtransporte }}">
+                            <button type="submit" class="delete-btn">
+                                <img src="{% static 'delete.png' %}" alt="Delete" title="Apagar transporte" style="height: 20px; width: auto;">
+                            </button>
+                        </form>
                 </td>
             </tr>
             {% empty %}
@@ -206,6 +208,12 @@
     // Abrir o modal
     document.getElementById('addTransportModal').style.display = 'block';
 }
+    function DeleteTransport(){
+        var r = confirm("Deseja realmente excluir o transporte?");
+        if (r == true) {
+            document.getElementById('deleteTransport').submit();
+            }
+    }
     function openAddTransportModal() {
         // Atualizar o título do modal
         document.getElementById('modal-title').textContent = 'Adicionar Transporte';
