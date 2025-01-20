@@ -86,7 +86,7 @@
     </div>
 </div>
 
-<!--
+
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTI6TEnnZbJlgzAqvkiYA0yxcMErcFyPg&language=pt"></script>
 
 <br>
@@ -111,9 +111,8 @@
         calculateAndDisplayRoute(directionsService, directionsRenderer);
 
         function calculateAndDisplayRoute(directionsService, directionsRenderer) {
-            alert("oi");
             const start = "Cabaços";
-            const end = "Viseu";
+            const end = "{{ transporte.morada  }}"
           
             directionsService
               .route({
@@ -133,7 +132,7 @@
 
     function calcularRota() {
         const origem = "Vinha da Encomenda, Vila Real";
-        const destino = document.getElementById("destino").textContent;
+        const destino = "ponte dom luís i, Porto";
 
         if (origem && destino) {
             const request = {
@@ -157,7 +156,7 @@
 
     window.onload = initMap;
 </script>
--->
+
 </div>
 
 {% endblock %}
