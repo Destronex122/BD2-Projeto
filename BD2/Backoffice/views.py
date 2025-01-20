@@ -45,7 +45,15 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            login(request, user)
+            login(request, user)  # Faz o login do usuário
+
+            # Recupera a role do usuário e armazena na sessão
+            try:
+                custom_user = Users.objects.get(username=user.username)  # Ajuste se necessário
+                request.session['user_role'] = custom_user.cargoid.nome if custom_user.cargoid else None
+            except Users.DoesNotExist:
+                request.session['user_role'] = None
+
             return redirect('backofficeIndex')
         else:
             messages.error(request, 'Utilizador ou password incorretos!')  # Adiciona uma mensagem de erro
@@ -2130,3 +2138,6 @@ def buscar_producao_uvas(request):
         return JsonResponse({"success": True, "producao": producao['producao']})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+    
+
+
