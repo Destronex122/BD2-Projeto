@@ -254,6 +254,7 @@
         
         // Função para carregar as vinhas com base no ID da quinta selecionada
         function loadVineyards(vineyardId) {
+            console.log(vineyardId);
             const url = `/backoffice/load_vineyards/?vineyard=${vineyardId}`;
         
             fetch(url, { method: 'GET' })
