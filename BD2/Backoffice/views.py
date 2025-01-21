@@ -156,6 +156,8 @@ def update_user_detail(userid, nome, email, telefone, endereco, postalcode, city
     with connection.cursor() as cursor:
         cursor.callproc("EditUserDetail", [userid, nome, email, telefone, endereco, postalcode, city, cargoid, campoid])
 
+
+# USER
 @login_required
 def users(request):
     #Filtros
