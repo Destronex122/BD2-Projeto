@@ -230,7 +230,12 @@ class Castas(models.Model):
 
 
 class Clientes(models.Model):
-    clienteid = models.OneToOneField('Users', models.DO_NOTHING, db_column='clienteid', primary_key=True)
+    clienteid = models.OneToOneField(
+        'Users', 
+        on_delete=models.CASCADE, 
+        db_column='clienteid', 
+        primary_key=True
+    )
     isempresa = models.BooleanField()
     nif = models.IntegerField()
     contacto = models.TextField()

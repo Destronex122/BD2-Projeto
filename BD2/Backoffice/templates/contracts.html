@@ -96,7 +96,7 @@
                 <label for="clienteId">Cliente:</label>
                 <select id="clienteId" name="clienteId" class="form-control" required>
                     {% for cliente in clientes %}
-                    <option value="{{ cliente.clienteid.userid }}">{{ cliente.nif }} - {{ cliente.user.nome }}</option>
+                    <option value="{{ cliente.clienteid.userid }}">{{ cliente.nif }} - {{ cliente.clienteid.nome }}</option>
                     {% endfor %}
                 </select>
             </div>

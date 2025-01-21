@@ -24,6 +24,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_protect
 from datetime import datetime
 import pymongo
+import pandas as pd
 
 
 # Conectar ao MongoDB
@@ -306,8 +307,12 @@ def delivery(request):
 @login_required
 def deliverydetail(request, idtransporte):
     transporte = get_object_or_404(Transportes, idtransporte=idtransporte)  # Corrigido para idtransporte
-    
-    return render(request, 'deliverydetail.html', {'transporte': transporte})  # Variável 'transporte' para o template
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT  f_get_origem(%s)", [idtransporte])
+        destino = cursor.fetchone()
+
+
+    return render(request, 'deliverydetail.html', {'transporte': transporte, 'origem': transporte.morada, 'destino':destino})  # Variável 'transporte' para o template
 
 
 #COLHEITA
@@ -753,6 +758,11 @@ def contracts(request):
     contratos = Contratos.objects.filter(isactive=True)  # Apenas contratos ativos
     clientes = Clientes.objects.filter(isactive=True)
     pedidos = PedidosItem.objects.filter(isactive=True)
+    for cliente in clientes:
+        user = cliente.clienteid  # Objeto relacionado do modelo Users
+        print(f"ID: {user.userid}, Nome: {user.nome}, Email: {user.email}")
+
+
 
     if filter_number:
         contratos = contratos.filter(contratoid__icontains=filter_number)
@@ -2173,4 +2183,10 @@ def buscar_producao_uvas(request):
         return JsonResponse({"success": False, "error": str(e)})
     
 
+def importar(request):
+    try:
+        df = pd.read_excel(file_path)
+        return df.to_json(orient='records')
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
 

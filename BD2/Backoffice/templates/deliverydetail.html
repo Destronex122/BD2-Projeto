@@ -111,8 +111,10 @@
         calculateAndDisplayRoute(directionsService, directionsRenderer);
 
         function calculateAndDisplayRoute(directionsService, directionsRenderer) {
-            const start = "Cabaços";
-            const end = "{{ transporte.morada  }}"
+            const start = "{{origem}}";
+            const end = "{{destino}}";
+            console.log(start);
+            console.log(end);
           
             directionsService
               .route({
@@ -123,7 +125,7 @@
               .then((response) => {
                 directionsRenderer.setDirections(response);
               })
-              .catch((e) => window.alert("Directions request failed due to " + status));
+              .catch((e) => window.alert("Não foi possível calcular a rota devido a direções inválidas."));
           }
           
           window.initMap = initMap;
@@ -131,13 +133,11 @@
     }
 
     function calcularRota() {
-        const origem = "Vinha da Encomenda, Vila Real";
-        const destino = "ponte dom luís i, Porto";
 
-        if (origem && destino) {
+        if ("{{origem}}" && "{{destino}}") {
             const request = {
-                origin: "Cabaços",
-                destination: "Viseu",
+                origin: "{{origem}}",
+                destination: "{{destino}}",
                 travelMode: 'DRIVING'
             };
 
@@ -146,7 +146,7 @@
                     directionsRenderer.setDirections(result);
                     const route = result.routes[0].legs[0];
                 } else {
-                    alert('Não foi possível encontrar o trajeto: ' + status);
+                    alert("Não foi possível calcular a rota devido a direções inválidas.");
                 }
             });
         } else {
