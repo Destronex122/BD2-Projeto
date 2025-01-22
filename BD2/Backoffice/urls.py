@@ -77,6 +77,8 @@ urlpatterns = [
     path('settings/', views.settings, name='settings'),
     path('create_recibo/', views.create_recibo, name='create_recibo'),
     path('deactivate_recibo/<int:recibo_id>/', views.deactivate_recibo, name='deactivate_recibo'),
-    path('update_recibo_status/<int:recibo_id>/pago/', views.update_recibo_status, name='update_recibo_status')
+    path('update_recibo_status/<int:recibo_id>/pago/', views.update_recibo_status, name='update_recibo_status'),
+    path('importar_campos/', views.importar_campos, name='importar_campos'),
+    path('export/contract/json/<int:contratoid>/', views.export_contract_json, name='export_contract_json'),
     
 ]

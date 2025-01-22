@@ -156,28 +156,34 @@
         </thead>
         <tbody>
             {% for contrato in contrato %}
-            <tr  data-contratoid="{{ contrato.contratoid}}">
-                <td>{{ contrato.nome}}</td>
-                <td>{{ contrato.clienteid.nif}}</td>
+            <tr data-contratoid="{{ contrato.contratoid }}">
+                <td>{{ contrato.nome }}</td>
+                <td>{{ contrato.clienteid.nif }}</td>
                 <td>{{ contrato.datainicio|date:'Y-m-d' }}</td>
-                <td>{{ contrato.datafim|date:'Y-m-d'}}</td>
+                <td>{{ contrato.datafim|date:'Y-m-d' }}</td>
                 <td>{{ contrato.qtdeestimada }}</td>
                 <td>{{ contrato.precoestimado }}</td>
                 <td>
+                    <!-- Botão de exportação JSON -->
+                    <form method="get" action="{% url 'export_contract_json' contrato.contratoid %}" style="display:inline;">
+                        <button type="submit" class="export-btn"><img src="{% static 'export.png' %}" title="Exportar contrato (JSON)" style="height: 25px; width: auto;"></button>
+                    </form>
+                    <!-- Botão de exclusão -->
                     <form method="post" class="delete-form" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="deleteContract" value="{{ contrato.contratoid }}">
-                        
                         <button type="submit" class="delete-btn"><img src="{% static 'delete.png' %}" title="Inativar contrato" style="height: 25px; width: auto;"></button>
                     </form>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6">Nenhum contrato encontrado.</td>
+                <td colspan="7">Nenhum contrato encontrado.</td>
             </tr>
             {% endfor %}
         </tbody>
+        
+        
     </table>
     
 

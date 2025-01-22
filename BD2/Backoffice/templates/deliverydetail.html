@@ -42,8 +42,10 @@
                 </div>
                 <div class="info-item">
                     <span class="label">Data:</span>
-                    <span class="value">{{transporte.data}} </span>
+                    <span class="value">{{ transporte.data|date:"Y/m/d" }}</span>
                 </div>
+                
+                
                 <div class="info-item">
                     <span class="label">Preço transporte:</span>
                     <span class="value">{{transporte.precotransporte}}</span>

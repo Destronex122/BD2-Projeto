@@ -64,7 +64,36 @@
     </div>
     <br>
     <div style="display:flex; justify-content: space-between;">
-        <div id="map" style="width: 650px; height: 500px; margin-right:24px"></div>
+        <div style="display:flex; flex-direction: column;">
+            <div id="map" style="width: 650px; height: 500px; margin-right:24px"></div>
+            <form id="importar-excel-form" style="margin-top:10px" enctype="multipart/form-data">
+                <label for="excel-file">Carregar arquivo Excel:</label>
+                <input type="file" id="excel-file" name="file" accept=".xlsx" required />
+                <button type="submit">Importar</button>
+            </form>
+            <script>
+                document.getElementById('importar-excel-form').addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const formData = new FormData();
+                    const fileInput = document.getElementById('excel-file');
+                    formData.append('file', fileInput.files[0]);
+            
+                    fetch('/importar_campos/', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        window.location.reload();
+                    })
+                    .catch(error => console.error('Erro ao importar Excel:', error));
+                });
+            </script>
+            
+        </div>
+           
+        
         <div style="width:50%;">
             <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
                 <div class="form-group" style="flex: 1; min-width: 200px; margin-top:16px">
@@ -80,7 +109,7 @@
                     </select>
                 </div>
                 
-                <button id="apply-filter" style="margin-bottom: 15px;gap: 10px;align-items: center; margin-top:24px"">Aplicar</button>
+                <button id="apply-filter" style="margin-bottom: 15px;gap: 10px;align-items: center; margin-top:24px"""">Aplicar</button>
                 <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2; margin-top:24px"">Limpar</button>
             </div>
             <table id="fields-table">

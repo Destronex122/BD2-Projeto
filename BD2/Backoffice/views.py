@@ -25,6 +25,8 @@ from django.views.decorators.csrf import csrf_protect
 from datetime import datetime
 import pymongo
 import pandas as pd
+from openpyxl import load_workbook
+from django.core.serializers.json import DjangoJSONEncoder
 
 
 # Conectar ao MongoDB
@@ -1929,7 +1931,7 @@ def delete_approved_status(request, approvedId):
 
 # VINHAS
 def load_castas(request):
-    castas = Castas.objects.all().values('castaid', 'nome')
+    castas = Castas.objects.filter(isactive=True).values('castaid', 'nome')
     return JsonResponse(list(castas), safe=False)
 
 @csrf_exempt
@@ -2189,4 +2191,66 @@ def importar(request):
         return df.to_json(orient='records')
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+
+@csrf_exempt
+def importar_campos(request):
+    if request.method == 'POST' and request.FILES['file']:
+        file = request.FILES['file']
+        workbook = load_workbook(file)
+        sheet = workbook.active
+        data_list = []
+
+        for row_index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):  # Ignora o cabeçalho
+            try:
+                # Verificar se a linha contém os dados necessários
+                if row and len(row) >= 6 and all(row[:6]):  # Checar as 6 primeiras colunas e evitar valores nulos
+                    data = {
+                        "nome": row[0].strip() if isinstance(row[0], str) else row[0],
+                        "morada": row[1].strip() if isinstance(row[1], str) else row[1],
+                        "cidade": row[2].strip() if isinstance(row[2], str) else row[2],
+                        "pais": row[3].strip() if isinstance(row[3], str) else row[3],
+                        "coordenadas": {"lat": float(row[4]), "lng": float(row[5])},
+                    }
+                    data_list.append(data)
+                else:
+                    print(f"Linha {row_index} ignorada: Dados incompletos ou inválidos -> {row}")
+            except Exception as e:
+                print(f"Erro ao processar linha {row_index}: {e}")
+        
+        if not data_list:
+            return JsonResponse({"status": "error", "message": "Nenhuma linha válida encontrada no arquivo."})
+        
+        try:
+            with connection.cursor() as cursor:
+                for data in data_list:
+                    print(f"Inserindo: {data}")  # Para depuração
+                    cursor.execute("CALL import_campos(%s)", [json.dumps(data)])  # Usar CALL para procedures
+
+            return JsonResponse({"status": "success", "message": "Dados importados com sucesso."})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": f"Erro ao inserir dados: {e}"})
+
+    return JsonResponse({"status": "error", "message": "Método não permitido ou arquivo ausente."})
+
+
+def export_contract_json(request, contratoid):
+    # Buscar o contrato pelo ID
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT get_contrato_info(%s)", [contratoid])
+        contrato = cursor.fetchone()
+
+    if not contrato or not contrato[0]:  # Verifica se o resultado é vazio ou nulo
+        raise Http404("Contrato não encontrado.")
+
+    # Carregar o contrato como JSON
+    contrato_json = contrato[0]
+
+    # Criar a resposta JSON
+    response = JsonResponse(
+        contrato_json,
+        encoder=DjangoJSONEncoder,
+        safe=False
+    )
+    response['Content-Disposition'] = f'attachment; filename="contrato_{contratoid}_{datetime.now().strftime("%Y%m%d")}.txt"'
+    return response
 
