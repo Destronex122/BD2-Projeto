@@ -857,7 +857,7 @@ def update_contrato_qtdefinal(idcontrato):
     except Exception as e:
         return False
     
-    
+
 # VINHAS
 @login_required    
 @csrf_exempt
@@ -1100,7 +1100,7 @@ def delete_note_request(request, notaid):
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 
-# CONTRATO
+# CONTRATO DETAIL
 @login_required
 def contractdetail(request, contratoid):
     contrato = get_object_or_404(Contratos, contratoid=contratoid)
