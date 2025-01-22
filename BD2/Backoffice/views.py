@@ -756,6 +756,7 @@ def delete_note_harvest(request, notaid):
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 
+# CONTRATOS
 @login_required
 def contracts(request):
     # Filtros
@@ -840,7 +841,24 @@ def contracts(request):
         },
     })
     
+def update_contrato_qtdefinal(idcontrato):
+    try:
+        # Obtém o contrato pelo id
+        contrato = Contratos.objects.get(contratoid=idcontrato)
+        
+        # Soma as quantidades de todos os recibos ativos associados ao contrato
+        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
+        
+        # Atualiza o campo qtdefinal do contrato
+        contrato.qtdefinal = total_quantidade
+        contrato.save()
 
+        return True
+    except Exception as e:
+        return False
+    
+    
+# VINHAS
 @login_required    
 @csrf_exempt
 @require_http_methods(['POST'])
@@ -2036,6 +2054,7 @@ def update_vineyard(request):
         return JsonResponse({"success": True, "message": "Vinha atualizada com sucesso!"})
     return JsonResponse({"success": False, "error": "Método inválido."})
 
+
 # RECIBO
 @csrf_exempt
 def create_recibo(request):
@@ -2086,7 +2105,6 @@ def deactivate_recibo(request, recibo_id):
 
     return JsonResponse({'success': False, 'message': 'Método inválido'})
 
-
 def update_recibo_status(request, recibo_id):
     # Verificar se a requisição é POST
     if request.method == "POST":
@@ -2100,22 +2118,6 @@ def update_recibo_status(request, recibo_id):
         else:
             return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
     return JsonResponse({'success': False, 'message': 'Método inválido.'})
-
-def update_contrato_qtdefinal(idcontrato):
-    try:
-        # Obtém o contrato pelo id
-        contrato = Contratos.objects.get(contratoid=idcontrato)
-        
-        # Soma as quantidades de todos os recibos ativos associados ao contrato
-        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
-        
-        # Atualiza o campo qtdefinal do contrato
-        contrato.qtdefinal = total_quantidade
-        contrato.save()
-
-        return True
-    except Exception as e:
-        return False
 
 
 # DASHBOARD
