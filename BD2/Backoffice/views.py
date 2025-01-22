@@ -48,18 +48,18 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            login(request, user)  # Faz o login do usuário
+            login(request, user)  # Faz o login do utilizador
 
-            # Recupera a role do usuário e armazena na sessão
+            # Recupera a role do utilizador e armazena na sessão
             try:
-                custom_user = Users.objects.get(username=user.username)  # Ajuste se necessário
+                custom_user = Users.objects.get(username=user.username)
                 request.session['user_role'] = custom_user.cargoid.nome if custom_user.cargoid else None
             except Users.DoesNotExist:
                 request.session['user_role'] = None
 
             return redirect('backofficeIndex')
         else:
-            messages.error(request, 'Utilizador ou password incorretos!')  # Adiciona uma mensagem de erro
+            messages.error(request, 'Utilizador ou password incorretos!') 
 
     form = UserCreationForm()
     context = {'form': form}
@@ -106,7 +106,7 @@ def backofficeIndex(request):
                 "contratos": contratos,
                 "recibos": recibos,
                 "uvas_por_ano": uvas,
-                "data_registo": datetime.now()  # Adicionar a data de registro
+                "data_registo": datetime.now()  # Adicionar a data de registo
             }
 
     except Exception as e:
@@ -138,9 +138,9 @@ def backofficeIndex(request):
 @login_required
 def userdetail(request, userid):
     user = get_object_or_404(Users, userid=userid)
-    cargos = Cargo.objects.all()  # Buscar todos os cargos da base de dados
+    cargos = Cargo.objects.all()  # Procura todos os cargos da base de dados
     if request.method == 'POST':
-        # Atualizar os dados do usuário
+        # Atualizar os dados do utilizador
         user.nome = request.POST.get('nome')
         user.email = request.POST.get('email')
         user.telefone = request.POST.get('telefone')
@@ -158,6 +158,8 @@ def update_user_detail(userid, nome, email, telefone, endereco, postalcode, city
     with connection.cursor() as cursor:
         cursor.callproc("EditUserDetail", [userid, nome, email, telefone, endereco, postalcode, city, cargoid, campoid])
 
+
+# USER
 @login_required
 def users(request):
     #Filtros
@@ -187,13 +189,13 @@ def users(request):
             username = request.POST['username']
             nome = request.POST['nome']
             email = request.POST['email']
-            password = request.POST['password']  # A senha será tratada pelo trigger
+            password = request.POST['password']  
             telefone = request.POST['telefone']
             endereco = request.POST['endereco']
             campoid = request.POST.get('campoid')
             cargoid = request.POST.get('cargoid')
 
-            # Encripta a senha
+            # Encripta a password
             encrypted_password = make_password(password)
 
             # Chamar o procedimento armazenado
@@ -203,7 +205,7 @@ def users(request):
                     [username, nome, email, encrypted_password, telefone, endereco, campoid, cargoid]
                 )
 
-            return JsonResponse({'message': 'Usuário adicionado com sucesso!'}, status=201)
+            return JsonResponse({'message': 'Utilizador adicionado com sucesso!'}, status=201)
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
@@ -308,7 +310,7 @@ def delivery(request):
 
 @login_required
 def deliverydetail(request, idtransporte):
-    transporte = get_object_or_404(Transportes, idtransporte=idtransporte)  # Corrigido para idtransporte
+    transporte = get_object_or_404(Transportes, idtransporte=idtransporte) 
     with connection.cursor() as cursor:
         cursor.execute("SELECT  f_get_origem(%s)", [idtransporte])
         destino = cursor.fetchone()
@@ -326,14 +328,17 @@ def harvest(request):
     filter_periodo_fim = request.GET.get('filterPeriodoFim', None)
     filter_estado = request.GET.get('filterIsActive', 'all') 
     filter_terminado = request.GET.get('filterTerminou', 'all')
-
+    filter_campo = request.GET.get('filterCampo', '').strip()
+    
     # Queryset de colheitas
-    colheitas = Colheitas.objects.select_related('vinhaid', 'periodoid').all()
+    colheitas = Colheitas.objects.select_related('vinhaid', 'vinhaid__campoid', 'periodoid').all()
 
     # Aplicar filtros
+    if filter_campo:
+        colheitas = colheitas.filter(vinhaid__campoid__nome__icontains=filter_campo)
     if filter_combined:
         colheitas = colheitas.filter(
-            Q(vinhaid__nome__icontains=filter_combined)  # Nome da vinha
+            Q(vinhaid__nome__icontains=filter_combined)
         )
     if filter_periodo_inicio:
         colheitas = colheitas.filter(periodoid__datainicio__gte=filter_periodo_inicio)
@@ -357,7 +362,7 @@ def harvest(request):
     total_pages = (total_records + rows_per_page - 1) // rows_per_page  # Calcula o total de páginas
     page_number = int(request.GET.get('page', 1))  # Obtém o número da página (padrão é 1)
 
-    # Queryset de vinhas para o dropdown
+    # Queryset de vinhas e campos para dropdown
     vinhas = Vinhas.objects.filter(isactive=True)
 
     # Adicionar informações para exibição
@@ -375,6 +380,7 @@ def harvest(request):
             'colheitaid': colheita.colheitaid,
             'vinha_nome': colheita.vinhaid.nome if colheita.vinhaid else "Sem Vinha",
             'vinha_id': colheita.vinhaid.vinhaid if colheita.vinhaid else None,
+            'campo_nome': colheita.vinhaid.campoid.nome if colheita.vinhaid and colheita.vinhaid.campoid else "Sem Campo",
             'peso_total': colheita.pesototal,
             'preco_por_tonelada': colheita.precoportonelada,
             'data_ultima_pesagem': colheita.data_ultima_pesagem or 'Sem pesagens',
@@ -398,6 +404,7 @@ def harvest(request):
             'has_next': page_number < total_pages,
         },
         'filters': {
+            'filterCampo': filter_campo,
             'combinedFilter': filter_combined,
             'filterPeriodoInicio': filter_periodo_inicio,
             'filterPeriodoFim': filter_periodo_fim,
@@ -405,6 +412,7 @@ def harvest(request):
             'filterTerminou': filter_terminado,
         }
     })
+
 
 def validate_date(field_value, field_name):
                 if not field_value or field_value.strip() == "":
@@ -468,7 +476,7 @@ def create_harvest(request):
                     vinha_id,
                     peso_total,
                     preco_por_tonelada,
-                    data_pesagem,  # Passando None se não fornecido
+                    data_pesagem,  
                     periodo_inicio,
                     periodo_fim,
                     previsao_fim_colheita,
@@ -603,10 +611,10 @@ def harvestdetail(request, colheitaid):
 
 #PESAGEM
 @csrf_exempt
-def add_pesagem(request, colheitaid):  # Colheita ID vem do URL
+def add_pesagem(request, colheitaid):
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)  # Captura os dados enviados
+            data = json.loads(request.body) 
             peso_bruto = data.get('pesobruto')
             peso_liquido = data.get('pesoliquido')
             data_pesagem = data.get('datadepesagem')
@@ -644,7 +652,7 @@ def edit_pesagem(request, pesagemid):
                 return JsonResponse({'success': False, 'message': 'Dados inválidos. Preencha todos os campos.'})
 
             # Chama o procedimento armazenado com CALL
-            if pesagemid:  # Se um ID foi fornecido, edite
+            if pesagemid:  
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "CALL sp_edit_pesagem(%s, %s, %s, %s)",
@@ -724,7 +732,7 @@ def edit_note_harvest(request, notaid):
             # Chama o procedimento para editar a nota
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.sp_edit_nota_colheita(%s, %s)",  # Chama o procedimento de edição
+                    "CALL public.sp_edit_nota_colheita(%s, %s)",  
                     [notaid, texto]
                 )
 
@@ -740,7 +748,7 @@ def delete_note_harvest(request, notaid):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.sp_delete_nota_colheita(%s)",  # Procedimento de exclusão
+                    "CALL public.sp_delete_nota_colheita(%s)",  
                     [notaid]
                 )
             return JsonResponse({'success': True, 'message': 'Nota excluída com sucesso!'})
@@ -750,6 +758,7 @@ def delete_note_harvest(request, notaid):
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 
+# CONTRATOS
 @login_required
 def contracts(request):
     # Filtros
@@ -757,7 +766,7 @@ def contracts(request):
     filter_date = request.GET.get('filterDate', None)
     filter_client_nif = request.GET.get('filterClientNif', '').strip()
 
-    contratos = Contratos.objects.filter(isactive=True)  # Apenas contratos ativos
+    contratos = Contratos.objects.filter(isactive=True)  
     clientes = Clientes.objects.filter(isactive=True)
     pedidos = PedidosItem.objects.filter(isactive=True)
     for cliente in clientes:
@@ -834,7 +843,24 @@ def contracts(request):
         },
     })
     
+def update_contrato_qtdefinal(idcontrato):
+    try:
+        # Obtém o contrato pelo id
+        contrato = Contratos.objects.get(contratoid=idcontrato)
+        
+        # Soma as quantidades de todos os recibos ativos associados ao contrato
+        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
+        
+        # Atualiza o campo qtdefinal do contrato
+        contrato.qtdefinal = total_quantidade
+        contrato.save()
 
+        return True
+    except Exception as e:
+        return False
+    
+
+# VINHAS
 @login_required    
 @csrf_exempt
 @require_http_methods(['POST'])
@@ -864,7 +890,7 @@ def requestdetail(request, pedidoid):
         novo_estado = request.POST.get("updateEstado")  # Aceite ou Rejeitado
         
         # Mapeamento de estado para o ID correto
-        estado_map = {"Aceite": 1, "Rejeitado": 2}  # Substitua pelos IDs reais do banco de dados
+        estado_map = {"Aceite": 1, "Rejeitado": 2}  
         estado_id = estado_map.get(novo_estado)
        
         try:
@@ -982,8 +1008,8 @@ def edit_item(request, item_id):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            casta_id = data.get('castaId')  # Novo ID da casta
-            quantidade = data.get('quantidade')  # Nova quantidade
+            casta_id = data.get('castaId')  
+            quantidade = data.get('quantidade')  
 
             if not casta_id and not quantidade:
                 return JsonResponse({'success': False, 'message': 'Pelo menos um campo deve ser atualizado.'}, status=400)
@@ -1050,8 +1076,8 @@ def edit_note_request(request, notaid):
             # Chama o procedimento para editar a nota
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.sp_edit_nota_pedido(%s, %s)",  # Chama o procedimento de edição
-                    [int(notaid), str(texto)]  # Certifique-se de passar os tipos corretos
+                    "CALL public.sp_edit_nota_pedido(%s, %s)", 
+                    [int(notaid), str(texto)]  
                 )
 
             return JsonResponse({'success': True, 'message': 'Nota atualizada com sucesso!'})
@@ -1066,7 +1092,7 @@ def delete_note_request(request, notaid):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "CALL public.sp_delete_nota_pedido(%s)",  # Procedimento de exclusão
+                    "CALL public.sp_delete_nota_pedido(%s)",  
                     [notaid]
                 )
             return JsonResponse({'success': True, 'message': 'Nota excluída com sucesso!'})
@@ -1076,7 +1102,7 @@ def delete_note_request(request, notaid):
     return JsonResponse({'success': False, 'message': 'Método não permitido.'})
 
 
-# CONTRATO
+# CONTRATO DETAIL
 @login_required
 def contractdetail(request, contratoid):
     contrato = get_object_or_404(Contratos, contratoid=contratoid)
@@ -1122,7 +1148,7 @@ def request(request):
 
     # Pagination
     rows_per_page = 5
-    page_number = int(request.GET.get('page', 1))  # Default page is 1 if not provided
+    page_number = int(request.GET.get('page', 1))  
     total_items = pedidos.count()
     total_pages = (total_items + rows_per_page - 1) // rows_per_page
 
@@ -1140,7 +1166,7 @@ def request(request):
             data_inicio = request.POST.get('newDataInicio')
             data_fim = request.POST.get('newDataFim')
             preco_estimado = float(request.POST.get('newPrecoEstimado'))
-            is_active = True  # Por padrão, o pedido começa ativo
+            is_active = True  
 
             # Chamar o procedimento armazenado
             with connection.cursor() as cursor:
@@ -1166,15 +1192,15 @@ def request(request):
     return render(request, 'request.html', {
         'clientes': clientes,
         'users': users,
-        'pedidos': paginated_pedidos,  # Pass only paginated results
+        'pedidos': paginated_pedidos,  
         'filters': {
             'filterPedido': filter_pedido,
             'filterDataInicio': filter_data_inicio,
             'filterDataFim': filter_data_fim,
         },
-        'total_pages': total_pages,  # Pass the total number of pages
-        'current_page': page_number,  # Pass the current page
-        'pages': range(1, total_pages + 1),  # Pass the range of pages
+        'total_pages': total_pages,  
+        'current_page': page_number,  
+        'pages': range(1, total_pages + 1),  
     })
 
 
@@ -1296,8 +1322,8 @@ def addvariety(request):
 
             # Chama o procedimento armazenado para inserir a casta
             with connection.cursor() as cursor:
-                cursor.execute("CALL sp_insert_casta(%s, %s)", [nome, None])  # None para o OUT parameter
-                cursor.execute("SELECT currval('castas_castaid_seq')")  # Recupera o último ID gerado
+                cursor.execute("CALL sp_insert_casta(%s, %s)", [nome, None])  
+                cursor.execute("SELECT currval('castas_castaid_seq')")  
                 new_castaid = cursor.fetchone()[0]
 
             return JsonResponse({'success': True, 'id': new_castaid, 'nome': nome})
@@ -1335,7 +1361,7 @@ def editvariety(request, castaid):
 
             # Resposta de sucesso
             response = {'success': True, 'id': castaid, 'nome': nome}
-            logger.info(f"Resposta editvariety: {response}")  # Log de sucesso
+            logger.info(f"Resposta editvariety: {response}")  
             return JsonResponse(response)
 
         except json.JSONDecodeError:
@@ -1738,7 +1764,6 @@ def edit_transport_state(request, state_id):
 def delete_transport_state(request, state_id):
     if request.method == 'POST':
         try:
-            # Exclui o estado usando a stored procedure
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_delete_estadotransporte(%s)", [state_id])
             return JsonResponse({'success': True, 'state_id': state_id})
@@ -1807,7 +1832,6 @@ def edit_receipt_status(request, status_id):
             if not nome:
                 return JsonResponse({'success': False, 'message': 'O nome do estado é obrigatório.'})
 
-            # Atualiza o estado usando a stored procedure
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_update_estadorecibo(%s, %s)", [status_id, nome])
 
@@ -1828,7 +1852,6 @@ def edit_receipt_status(request, status_id):
 def delete_receipt_status(request, status_id):
     if request.method == 'POST':
         try:
-            # Exclui o estado usando a stored procedure
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_delete_estadorecibo(%s)", [status_id])
             return JsonResponse({'success': True, 'status_id': status_id})
@@ -1897,7 +1920,6 @@ def edit_approved_status(request, approvedId):
             if not nome:
                 return JsonResponse({'success': False, 'message': 'O nome do estado é obrigatório.'})
 
-            # Atualiza o estado usando a stored procedure
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_update_estadoaprovacoes(%s, %s)", [approvedId, nome])
 
@@ -1918,7 +1940,6 @@ def edit_approved_status(request, approvedId):
 def delete_approved_status(request, approvedId):
     if request.method == 'POST':
         try:
-            # Exclui o estado usando a stored procedure
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_delete_estadoaprovacoes(%s)", [approvedId])
             return JsonResponse({'success': True, 'approvedId': approvedId})
@@ -1985,7 +2006,6 @@ def create_vineyard(request):
 @csrf_exempt
 def delete_vineyard(request, vinhaid):
     if request.method == 'POST':
-        print("oi")
         try:
             with connection.cursor() as cursor:
                 cursor.execute("CALL sp_desativarvinha(%s)", [vinhaid])
@@ -2017,8 +2037,6 @@ def update_vineyard(request):
         hectares = request.POST.get('size')
 
         with connection.cursor() as cursor:
-            print("caralho")
-            print(nome)
             cursor.execute(
                 """
                 CALL sp_update_vinha(%s,%s,%s,%s,%s,%s,%s)
@@ -2037,6 +2055,7 @@ def update_vineyard(request):
         
         return JsonResponse({"success": True, "message": "Vinha atualizada com sucesso!"})
     return JsonResponse({"success": False, "error": "Método inválido."})
+
 
 # RECIBO
 @csrf_exempt
@@ -2088,7 +2107,6 @@ def deactivate_recibo(request, recibo_id):
 
     return JsonResponse({'success': False, 'message': 'Método inválido'})
 
-
 def update_recibo_status(request, recibo_id):
     # Verificar se a requisição é POST
     if request.method == "POST":
@@ -2102,22 +2120,6 @@ def update_recibo_status(request, recibo_id):
         else:
             return JsonResponse({'success': False, 'message': 'Recibo já está pago ou não pode ser alterado.'})
     return JsonResponse({'success': False, 'message': 'Método inválido.'})
-
-def update_contrato_qtdefinal(idcontrato):
-    try:
-        # Obtém o contrato pelo id
-        contrato = Contratos.objects.get(contratoid=idcontrato)
-        
-        # Soma as quantidades de todos os recibos ativos associados ao contrato
-        total_quantidade = Recibos.objects.filter(contrato=contrato, isactive=True).aggregate(Sum('quantidade'))['quantidade__sum'] or 0
-        
-        # Atualiza o campo qtdefinal do contrato
-        contrato.qtdefinal = total_quantidade
-        contrato.save()
-
-        return True
-    except Exception as e:
-        return False
 
 
 # DASHBOARD
