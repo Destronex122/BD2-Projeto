@@ -104,8 +104,10 @@
                 <label for="pedidoId">Item de pedido:</label>
                 <select id="pedidoId" name="pedidoId" class="form-control">
                     {% for pedido in pedidos %}
-                    {% comment %} <option value="{{ pedido.idpedido_item }}">{{ pedido.idpedido_item }} - {{ pedido.castaid.nome }}</option> {% endcomment %}
-                    <option value="{{ pedido.idpedido_item }}">{{ pedido.castaid.nome }}</option>
+                    <option value="{{ pedido.idpedido_item }}">{{ pedido.idpedido.nome }} - {{ pedido.castaid.nome }} {{ pedido.quantidade }} kg</option>
+                    {% comment %}
+                        <option value="{{ pedido.idpedido_item }}">{{ pedido.castaid.nome }}</option>
+                    {% endcomment %}
                     {% endfor %}
                 </select>
             </div>
