@@ -72,7 +72,6 @@ def settings(request):
 def backofficeIndex(request):
     # Conectar ao MongoDB
     db = client['GrapeFlow']
-
     try:
         with connection.cursor() as cursor:
             # Executar todas as funções do PostgreSQL e coletar os resultados
@@ -2220,7 +2219,7 @@ def importar_campos(request):
                 print(f"Erro ao processar linha {row_index}: {e}")
         
         if not data_list:
-            return JsonResponse({"status": "error", "message": "Nenhuma linha válida encontrada no arquivo."})
+            return JsonResponse({"status": "error", "message": "Nenhuma linha válida encontrada no ficheiro."})
         
         try:
             with connection.cursor() as cursor:
@@ -2232,7 +2231,7 @@ def importar_campos(request):
         except Exception as e:
             return JsonResponse({"status": "error", "message": f"Erro ao inserir dados: {e}"})
 
-    return JsonResponse({"status": "error", "message": "Método não permitido ou arquivo ausente."})
+    return JsonResponse({"status": "error", "message": "Método não permitido ou ficheiro ausente."})
 
 
 def export_contract_json(request, contratoid):
