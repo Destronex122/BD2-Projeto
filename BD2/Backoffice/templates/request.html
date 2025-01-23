@@ -174,7 +174,7 @@
                     <select id="clienteid" name="clienteid" class="form-control" required>
                         <option value="">Selecione um cliente</option>
                         {% for cliente in clientes %}
-                        <option value="{{ cliente.clienteid.userid }}">{{ cliente.nif }} - {{ cliente.nome }}</option>
+                        <option value="{{ cliente.clienteid.userid }}">{{ cliente.nif }} - {{ cliente.clienteid.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
