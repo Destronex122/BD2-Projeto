@@ -71,6 +71,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'Backoffice.Dynamic_db_middleware.DynamicDBMiddleware',
 ]
 
 ROOT_URLCONF = 'BD2.urls'
