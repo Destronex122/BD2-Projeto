@@ -73,7 +73,7 @@ def login_view(request):
                 request.session['user_role'] = user_role
 
                 # Redirecionar com base na role
-                if user_role == "Cliente":
+                if user_role == "Cliente" or user_role == "Operador" :
                     return redirect('harvest')  # Substitua 'harvest' pelo nome da rota correspondente
                 elif user_role == "Externo":
                     return redirect('delivery')  # Substitua pelo nome da rota padrão
@@ -132,6 +132,8 @@ def backofficeIndex(request):
                 "uvas_por_ano": uvas,
                 "data_registo": datetime.now()  # Adicionar a data de registo
             }
+
+           
 
     except Exception as e:
         print(f"Erro ao executar as funções do PostgreSQL: {e}")
