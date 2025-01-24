@@ -28,6 +28,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from django.core.serializers.json import DjangoJSONEncoder
 from Backoffice.Dynamic_db_middleware import set_db_role
+from django.db.models import Q
 
 
 # Conectar ao MongoDB
@@ -1268,7 +1269,7 @@ def request(request):
 
     return render(request, 'request.html', {
         'clientes': None if user_role == "Cliente" else Clientes.objects.all(),
-        'users': None if user_role == "Cliente" else Users.objects.all(),
+        'users': None if user_role == "Cliente" else Users.objects.filter(Q(cargoid__nome="Admin") | Q(cargoid__nome="Gestor")),
         'pedidos': paginated_pedidos,
         'filters': {
             'filterPedido': filter_pedido,
