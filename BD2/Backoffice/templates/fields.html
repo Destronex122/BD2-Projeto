@@ -64,13 +64,16 @@
     </div>
     <br>
     <div style="display:flex; justify-content: space-between;">
+        
         <div style="display:flex; flex-direction: column;">
             <div id="map" style="width: 650px; height: 500px; margin-right:24px"></div>
+            {% if request.session.user_role != "Gestor" %}
             <form id="importar-excel-form" style="margin-top:10px" enctype="multipart/form-data">
                 <label for="excel-file">Carregar arquivo Excel:</label>
                 <input type="file" id="excel-file" name="file" accept=".xlsx" required />
                 <button type="submit">Importar</button>
             </form>
+            {% endif %}
             <script>
                 document.getElementById('importar-excel-form').addEventListener('submit', function(event) {
                     event.preventDefault();
@@ -91,7 +94,7 @@
                 });
             </script>
         </div>
-           
+        
         
         <div style="width:50%;">
             <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
@@ -111,20 +114,23 @@
                 <button id="apply-filter" style="margin-bottom: 15px;gap: 10px;align-items: center; margin-top:24px"""">Aplicar</button>
                 <button id="clear-filter" style="margin-bottom: 15px; gap: 10px; align-items: center; background-color: #e9e8e2; margin-top:24px"">Limpar</button>
             </div>
+            
             <table id="fields-table">
                 <thead>
                     <tr>
                         <th>Nome do campo</th>
                         <th>Cidade</th>
+                        {% if request.session.user_role != "Gestor" %}
                         <th>Ações</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody id="table-body">
                     {% for campo in campos %}
-                        <tr data-campoid="{{ campo.campoid }}"
-                            data-isactive="{{ campo.isactive_cleaned|yesno:'true,false' }}">
+                        <tr data-campoid="{{ campo.campoid }}" data-isactive="{{ campo.isactive_cleaned|yesno:'true,false' }}">
                             <td>{{ campo.nome }}</td>
                             <td>{{ campo.cidade }}</td>
+                            
                             <td>
                                 <button title="Editar campo" type="button" class="edit-btn" data-id="{{ campo.campoid }}">
                                     <img src="{% static 'edit.png' %}" title="Editar campo" alt="edit" style="height: 25px; width: auto;">
@@ -132,12 +138,14 @@
                                 <button title="Eliminar campo" type="button" class="delete-btn" data-id="{{ campo.campoid }}" {% if not campo.isactive_cleaned %}disabled{% endif %}>
                                     <img src="{% static 'delete.png' %}" title="Eliminar campo" alt="delete" style="height: 25px; width: auto;">
                                 </button>
+                                
                             </td>
+                            
                         </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="no-data-message">Não existem campos.</td>
-                        </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="no-data-message">Não existem campos.</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -282,10 +290,11 @@
                 row.dataset.name = campo.nome.toLowerCase();
                 row.dataset.city = campo.cidade.toLowerCase();
                 row.dataset.isactive = String(campo.isactive);
-
+                
                 row.innerHTML = `
                     <td>${campo.nome}</td>
                     <td>${campo.cidade}</td>
+                    {% if request.session.user_role != "Gestor" %}
                     <td>
                         <button class="edit-btn" data-id="${campo.campoid}">
                             <img src="{% static 'edit.png' %}" alt="Edit" style="height: 25px; width: auto;">
@@ -294,6 +303,7 @@
                             <img src="{% static 'delete.png' %}" alt="Delete" style="height: 25px; width: auto;">
                         </button>
                     </td>
+                    {% endif %}
                 `;
                 tableBody.appendChild(row);
             }

@@ -28,9 +28,11 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <!-- Links comuns a todos -->
+                    {% if request.session.user_role == "Gestor" or request.session.user_role == "Admin" %}
                     <li class="nav-item active">
                         <a class="nav-link" href="/backoffice/home">Início</a>
                     </li>
+                    {% endif %}
                     <!-- Cliente: vê apenas Vinhas e Colheitas -->
                     {% if request.session.user_role == "Cliente" %}
                         <li class="nav-item">
@@ -52,12 +54,13 @@
                             <a class="nav-link" href="/backoffice/harvest">Colheitas</a>
                         </li>
                     {% endif %}
+                    <!-- Externo: vê apenas Transporte -->
                     {% if request.session.user_role == "Externo" %}
                     <li class="nav-item">
                         <a class="nav-link" href="/backoffice/delivery">Transporte</a>
                     </li>
                     {% endif %}
-                    <!-- Gestor: vê tudo, exceto Utilizadores e Gerir Campos -->
+                    <!-- Gestor: vê tudo -->
                     {% if request.session.user_role == "Gestor" %}
                         <li class="nav-item">
                             <a class="nav-link" href="/backoffice/vineyards">Vinhas</a>
@@ -89,12 +92,12 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/backoffice/contracts">Contratos</a>
                         </li>
-                        
                         <li class="nav-item">
                             <a class="nav-link" href="/backoffice/delivery">Transporte</a>
                         </li>
                     {% endif %}
                 </ul>
+                
                 <div class="ml-auto d-flex align-items-center"> <!-- Alinhamento à direita com ícone de logout -->
                     <div class="dropdown">
                         <div class="dropdown-toggle" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
