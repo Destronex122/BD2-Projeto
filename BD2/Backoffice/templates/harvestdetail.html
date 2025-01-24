@@ -141,16 +141,18 @@
                    <span class="value">{{ data_termino }}</span>
                 </div>
             </div>
-
+            {% if request.session.user_role != "Cliente" %}
             <!-- Secção de notas -->
             <div class="info-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
+                    
                     <h2>Notas</h2>
                     {% if colheita.isactive %}
                         <button onclick="openNoteModal()">
                             <img src="{% static 'add.png' %}" title="Adicionar nova nota" alt="edit" style="height: 25px; width: 25px;">
                         </button>
                     {% endif %}
+                    
                 </div>
                 <!-- Secção de notas -->
                 <div id="notesCarousel" class="carousel">
@@ -186,6 +188,8 @@
                     <button id="nextNote" onclick="nextNote()">&#10095;</button>
                 </div>            
             </div>
+            {% endif %}
+            
         </div>         
     </div>   
 
@@ -193,15 +197,18 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px;">
         <h2 class="pesagens-title">Pesagens da colheita</h2>
         {% if colheita.isactive %}
+        {% if request.session.user_role != "Cliente" %}
             <button onclick="openPesagemModal(false)">
                 <img src="{% static 'add.png' %}" title="Adicionar nova pesagem" alt="Adicionar Pesagem" style="height: 25px; width: 25px;">
             </button>
-        {% endif %}    
+        {% endif %}
+        {% endif %}  
     </div>
     <div class="pesagens-container" id="pesagensContainer">
         {% for pesagem in pesagens %}
             <div class="pesagem-card" id="pesagem-{{ pesagem.pesagemid }}">
                 <div style="text-align: right; margin-bottom: 24px;">
+                    {% if request.session.user_role != "Cliente" %}
                     <button class="edit-button" 
                             onclick="openPesagemModal(true, '{{ pesagem.pesagemid }}', '{{ pesagem.pesobruto|escapejs }}', '{{ pesagem.pesoliquido|escapejs }}', '{{ pesagem.datadepesagem}}')">
                         <img src="{% static 'edit.png' %}" title="Editar pesagem" alt="edit" style="height: 25px; width: auto;">
@@ -209,6 +216,7 @@
                     <button class="delete-button" onclick="deletePesagem('{{ pesagem.pesagemid }}')">
                         <img src="{% static 'delete.png' %}" title="Eliminar pesagem" alt="delete" style="height: 25px; width: auto;">
                     </button>
+                    {% endif %}
                 </div>
                 <p><strong>Data de pesagem:</strong> {{ pesagem.datadepesagem|date:'Y-m-d' }}</p>
                 <p><strong>Peso bruto:</strong> {{ pesagem.pesobruto }} kg</p>

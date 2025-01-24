@@ -122,7 +122,9 @@
                 <th>Data de fim</th>
                 <th>Preço estimado (€)</th>
                 <th>Aprovador</th>
+                {% if request.session.user_role != "Cliente" %}
                 <th class="actions-column">Ações</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>

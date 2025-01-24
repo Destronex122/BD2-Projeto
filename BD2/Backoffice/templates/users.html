@@ -156,8 +156,8 @@
                     <label for="newUserCargo">Cargo:</label>
                     <select id="newUserCargo" class="form-control" required>
                         {% for cargo in cargos %}
-                            <!-- Se a role for "Gestor", não mostre "Admin" -->
-                            {% if request.session.user_role == "Gestor" and cargo.nome != "Admin" %}
+                            <!-- Se a role for "Gestor", não mostre "Admin" nem "Gestor" -->
+                            {% if request.session.user_role == "Gestor" and cargo.nome != "Admin" and cargo.nome != "Gestor" %}
                                 <option value="{{ cargo.cargoid }}">{{ cargo.nome }}</option>
                             {% elif request.session.user_role != "Gestor" %}
                                 <!-- Para outras roles, mostre todos os cargos -->
@@ -166,6 +166,7 @@
                         {% endfor %}
                     </select>
                 </div>
+                
                 
                 <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                     <button type="button" onclick="closeAddUserModal()" class="secondary-button">Cancelar</button>

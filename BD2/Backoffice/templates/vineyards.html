@@ -55,7 +55,9 @@
                         <th>Casta</th>
                         <th>Data de plantação</th>
                         <th>Hectares</th>
+                        {% if request.session.user_role != "Gestor" %}
                         <th>Ações</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -120,10 +122,12 @@
                     <td>${item.Casta}</td>
                     <td>${item.DataPlantacao || 'N/A'}</td>
                     <td>${item.Hectares || 'N/A'}</td>
+                    {% if request.session.user_role != "Gestor" %}
                     <td>
                         <button><img src="{% static 'edit.png' %}" title="Editar vinha" alt="edit" style="height: 25px; width: auto;"></button>
                         <button><img src="{% static 'delete.png' %}" title="Eliminar vinha" alt="delete" style="height: 25px; width: auto;"></button>
                     </td>
+                    {% endif %}
                 `;
                 tableBody.appendChild(row);
             });
