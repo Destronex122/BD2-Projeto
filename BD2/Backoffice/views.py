@@ -1158,7 +1158,7 @@ def contractdetail(request, contratoid):
 # PEDIDOS
 @login_required
 def request(request):
-    # Role do usuário logado
+    # Role of the logged-in user
     user_role = request.session.get('user_role', None)
 
     # Filters
@@ -1166,18 +1166,23 @@ def request(request):
     filter_data_inicio = request.GET.get('filterDataInicio', None)
     filter_data_fim = request.GET.get('filterDataFim', None)
 
-    # Queryset inicial
+    # Initial queryset
     pedidos = Pedidos.objects.all()
 
-    # Se o usuário for cliente, filtre pelos pedidos dele
+    # If the user is a client, filter requests associated with their clienteid
     if user_role == "Cliente":
         try:
-            cliente = Clientes.objects.get(clienteid=request.user.id)  # Baseado na relação ID=ID
-            pedidos = pedidos.filter(clienteid=cliente.clienteid)
+            # Get the `Clientes` instance for the logged-in user
+            cliente = Clientes.objects.get(clienteid=request.user.id)
+            logger.debug(f"Found client: {cliente}")  # Debug statement
+            # Filter pedidos by the retrieved `cliente`
+            pedidos = pedidos.filter(clienteid=cliente)
+            logger.debug(f"Filtered pedidos: {pedidos}")  # Debug statement
         except Clientes.DoesNotExist:
-            pedidos = Pedidos.objects.none()  # Nenhum pedido, caso o cliente não seja encontrado
+            logger.error(f"No Clientes entry found for user ID: {request.user.id}")
+            pedidos = Pedidos.objects.none()
 
-    # Aplicar filtros
+    # Apply filters
     if filter_pedido:
         pedidos = pedidos.filter(pedidoid__icontains=filter_pedido)
     if filter_data_inicio:
@@ -1185,16 +1190,48 @@ def request(request):
     if filter_data_fim:
         pedidos = pedidos.filter(datafim__lte=filter_data_fim)
 
-    # Paginação
+    # Pagination
     rows_per_page = 5
     page_number = int(request.GET.get('page', 1))
     total_items = pedidos.count()
     total_pages = (total_items + rows_per_page - 1) // rows_per_page
 
-    # Resultados paginados
+    # Paginated results
     start_index = (page_number - 1) * rows_per_page
     end_index = start_index + rows_per_page
     paginated_pedidos = pedidos[start_index:end_index]
+
+    if request.method == 'POST':
+        try:
+            # Capturar os dados enviados pelo formulário
+            cliente_id = int(request.POST.get('clienteid'))
+            aprovador_id = int(request.POST.get('aprovadorid'))
+            nome = request.POST.get('newNome')
+            data_inicio = request.POST.get('newDataInicio')
+            data_fim = request.POST.get('newDataFim')
+            preco_estimado = float(request.POST.get('newPrecoEstimado'))
+            is_active = True  
+
+            # Chamar o procedimento armazenado
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    CALL sp_inserirpedido(
+                        %s, %s, %s, %s, %s, %s, %s
+                    )
+                """, [
+                    nome,
+                    cliente_id,
+                    data_inicio,
+                    data_fim,
+                    aprovador_id,
+                    preco_estimado,
+                    is_active
+                ])
+            
+            return JsonResponse({'success': True, 'message': 'Pedido criado com sucesso!'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Ocorreu um erro: {e}'})
 
     return render(request, 'request.html', {
         'clientes': None if user_role == "Cliente" else Clientes.objects.all(),

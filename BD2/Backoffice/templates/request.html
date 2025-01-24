@@ -135,6 +135,7 @@
                 <td>{{ pedido.datafim|date:'Y-m-d' }}</td>
                 <td>{{ pedido.precoestimado }}</td>
                 <td>{{ pedido.aprovadorid.nome }}</td>
+                {% if request.session.user_role != "Cliente" %}
                 <td class="actions-column">
                     <!-- <button title="Editar pedido" type="button" class="edit-btn" onclick="openEditModal('{{ pedido.pedidoid }}')">
                         <img src="{% static 'edit.png' %}" alt="edit" style="height: 25px; width: auto;">
@@ -144,6 +145,7 @@
                         <img src="{% static 'delete.png' %}" alt="delete" style="height: 25px; width: auto;">
                     </button>
                 </td>
+                {% endif %}
             </tr>
             {% empty %}
             <tr>
