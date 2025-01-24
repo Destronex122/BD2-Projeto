@@ -1208,12 +1208,9 @@ def request(request):
         try:
             # Get the `Clientes` instance for the logged-in user
             cliente = Clientes.objects.get(clienteid=request.user.id)
-            logger.debug(f"Found client: {cliente}")  # Debug statement
             # Filter pedidos by the retrieved `cliente`
             pedidos = pedidos.filter(clienteid=cliente)
-            logger.debug(f"Filtered pedidos: {pedidos}")  # Debug statement
         except Clientes.DoesNotExist:
-            logger.error(f"No Clientes entry found for user ID: {request.user.id}")
             pedidos = Pedidos.objects.none()
 
     # Apply filters
@@ -1238,13 +1235,18 @@ def request(request):
     if request.method == 'POST':
         try:
             # Capturar os dados enviados pelo formulário
-            cliente_id = int(request.POST.get('clienteid'))
-            aprovador_id = int(request.POST.get('aprovadorid'))
+            cliente_id = request.POST.get('clienteid')
+            aprovador_id = request.POST.get('aprovadorid')
             nome = request.POST.get('newNome')
             data_inicio = request.POST.get('newDataInicio')
             data_fim = request.POST.get('newDataFim')
             preco_estimado = float(request.POST.get('newPrecoEstimado'))
-            is_active = True  
+            is_active = True
+
+            # Se o cliente for "Cliente", use o ID do usuário logado
+            if user_role == "Cliente":
+                cliente_id = request.user.id
+                aprovador_id = aprovador_id if aprovador_id else None
 
             # Chamar o procedimento armazenado
             with connection.cursor() as cursor:
@@ -1267,9 +1269,13 @@ def request(request):
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Ocorreu um erro: {e}'})
 
+    # Seleção de clientes e aprovadores
+    clientes = None if user_role == "Cliente" else Clientes.objects.all()
+    aprovadores = Users.objects.filter(Q(cargoid__nome="Admin") | Q(cargoid__nome="Gestor"))
+
     return render(request, 'request.html', {
-        'clientes': None if user_role == "Cliente" else Clientes.objects.all(),
-        'users': None if user_role == "Cliente" else Users.objects.filter(Q(cargoid__nome="Admin") | Q(cargoid__nome="Gestor")),
+        'clientes': clientes,
+        'users': aprovadores,
         'pedidos': paginated_pedidos,
         'filters': {
             'filterPedido': filter_pedido,
@@ -1283,24 +1289,24 @@ def request(request):
 
 
 
+
 @csrf_exempt
 def add_request(request):
     if request.method == 'POST':
         try:
-            # Parse JSON data from the request
-            data = json.loads(request.body)
-            clienteid = data.get('clienteid')
-            aprovadorid = data.get('aprovadorid')
-            nome = data.get('nome')
-            datainicio = data.get('datainicio')
-            datafim = data.get('datafim')
-            precoestimado = data.get('precoestimado')
+            # Capturar os dados enviados pelo formulário
+            clienteid = request.POST.get('clienteid')
+            aprovadorid = request.POST.get('aprovadorid')
+            nome = request.POST.get('newNome')
+            datainicio = request.POST.get('newDataInicio')
+            datafim = request.POST.get('newDataFim')
+            precoestimado = request.POST.get('newPrecoEstimado')
 
-            # Ensure IDs are passed as integers
+            # Validar e converter os IDs para inteiros (se necessário)
             clienteid = int(clienteid) if clienteid else None
             aprovadorid = int(aprovadorid) if aprovadorid else None
 
-            # Call the stored procedure
+            # Chamar o procedimento armazenado
             with connection.cursor() as cursor:
                 cursor.execute(
                     "CALL add_pedido(%s, %s, %s, %s, %s, %s)", 
@@ -1313,7 +1319,6 @@ def add_request(request):
             return JsonResponse({'success': False, 'message': f'Erro ao adicionar pedido: {str(e)}'})
 
     return JsonResponse({'success': False, 'message': 'Método inválido'})
-
 
 def update_request(request, pedidoid):
     if request.method == "POST":

@@ -284,31 +284,21 @@
         }
     });
 
-   document.getElementById('addRequestForm').addEventListener('submit', function (event) {
+    document.getElementById('addRequestForm').addEventListener('submit', function (event) {
     event.preventDefault();
 
     // Capturar os valores do formulário
-    let clienteid = document.getElementById('clienteid').value;
-    let aprovadorid = document.getElementById('aprovadorid').value;
+    let clienteid = document.getElementById('clienteid') ? document.getElementById('clienteid').value : null;
+    let aprovadorid = document.getElementById('aprovadorid') ? document.getElementById('aprovadorid').value : null;
     const nome = document.getElementById('newNome').value;
     const datainicio = document.getElementById('newDataInicio').value;
     const datafim = document.getElementById('newDataFim').value;
     const precoestimado = document.getElementById('newPrecoEstimado').value;
 
-    // Obter a role do usuário logado (pode vir de uma variável global ou de um atributo no template)
-    const userRole = document.getElementById('userRole').value; // Certifique-se de que o role está disponível no template
+    // Log dos valores capturados
+    console.log({ clienteid, aprovadorid, nome, datainicio, datafim, precoestimado });
 
-    // Verificar se o usuário é cliente e definir valores padrão
-    if (userRole === "Cliente") {
-        if (!clienteid) {
-            clienteid = document.getElementById('clienteLoggedId').value; // ID do cliente logado (injetado no template)
-        }
-        if (!aprovadorid) {
-            aprovadorid = "0"; // Definir aprovador como 0
-        }
-    }
-
-    // Validação dos campos
+    // Verificar se os campos estão preenchidos
     if (!clienteid || !aprovadorid || !nome || !datainicio || !datafim || !precoestimado) {
         alert('Por favor, preencha todos os campos.');
         return;

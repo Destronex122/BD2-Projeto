@@ -208,8 +208,10 @@
                         <th>Casta</th>
                         <th>Quantidade (kg)</th>
                         <th>Estado</th>
+                        {% if request.session.user_role != "Cliente" %}
                         <th style="width: 100px;">Ações</th> 
                         <th style="width: 200px;">Decisão</th> 
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -218,6 +220,7 @@
                         <td>{{ item.casta_nome }}</td>
                         <td>{{ item.quantidade }}</td>
                         <td>{{ item.estado_nome }}</td>
+                        {% if request.session.user_role != "Cliente" %}
                         <td>  
                             {% if pedido.isactive and item.estado_id == 6 %} 
                             <div style="width: 100px;">
@@ -233,6 +236,8 @@
                                 <span>-</span>
                             {% endif %} 
                         </td>
+                        {% endif %} 
+                        {% if request.session.user_role != "Cliente" %}
                         <td>
                             {% if item.estado_id == 6 %} <!-- Mostrar botões apenas se estado for "Pendente" -->
                             <div style="width: 200px;">
@@ -253,6 +258,7 @@
                                 <span>Sem ações disponíveis</span>
                             {% endif %}
                         </td>
+                        {% endif %}
                     </tr>
                     {% empty %}
                     <tr>
