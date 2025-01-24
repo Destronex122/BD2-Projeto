@@ -56,18 +56,18 @@ def login_view(request):
             try:
                 custom_user = Users.objects.get(username=user.username)
                 request.session['user_role'] = custom_user.cargoid.nome if custom_user.cargoid else None
-#                role_name = custom_user.cargoid.nome.lower() if custom_user.cargoid else None
-#                role_mapping = {
-#                    'admin': ('admin_user', 'senha_admin'),
-#                    'gestor': ('gestor_user', 'senha_gestor'),
-#                    'cliente': ('cliente_user', 'senha_cliente'),
-#                    'operador': ('operador_user', 'senha_operador'),
-#                }
-#                if role_name in role_mapping:
-#                    role, password = role_mapping[role_name]
-#                    set_db_role(role, password)
-#                else:
-#                    return HttpResponse('Role inválida'' ou não defenida')
+                role_name = custom_user.cargoid.nome.lower() if custom_user.cargoid else None
+                role_mapping = {
+                    'admin': ('admin_user', 'senha_admin'),
+                    'gestor': ('gestor_user', 'senha_gestor'),
+                    'cliente': ('cliente_user', 'senha_cliente'),
+                    'operador': ('operador_user', 'senha_operador'),
+                }
+                if role_name in role_mapping:
+                    role, password = role_mapping[role_name]
+                    set_db_role(role, password)
+                else:
+                    return HttpResponse('Role inválida'' ou não defenida')
             except Users.DoesNotExist:
                 request.session['user_role'] = None
 
