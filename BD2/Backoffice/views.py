@@ -68,10 +68,21 @@ def login_view(request):
                     set_db_role(role, password)
                 else:
                     return HttpResponse('Role inválida'' ou não defenida')
+
+                user_role = custom_user.cargoid.nome if custom_user.cargoid else None
+                request.session['user_role'] = user_role
+
+                # Redirecionar com base na role
+                if user_role == "Cliente":
+                    return redirect('harvest')  # Substitua 'harvest' pelo nome da rota correspondente
+                elif user_role == "Externo":
+                    return redirect('delivery')  # Substitua pelo nome da rota padrão
+                else:
+                    return redirect('backofficeIndex') 
             except Users.DoesNotExist:
                 request.session['user_role'] = None
+                messages.error(request, 'Erro ao recuperar role do utilizador.')
 
-            return redirect('backofficeIndex')
         else:
             messages.error(request, 'Utilizador ou password incorretos!') 
 
