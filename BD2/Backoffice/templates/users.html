@@ -11,6 +11,23 @@
         background-color: #f1f1f1; /* Cor de fundo da linha ao passar o rato */
         cursor: pointer; /* Muda o cursor para indicar que a linha é clicável */
     }
+    .popup-content {
+        max-height: 80vh; /* Limita a altura do modal a 80% da altura da tela */
+        overflow-y: auto; /* Adiciona o scroll vertical quando o conteúdo ultrapassar a altura */
+    }
+
+    .popup-overlay {
+        position: fixed; /* Mantém o modal fixo */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semitransparente */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
 </style>
 
 
@@ -111,7 +128,7 @@
     </table>
 
     <!-- Modal para adicionar novo utilizador -->
-    <div class="popup-overlay" id="addUserModal">
+    <div class="popup-overlay" id="addUserModal" style="display: none;">
         <div class="popup-content">
             <div class="popup-header">
                 <h5>Adicionar utilizador</h5>
@@ -154,7 +171,7 @@
                 </div>
                 <div class="form-group">
                     <label for="newUserCargo">Cargo:</label>
-                    <select id="newUserCargo" class="form-control" required>
+                    <select id="newUserCargo" class="form-control" required onchange="toggleClienteFields()">
                         {% for cargo in cargos %}
                             <!-- Se a role for "Gestor", não mostre "Admin" nem "Gestor" -->
                             {% if request.session.user_role == "Gestor" and cargo.nome != "Admin" and cargo.nome != "Gestor" %}
@@ -165,6 +182,24 @@
                             {% endif %}
                         {% endfor %}
                     </select>
+                </div>
+                <!-- Campos adicionais para cliente -->
+                <div id="clienteFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="clienteNIF">NIF:</label>
+                        <input type="number" id="clienteNIF" class="form-control" min="0" max="999999999">
+                    </div>
+                    <div class="form-group">
+                        <label for="clienteContacto">Contacto:</label>
+                        <input type="text" id="clienteContacto" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="clienteTipo">Tipo de Cliente:</label>
+                        <select id="clienteTipo" class="form-control">
+                            <option value="Individual">Individual</option>
+                            <option value="Empresa">Empresa</option>
+                        </select>
+                    </div>
                 </div>
                 
                 
@@ -215,7 +250,15 @@
            formData.append('campoid', document.getElementById('newUserCampo').value);
            formData.append('cargoid', document.getElementById('newUserCargo').value);
 
-           fetch('/users/', {
+           const cargoSelect = document.getElementById('newUserCargo');
+           const selectedRole = cargoSelect.options[cargoSelect.selectedIndex].text;
+
+            if (selectedRole === "Cliente") {
+                formData.append('cliente_nif', document.getElementById('clienteNIF').value);
+                formData.append('cliente_contacto', document.getElementById('clienteContacto').value);
+                formData.append('cliente_tipo', document.getElementById('clienteTipo').value);
+            }
+                    fetch('/users/', {
                method: 'POST',
                headers: {
                    'X-CSRFToken': csrfToken  // Inclua o token CSRF
@@ -260,6 +303,19 @@
                 }
             });
         });
+
+        function toggleClienteFields() {
+         const cargoSelect = document.getElementById('newUserCargo');
+         const clienteFields = document.getElementById('clienteFields');
+
+         // Verifica se o cargo selecionado é "Cliente"
+         const selectedRole = cargoSelect.options[cargoSelect.selectedIndex].text;
+         if (selectedRole === "Cliente") {
+             clienteFields.style.display = "block"; // Mostra os campos de cliente
+         } else {
+             clienteFields.style.display = "none"; // Oculta os campos de cliente
+         }
+}
     </script>
     
 </div>
