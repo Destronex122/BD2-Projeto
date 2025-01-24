@@ -767,7 +767,7 @@ def contracts(request):
 
     contratos = Contratos.objects.filter(isactive=True)  
     clientes = Clientes.objects.filter(isactive=True)
-    pedidos = PedidosItem.objects.filter(isactive=True)
+    pedidos = PedidosItem.objects.filter(isactive=True, estadoaprovacaoid=1)
     for cliente in clientes:
         user = cliente.clienteid  # Objeto relacionado do modelo Users
         print(f"ID: {user.userid}, Nome: {user.nome}, Email: {user.email}")
