@@ -216,6 +216,24 @@ def users(request):
                     "CALL sp_inserir_user(%s, %s, %s, %s, %s, %s, %s, %s);",
                     [username, nome, email, encrypted_password, telefone, endereco, campoid, cargoid]
                 )
+                # Se o cargo selecionado for "Cliente", adicionar dados específicos do cliente
+            cargo_nome = Cargo.objects.get(cargoid=cargoid).nome  # Obter o nome do cargo
+            if cargo_nome == "Cliente":
+                cliente_nif = request.POST.get('cliente_nif')
+                cliente_contacto = request.POST.get('cliente_contacto')
+                cliente_tipo = request.POST.get('cliente_tipo')
+
+                if cliente_tipo == "Empresa":
+                    isEmpresa = True
+                else:
+                    isEmpresa = False
+
+                # Chamar o procedimento armazenado para inserir os dados do cliente
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "CALL sp_add_cliente(%s, %s, %s, %s, %s);",
+                        [username, cliente_nif, cliente_contacto, isEmpresa, endereco ]
+                    )
 
             return JsonResponse({'message': 'Utilizador adicionado com sucesso!'}, status=201)
 
