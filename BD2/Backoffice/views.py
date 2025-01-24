@@ -253,13 +253,31 @@ def users(request):
 
 @login_required
 def delivery(request):
+    # Role do usuário logado
+    user_role = request.session.get('user_role', None)
+
     # Filtros
     filter_number = request.GET.get('filterNumber', '').strip()
     filter_date = request.GET.get('filterDate', None)
     filter_state = request.GET.get('filterState', '').strip()
 
+    # Query inicial de transportes
     transporte = Transportes.objects.all()
 
+    # Filtrar pelo cliente associado ao contrato e recibo, se o usuário for cliente
+    if user_role == "Cliente":
+        try:
+            # Obter o cliente associado ao usuário logado
+            cliente = Clientes.objects.get(clienteid=request.user.id)
+
+            # Filtrar transportes relacionados ao cliente
+            transporte = transporte.filter(
+                reciboid__idcontrato__clienteid=cliente
+            )
+        except Clientes.DoesNotExist:
+            transporte = Transportes.objects.none()  # Sem transportes se o cliente não existir
+
+    # Aplicar filtros adicionais
     if filter_number:
         transporte = transporte.filter(idtransporte__icontains=filter_number)
     if filter_date:
@@ -267,6 +285,7 @@ def delivery(request):
     if filter_state:
         transporte = transporte.filter(estadoid__nome__icontains=filter_state)
 
+    # Lidar com ações POST (adicionar, editar, excluir transportes)
     if request.method == 'POST':
         action = request.POST.get('action')
 
@@ -336,6 +355,7 @@ def delivery(request):
         },
         'estados': estados, 
     })
+
 
 
 @login_required
@@ -791,26 +811,38 @@ def delete_note_harvest(request, notaid):
 # CONTRATOS
 @login_required
 def contracts(request):
+    # Obter a role do usuário logado
+    user_role = request.session.get('user_role', None)
+
     # Filtros
     filter_number = request.GET.get('filterNumber', '').strip()
     filter_date = request.GET.get('filterDate', None)
     filter_client_nif = request.GET.get('filterClientNif', '').strip()
 
-    contratos = Contratos.objects.filter(isactive=True)  
-    clientes = Clientes.objects.filter(isactive=True)
-    pedidos = PedidosItem.objects.filter(isactive=True, estadoaprovacaoid=1)
-    for cliente in clientes:
-        user = cliente.clienteid  # Objeto relacionado do modelo Users
-        print(f"ID: {user.userid}, Nome: {user.nome}, Email: {user.email}")
+    # Query inicial
+    contratos = Contratos.objects.filter(isactive=True)
 
+    # Se o usuário for cliente, filtrar contratos relacionados ao cliente
+    if user_role == "Cliente":
+        try:
+            # Obter o cliente associado ao usuário logado
+            cliente = Clientes.objects.get(clienteid=request.user.id)
+            # Filtrar contratos pelo cliente
+            contratos = contratos.filter(clienteid=cliente)
+        except Clientes.DoesNotExist:
+            contratos = Contratos.objects.none()  # Sem contratos se o cliente não existir
 
-
+    # Aplicar filtros adicionais
     if filter_number:
         contratos = contratos.filter(contratoid__icontains=filter_number)
     if filter_date:
         contratos = contratos.filter(datainicio=filter_date)
     if filter_client_nif:
         contratos = contratos.filter(clienteid__nif__icontains=filter_client_nif)
+
+    # Obter clientes e pedidos ativos para exibição
+    clientes = Clientes.objects.filter(isactive=True)
+    pedidos = PedidosItem.objects.filter(isactive=True, estadoaprovacaoid=1)
 
     # Verificar se é uma requisição POST para criar ou excluir contrato
     if request.method == 'POST':
@@ -850,7 +882,7 @@ def contracts(request):
                             %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
                     """, [
-                         nome,cliente_id, pedido_id, data_inicio, data_fim,
+                        nome, cliente_id, pedido_id, data_inicio, data_fim,
                         quantidade_estimada, preco_estimado,
                         quantidade_final, is_active
                     ])
@@ -872,6 +904,7 @@ def contracts(request):
             'filterClientNif': filter_client_nif,
         },
     })
+
     
 def update_contrato_qtdefinal(idcontrato):
     try:

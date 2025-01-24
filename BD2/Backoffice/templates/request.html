@@ -172,7 +172,8 @@
             <br>
             <form id="addRequestForm" action="{% url 'add_request' %}" method="post">
                 {% csrf_token %}
-                <!-- Campo para o Cliente -->
+                <!-- Campo para o Cliente (oculto se o usuário for um cliente) -->
+                {% if request.session.user_role != "Cliente" %}
                 <div class="form-group">
                     <label for="clienteid">Cliente:</label>
                     <select id="clienteid" name="clienteid" class="form-control" required>
@@ -182,7 +183,11 @@
                         {% endfor %}
                     </select>
                 </div>
-
+                {% else %}
+                <!-- Input oculto para capturar o ID do cliente logado -->
+                <input type="hidden" id="clienteid" name="clienteid" value="{{ request.user.id }}">
+                {% endif %}
+    
                 <!-- Campo para o Aprovador -->
                 <div class="form-group">
                     <label for="aprovadorid">Aprovador:</label>
@@ -193,7 +198,8 @@
                         {% endfor %}
                     </select>
                 </div>
-
+    
+                <!-- Nome do Pedido -->
                 <div class="form-group">
                     <label for="newNome">Nome do pedido:</label>
                     <input type="text" id="newNome" name="newNome" class="form-control" required>
@@ -278,39 +284,53 @@
         }
     });
 
-    document.getElementById('addRequestForm').addEventListener('submit', function (event) {
-        event.preventDefault();
-        // Capturar os valores do formulário
-        const clienteid = document.getElementById('clienteid').value;
-        const aprovadorid = document.getElementById('aprovadorid').value;
-        const nome = document.getElementById('newNome').value;
-        const datainicio = document.getElementById('newDataInicio').value;
-        const datafim = document.getElementById('newDataFim').value;
-        const precoestimado = document.getElementById('newPrecoEstimado').value;
+   document.getElementById('addRequestForm').addEventListener('submit', function (event) {
+    event.preventDefault();
 
-        // Validação dos campos
-        if (!clienteid || !aprovadorid || !nome || !datainicio || !datafim || !precoestimado) {
-            alert('Por favor, preencha todos os campos.');
-            return;
+    // Capturar os valores do formulário
+    let clienteid = document.getElementById('clienteid').value;
+    let aprovadorid = document.getElementById('aprovadorid').value;
+    const nome = document.getElementById('newNome').value;
+    const datainicio = document.getElementById('newDataInicio').value;
+    const datafim = document.getElementById('newDataFim').value;
+    const precoestimado = document.getElementById('newPrecoEstimado').value;
+
+    // Obter a role do usuário logado (pode vir de uma variável global ou de um atributo no template)
+    const userRole = document.getElementById('userRole').value; // Certifique-se de que o role está disponível no template
+
+    // Verificar se o usuário é cliente e definir valores padrão
+    if (userRole === "Cliente") {
+        if (!clienteid) {
+            clienteid = document.getElementById('clienteLoggedId').value; // ID do cliente logado (injetado no template)
         }
+        if (!aprovadorid) {
+            aprovadorid = "0"; // Definir aprovador como 0
+        }
+    }
 
-        // Preparar os dados para envio
-        const formData = new FormData();
-        formData.append('clienteid', clienteid);
-        formData.append('aprovadorid', aprovadorid);
-        formData.append('newNome', nome);
-        formData.append('newDataInicio', datainicio);
-        formData.append('newDataFim', datafim);
-        formData.append('newPrecoEstimado', precoestimado);
+    // Validação dos campos
+    if (!clienteid || !aprovadorid || !nome || !datainicio || !datafim || !precoestimado) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+    }
 
-        // Enviar a requisição POST
-        fetch('.', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-            body: formData,
-        })
+    // Preparar os dados para envio
+    const formData = new FormData();
+    formData.append('clienteid', clienteid);
+    formData.append('aprovadorid', aprovadorid);
+    formData.append('newNome', nome);
+    formData.append('newDataInicio', datainicio);
+    formData.append('newDataFim', datafim);
+    formData.append('newPrecoEstimado', precoestimado);
+
+    // Enviar a requisição POST
+    fetch('.', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData,
+    })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -324,7 +344,8 @@
             console.error('Erro:', error);
             alert('Erro ao enviar o pedido.');
         });
-    });
+});
+
 
     function deleteRequest(button, pedidoid) {
         if (!confirm('Tem certeza de que deseja inativar este pedido?')) {

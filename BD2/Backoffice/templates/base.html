@@ -31,7 +31,6 @@
                     <li class="nav-item active">
                         <a class="nav-link" href="/backoffice/home">Início</a>
                     </li>
-
                     <!-- Cliente: vê apenas Vinhas e Colheitas -->
                     {% if request.session.user_role == "Cliente" %}
                         <li class="nav-item">
@@ -40,15 +39,24 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/backoffice/request">Pedidos</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/contracts">Contratos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/backoffice/delivery">Transporte</a>
+                        </li>
                     {% endif %}
-
                     <!-- Operador: vê apenas Colheitas -->
                     {% if request.session.user_role == "Operador" %}
                         <li class="nav-item">
                             <a class="nav-link" href="/backoffice/harvest">Colheitas</a>
                         </li>
                     {% endif %}
-
+                    {% if request.session.user_role == "Externo" %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/backoffice/delivery">Transporte</a>
+                    </li>
+                    {% endif %}
                     <!-- Gestor: vê tudo, exceto Utilizadores e Gerir Campos -->
                     {% if request.session.user_role == "Gestor" %}
                         <li class="nav-item">
@@ -63,13 +71,10 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/backoffice/contracts">Contratos</a>
                         </li>
-                        
-                        
                         <li class="nav-item">
                             <a class="nav-link" href="/backoffice/delivery">Transporte</a>
                         </li>
                     {% endif %}
-
                     <!-- Admin: vê tudo -->
                     {% if request.session.user_role == "Admin" %}
                         <li class="nav-item">
@@ -90,7 +95,6 @@
                         </li>
                     {% endif %}
                 </ul>
-
                 <div class="ml-auto d-flex align-items-center"> <!-- Alinhamento à direita com ícone de logout -->
                     <div class="dropdown">
                         <div class="dropdown-toggle" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -102,11 +106,9 @@
                             <a class="dropdown-item" href="{% url 'users' %}">Utilizadores</a>
                             <a class="dropdown-item" href="{% url 'fields' %}">Gerir Campos</a>
                             {% endif %}
-
                             {% if request.session.user_role == "Admin" %}
                              <a class="dropdown-item" href="{% url 'settings' %}">Configurações</a>
                             {% endif %}
-
                             <div class="dropdown-divider"></div>
                             <form action="{% url 'logout' %}" method="post" style="display: inline;">
                                 {% csrf_token %}
@@ -118,9 +120,7 @@
             </div>
         </nav>
     {% endif %}
-
     <div class="container" style="width: 100vh;">{% block content %} {% endblock %}</div>
-
     <!-- Scripts necessários -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>

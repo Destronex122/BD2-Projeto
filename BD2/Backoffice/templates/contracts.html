@@ -43,9 +43,11 @@
     <div style="display:flex; justify-content: space-between;">
         <h1>Contratos</h1>
         <div style="text-align:right; margin-bottom: 20px;" onclick="openAddContractModal()">
+            {% if request.session.user_role != "Cliente" %}
             <button type="button" onclick="openAddContractModal()">
                 <img src="{% static 'add.png' %}" title="Adicionar novo contrato" alt="add" style="height: 25px; width: auto;">
             </button>
+            {% endif %}
         </div>
     </div>
     <p>Selecione um contrato para visualizar o detalhe do mesmo.</p> 
@@ -166,17 +168,21 @@
             <td>{{ contrato.datafim|date:'Y-m-d' }}</td>
             <td>{{ contrato.qtdeestimada }}</td>
             <td>{{ contrato.precoestimado }}</td>
+
             <td>
                 <!-- Botão de exportação JSON -->
                 <form method="get" action="{% url 'export_contract_json' contrato.contratoid %}" style="display:inline;">
                     <button type="submit" class="export-btn"><img src="{% static 'export.png' %}" title="Exportar contrato (JSON)" style="height: 25px; width: auto;"></button>
                 </form>
+                {% if request.session.user_role != "Cliente" %}
                 <!-- Botão de exclusão -->
                 <form method="post" class="delete-form" style="display:inline;">
                     {% csrf_token %}
                     <input type="hidden" name="deleteContract" value="{{ contrato.contratoid }}">
                     <button type="submit" class="delete-btn"><img src="{% static 'delete.png' %}" title="Inativar contrato" style="height: 25px; width: auto;"></button>
                 </form>
+                {% endif %}
+
             </td>
         </tr>
         {% empty %}
