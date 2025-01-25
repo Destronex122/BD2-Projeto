@@ -62,6 +62,7 @@ def login_view(request):
                     'gestor': ('gestor_user', 'senha_gestor'),
                     'cliente': ('cliente_user', 'senha_cliente'),
                     'operador': ('operador_user', 'senha_operador'),
+                    'externo':('externo_user','123'),
                 }
                 if role_name in role_mapping:
                     role, password = role_mapping[role_name]
